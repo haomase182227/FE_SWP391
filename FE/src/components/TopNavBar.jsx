@@ -31,17 +31,17 @@ export default function TopNavBar() {
             <span className="font-headline font-bold text-secondary">$12,450.00</span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
+            <Link to="/wishlist" className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>favorite</span>
               <span className="hidden xl:inline text-xs font-bold uppercase tracking-tighter">Wishlist</span>
-            </button>
+            </Link>
             <button className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>receipt_long</span>
               <span className="hidden xl:inline text-xs font-bold uppercase tracking-tighter">Orders</span>
             </button>
-            <button className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
+            <Link to="/cart" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>shopping_cart</span>
-            </button>
+            </Link>
             <button className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>notifications</span>
             </button>

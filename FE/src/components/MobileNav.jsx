@@ -8,14 +8,14 @@ export default function MobileNav() {
         <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>explore</span>
         <span className="text-[10px] font-bold">Discover</span>
       </Link>
-      <button className="flex flex-col items-center gap-1 text-stone-400 hover:text-primary transition-colors">
+      <Link to="/wishlist" className="flex flex-col items-center gap-1 text-stone-400 hover:text-primary transition-colors">
         <span className="material-symbols-outlined">favorite</span>
         <span className="text-[10px] font-bold">Saved</span>
-      </button>
-      <button className="flex flex-col items-center gap-1 text-stone-400 hover:text-primary transition-colors">
+      </Link>
+      <Link to="/cart" className="flex flex-col items-center gap-1 text-stone-400 hover:text-primary transition-colors">
         <span className="material-symbols-outlined">receipt_long</span>
         <span className="text-[10px] font-bold">Orders</span>
-      </button>
+      </Link>
       <button className="flex flex-col items-center gap-1 text-stone-400 hover:text-primary transition-colors">
         <span className="material-symbols-outlined">person</span>
         <span className="text-[10px] font-bold">Profile</span>
