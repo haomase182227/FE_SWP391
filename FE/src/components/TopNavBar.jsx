@@ -1,7 +1,49 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../pages/Context/AuthContext';
 
 export default function TopNavBar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const profileMenuRef = useRef(null);
+  const { currentUser, isAuthenticated, login, logout } = useAuth();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function handleLogin(event) {
+    event.preventDefault();
+    setAuthError('');
+    const result = login({ email, password });
+
+    if (!result.success) {
+      setAuthError(result.message);
+      return;
+    }
+
+    setEmail('');
+    setPassword('');
+    setIsMenuOpen(false);
+  }
+
+  function handleLogout() {
+    logout();
+    setEmail('');
+    setPassword('');
+    setAuthError('');
+    setIsMenuOpen(false);
+  }
+
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(168,49,0,0.04)]">
       <div className="flex justify-between items-center px-8 h-20 w-full max-w-screen-2xl mx-auto font-['Space_Grotesk'] tracking-tight">
@@ -45,12 +87,79 @@ export default function TopNavBar() {
             <button className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>notifications</span>
             </button>
-            <div className="h-10 w-10 rounded-full bg-surface-container-high border-2 border-primary/10 overflow-hidden">
-              <img 
-                alt="Profile" 
-                className="w-full h-full object-cover" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq5MBi-FnDVnn8Cn6I2Vv4fbe7bIcqc1SUlWAi13OL58uUjhMWHO1YmOGjJLCtYgz4LIfQ_pVBuhPfPz9UhMZHuhYjNkEJg9IoUg3aGKzkN6Sldk_304Xovk8-HCdy-4PpA-dOBGIXUJ-o0NWRYnNVf2LI3MsnL_X71pYWdwSzNfrC_pfEfTIX83VJOJg_ZretoolpJH7MofTvfggz3Em1P9uzcDH60WXLdOIPkl4M3DfDDXgelqw8BxHCz9GN7EddpmpqdkgC_RpW"
-              />
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                className="h-10 w-10 rounded-full bg-surface-container-high border-2 border-primary/10 overflow-hidden hover:scale-95 transition-transform"
+              >
+                <img 
+                  alt="Profile" 
+                  className="w-full h-full object-cover" 
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq5MBi-FnDVnn8Cn6I2Vv4fbe7bIcqc1SUlWAi13OL58uUjhMWHO1YmOGjJLCtYgz4LIfQ_pVBuhPfPz9UhMZHuhYjNkEJg9IoUg3aGKzkN6Sldk_304Xovk8-HCdy-4PpA-dOBGIXUJ-o0NWRYnNVf2LI3MsnL_X71pYWdwSzNfrC_pfEfTIX83VJOJg_ZretoolpJH7MofTvfggz3Em1P9uzcDH60WXLdOIPkl4M3DfDDXgelqw8BxHCz9GN7EddpmpqdkgC_RpW"
+                />
+              </button>
+
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-3 w-80 bg-surface-container-lowest border border-outline-variant/20 rounded-2xl editorial-shadow p-5 z-50">
+                  {!isAuthenticated ? (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-headline text-lg font-bold tracking-tight">Đăng nhập nhanh</h3>
+                        <p className="text-xs text-on-surface-variant mt-1">Không chuyển trang, đăng nhập ngay tại menu.</p>
+                      </div>
+
+                      <form className="space-y-3" onSubmit={handleLogin}>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          placeholder="Email"
+                          className="w-full rounded-xl bg-surface-container-low px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                          placeholder="Mật khẩu"
+                          className="w-full rounded-xl bg-surface-container-low px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        {authError && <p className="text-xs font-medium text-error">{authError}</p>}
+                        <button
+                          type="submit"
+                          className="w-full rounded-xl bg-primary text-on-primary py-3 text-xs font-bold uppercase tracking-widest hover:opacity-95 transition-opacity"
+                        >
+                          Đăng nhập
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-11 w-11 rounded-full overflow-hidden border border-outline-variant/30">
+                          <img
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq5MBi-FnDVnn8Cn6I2Vv4fbe7bIcqc1SUlWAi13OL58uUjhMWHO1YmOGjJLCtYgz4LIfQ_pVBuhPfPz9UhMZHuhYjNkEJg9IoUg3aGKzkN6Sldk_304Xovk8-HCdy-4PpA-dOBGIXUJ-o0NWRYnNVf2LI3MsnL_X71pYWdwSzNfrC_pfEfTIX83VJOJg_ZretoolpJH7MofTvfggz3Em1P9uzcDH60WXLdOIPkl4M3DfDDXgelqw8BxHCz9GN7EddpmpqdkgC_RpW"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đã đăng nhập</p>
+                          <p className="font-headline text-sm font-bold text-on-surface">{currentUser?.email}</p>
+                          <p className="text-[11px] text-on-surface-variant">Role: {currentUser?.role}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full rounded-xl bg-error text-on-error py-3 text-xs font-bold uppercase tracking-widest hover:opacity-95 transition-opacity"
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

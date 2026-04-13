@@ -1,7 +1,31 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../Context/AuthContext';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loginEmail, setLoginEmail] = useState('buyer@kinetic.vn');
+  const [loginPassword, setLoginPassword] = useState('123456');
+  const [loginError, setLoginError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  function handleLoginSubmit(event) {
+    event.preventDefault();
+    setLoginError('');
+
+    const result = login({
+      email: loginEmail,
+      password: loginPassword,
+    });
+
+    if (!result.success) {
+      setLoginError(result.message);
+      return;
+    }
+
+    navigate(result.redirectPath);
+  }
 
   if (isLogin) {
     return (
@@ -82,7 +106,7 @@ const AuthPage = () => {
                 Tiếp tục hành trình chinh phục những đỉnh cao mới.
               </p>
             </div>
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleLoginSubmit}>
               {/* Email Field */}
               <div className="space-y-1.5">
                 <label
@@ -103,6 +127,8 @@ const AuthPage = () => {
                     name="email"
                     placeholder="ten@kinetic.vn"
                     type="email"
+                    value={loginEmail}
+                    onChange={(event) => setLoginEmail(event.target.value)}
                   />
                 </div>
               </div>
@@ -134,6 +160,8 @@ const AuthPage = () => {
                     name="password"
                     placeholder="••••••••"
                     type="password"
+                    value={loginPassword}
+                    onChange={(event) => setLoginPassword(event.target.value)}
                   />
                 </div>
               </div>
@@ -151,6 +179,12 @@ const AuthPage = () => {
                 >
                   Ghi nhớ đăng nhập
                 </label>
+              </div>
+              {loginError && (
+                <p className="text-sm font-medium text-error">{loginError}</p>
+              )}
+              <div className="text-[11px] text-on-surface-variant bg-surface-container-low rounded-lg px-3 py-2 leading-relaxed">
+                Tai khoan test: buyer@kinetic.vn, admin@kinetic.vn, inspector@kinetic.vn, seller@kinetic.vn. Mat khau: 123456.
               </div>
               {/* Submit Button */}
               <button
