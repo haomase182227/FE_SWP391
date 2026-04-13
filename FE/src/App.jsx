@@ -13,6 +13,7 @@ import Dashboard from './pages/Admin/Dashboard';
 import NotFound from './pages/NotFound';
 import AccountSellerManagement from './pages/Seller/AccountSellerManagement';
 import NewListing from './pages/Seller/NewListing';
+import ListingManagement from './pages/Seller/ListingManagement';
 import OderManagement from './pages/Seller/OderManagement';
 import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
 import InspectionTracking from './pages/Seller/InspectionTracking';
@@ -39,7 +40,8 @@ function AppContent() {
           <Route path="/inspector" element={<div className="pt-20 p-8 text-center">Inspector Workspace Coming Soon</div>} />
           <Route path="/seller" element={<Navigate to="/seller/account" replace />} />
           <Route path="/seller/account" element={<AccountSellerManagement />} />
-          <Route path="/seller/listings" element={<NewListing />} />
+          <Route path="/seller/listings" element={<ListingManagement />} />
+          <Route path="/seller/new-listing" element={<NewListing />} />
           <Route path="/seller/orders" element={<OderManagement />} />
           <Route path="/seller/wallet" element={<WalletSellerManagement />} />
           <Route path="/seller/inspections" element={<InspectionTracking />} />

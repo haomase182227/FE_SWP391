@@ -52,7 +52,7 @@ export default function NewListing() {
         merchantName="Verified Merchant"
         merchantSub="Seller Dashboard"
         bottomButton="List New Bike"
-        onBottomButtonClick={() => navigate('/seller/listings')}
+        onBottomButtonClick={() => navigate('/seller/new-listing')}
       />
 
       {/* Main Content */}

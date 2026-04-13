@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../pages/Context/AuthContext';
 
 const NAV_ITEMS = [
   { icon: 'dashboard', label: 'Account', to: '/seller/account' },
@@ -10,6 +11,13 @@ const NAV_ITEMS = [
 ];
 
 export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc, avatarAlt = 'Seller Avatar', merchantName = 'Verified Merchant', merchantSub = 'Seller Dashboard', bottomButton, onBottomButtonClick }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/auth');
+  }
   return (
     <aside className="fixed left-0 top-0 h-full flex flex-col py-6 w-64 border-r border-outline-variant/20 bg-surface-container-low z-50">
       <div className="px-6 mb-10">
@@ -22,13 +30,16 @@ export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc,
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-6 py-3 transition-all duration-200 text-xs uppercase tracking-tight font-semibold ${
-                isActive
+            end={item.to === '/seller/listings'}
+            className={({ isActive }) => {
+              // "Listings" nav item should also be active on /seller/new-listing
+              const extraActive = item.to === '/seller/listings' && window.location.pathname === '/seller/new-listing';
+              return `flex items-center gap-3 px-6 py-3 transition-all duration-200 text-xs uppercase tracking-tight font-semibold ${
+                isActive || extraActive
                   ? 'text-primary font-bold border-r-4 border-primary bg-surface-container-low'
                   : 'text-on-surface-variant hover:text-primary hover:bg-surface-container-low'
-              }`
-            }
+              }`;
+            }}
           >
             <span className="material-symbols-outlined text-xl">{item.icon}</span>
             <span>{item.label}</span>
@@ -54,6 +65,13 @@ export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc,
             {bottomButton}
           </button>
         )}
+        <button
+          onClick={handleLogout}
+          className="w-full mt-3 py-3 flex items-center justify-center gap-2 text-on-surface-variant hover:text-error hover:bg-error-container/10 text-xs font-bold uppercase tracking-widest rounded-lg transition-colors"
+        >
+          <span className="material-symbols-outlined text-sm">logout</span>
+          Logout
+        </button>
       </div>
     </aside>
   );
