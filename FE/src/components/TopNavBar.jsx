@@ -26,10 +26,10 @@ export default function TopNavBar() {
         </div>
         <div className="flex items-center gap-6">
           {/* Wallet Balance Integration */}
-          <div className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20">
+          <Link to="/wallet" className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20 hover:opacity-90 transition-opacity">
             <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Wallet Balance</span>
             <span className="font-headline font-bold text-secondary">$12,450.00</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-4">
             <Link to="/wishlist" className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>favorite</span>

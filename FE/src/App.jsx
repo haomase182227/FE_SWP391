@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import TopNavBar from './components/TopNavBar';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
@@ -7,29 +7,42 @@ import Home from './pages/Home';
 import BikeDetail from './pages/BikeDetail';
 import Wishlist from './pages/Buyer/Wishlist';
 import Cart from './pages/Buyer/Cart';
+import Wallet from './pages/Buyer/Wallet';
+import AuthPage from './pages/Auth/AuthPage';
 import NotFound from './pages/NotFound';
+
+function AppContent() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/auth';
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!isAuthPage && <TopNavBar />}
+      <div className="flex-grow">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/bike/:id" element={<BikeDetail />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/wallet" element={<Wallet />} />
+          <Route path="/auth" element={<AuthPage />} />
+          {/* Future Routes for Buyer, Seller, Inspector, Admin */}
+          <Route path="/compare" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
+          <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
+          <Route path="/support" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+      <Footer />
+      <MobileNav />
+    </div>
+  );
+}
 
 function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
-        <TopNavBar />
-        <div className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/bike/:id" element={<BikeDetail />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/cart" element={<Cart />} />
-            {/* Future Routes for Buyer, Seller, Inspector, Admin */}
-            <Route path="/compare" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
-            <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
-            <Route path="/support" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Footer />
-        <MobileNav />
-      </div>
+      <AppContent />
     </Router>
   );
 }

@@ -40,6 +40,18 @@ export default function Home() {
                 Explore
               </button>
             </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => navigate('/auth')}
+                className="inline-flex items-center gap-2 bg-surface-container-lowest text-primary px-6 py-3 rounded-lg font-headline font-bold uppercase tracking-tight border border-outline-variant/15 hover:bg-surface-container-low transition-all"
+              >
+                Đăng nhập / Đăng ký
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+              <span className="text-sm text-on-surface-variant">
+                Có thể chuyển giữa login và register ngay trong trang này.
+              </span>
+            </div>
           </div>
         </div>
       </section>
