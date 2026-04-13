@@ -1,12 +1,6 @@
 import React, { useState, useRef } from 'react';
-
-const NAV_ITEMS = [
-  { icon: 'dashboard', label: 'Account', href: '#' },
-  { icon: 'directions_bike', label: 'Listings', href: '#', active: true },
-  { icon: 'payments', label: 'Sales', href: '#' },
-  { icon: 'leaderboard', label: 'Analytics', href: '#' },
-  { icon: 'settings', label: 'Settings', href: '#' },
-];
+import { useNavigate } from 'react-router-dom';
+import SellerSidebar from '../../components/SellerSidebar';
 
 const CONDITIONS = ['Pristine', 'Excellent', 'Good', 'Fair'];
 
@@ -48,52 +42,18 @@ export default function NewListing() {
     console.log({ form, condition, inspectionEnabled, images });
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full flex flex-col py-8 px-4 w-64 bg-surface-container-low z-40">
-        <div className="mb-12 px-4">
-          <span className="text-2xl font-headline font-black uppercase text-primary tracking-widest">
-            Pro-Tour Seller
-          </span>
-          <div className="flex items-center mt-6 gap-3">
-            <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
-              <img
-                alt="Seller Profile Avatar"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqbF9iNTv0bf12Xf_6OXCV8ABGhUJ13qL3Skz87MXP9Z_Gg_67pryu_bzTsFeYh5zumD-CWuZuYJCr7cz4m6fab0MRt3mUYxHZgs3-frNGSKKv-ymzNlmNDz_rmK5q--8c7V7z3q_7Y6197v12Q39EdH8tpFH93Bvt6JtO2mDROzGAW3sQwYdQz-Rj6q9piqEIUN9j9WSrQxVkg2a2UQYDzK2Zq4QVowKJQCOjP-Rj3FhqIeOuAG4bVxx6CLCH_8rFQAucJZXGuQvG"
-              />
-            </div>
-            <div>
-              <p className="font-headline font-bold tracking-tight text-primary text-sm">Verified Merchant</p>
-              <p className="font-body text-xs opacity-70">Seller Dashboard</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 transition-all duration-300 scale-95 active:scale-90 ${
-                item.active
-                  ? 'text-primary font-bold border-r-4 border-primary bg-surface-container-low'
-                  : 'text-on-background opacity-70 hover:bg-surface-container-low'
-              }`}
-            >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="font-body text-sm">{item.label}</span>
-            </a>
-          ))}
-        </nav>
-
-        <div className="mt-auto px-4">
-          <button className="w-full py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold uppercase tracking-widest text-xs rounded-lg transition-transform active:scale-95 shadow-[0_10px_20px_rgba(168,49,0,0.2)]">
-            List New Bike
-          </button>
-        </div>
-      </aside>
+      <SellerSidebar
+        brandName="Pro-Tour Seller"
+        avatarSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuBqbF9iNTv0bf12Xf_6OXCV8ABGhUJ13qL3Skz87MXP9Z_Gg_67pryu_bzTsFeYh5zumD-CWuZuYJCr7cz4m6fab0MRt3mUYxHZgs3-frNGSKKv-ymzNlmNDz_rmK5q--8c7V7z3q_7Y6197v12Q39EdH8tpFH93Bvt6JtO2mDROzGAW3sQwYdQz-Rj6q9piqEIUN9j9WSrQxVkg2a2UQYDzK2Zq4QVowKJQCOjP-Rj3FhqIeOuAG4bVxx6CLCH_8rFQAucJZXGuQvG"
+        merchantName="Verified Merchant"
+        merchantSub="Seller Dashboard"
+        bottomButton="List New Bike"
+        onBottomButtonClick={() => navigate('/seller/listings')}
+      />
 
       {/* Main Content */}
       <main className="ml-64 min-h-screen p-8 md:p-12 max-w-7xl">

@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-
-const NAV_ITEMS = [
-  { icon: 'dashboard', label: 'Account', href: '#' },
-  { icon: 'directions_bike', label: 'Listings', href: '#' },
-  { icon: 'shopping_cart', label: 'Orders', href: '#', active: true },
-  { icon: 'account_balance_wallet', label: 'Wallet', href: '#' },
-  { icon: 'verified', label: 'Inspections', href: '#' },
-];
+import { useNavigate } from 'react-router-dom';
+import SellerSidebar from '../../components/SellerSidebar';
 
 const TABS = ['All Orders', 'Shipping (3)', 'Escrow (5)', 'Completed'];
 
@@ -124,6 +118,7 @@ export default function OderManagement() {
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
   const filtered = ORDERS.filter((o) =>
     o.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -133,47 +128,13 @@ export default function OderManagement() {
 
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full flex flex-col py-6 bg-surface-container-low w-64 border-r border-outline-variant/20 z-50">
-        <div className="px-6 mb-10">
-          <h1 className="text-xl font-bold tracking-tighter text-primary font-headline">Veloce Kinetic</h1>
-          <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Verified Merchant</p>
-        </div>
-
-        <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-6 py-3 transition-all duration-200 ${
-                item.active
-                  ? 'text-primary font-bold border-r-4 border-primary bg-surface-container-low'
-                  : 'text-on-surface-variant hover:bg-surface-container-low'
-              }`}
-            >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="font-label text-sm">{item.label}</span>
-            </a>
-          ))}
-        </nav>
-
-        <div className="px-6 mt-auto">
-          <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-3 mb-6">
-            <img
-              alt="Seller Profile Avatar"
-              className="w-10 h-10 rounded-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcO1STGLhu5TxCCSv7SSnJWDsyPut-fCrimCyvQL3SCtMfecIqWIZzWS4RTZwLx_Gzc9Lh6kUqp5K96x-dMmTszn_OnXQYZFxKggkuXAFfpj4RYPRGSsTbipYVRWXE3D9zJGhTANMhVn9Prx1taHfWhO71Wpyg_fZZ2_qotE3DEk9EcaOJrWlWiJNooEtiQgftVupOMICXk7Z1nT5misFZVOqevlwK4uTkBUnpYxXlNns4kdpNyob2_RXK5FA8jEVN76uBuSiQbgoB"
-            />
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold truncate">Marcus Velo</p>
-              <p className="text-[10px] text-on-surface-variant">Elite Seller</p>
-            </div>
-          </div>
-          <button className="w-full py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-label font-bold uppercase text-xs rounded-lg active:scale-95 transition-transform">
-            Create Listing
-          </button>
-        </div>
-      </aside>
+      <SellerSidebar
+        avatarSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuDcO1STGLhu5TxCCSv7SSnJWDsyPut-fCrimCyvQL3SCtMfecIqWIZzWS4RTZwLx_Gzc9Lh6kUqp5K96x-dMmTszn_OnXQYZFxKggkuXAFfpj4RYPRGSsTbipYVRWXE3D9zJGhTANMhVn9Prx1taHfWhO71Wpyg_fZZ2_qotE3DEk9EcaOJrWlWiJNooEtiQgftVupOMICXk7Z1nT5misFZVOqevlwK4uTkBUnpYxXlNns4kdpNyob2_RXK5FA8jEVN76uBuSiQbgoB"
+        merchantName="Marcus Velo"
+        merchantSub="Elite Seller"
+        bottomButton="Create Listing"
+        onBottomButtonClick={() => navigate('/seller/listings')}
+      />
 
       {/* Top App Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-8 ml-64 bg-surface/80 backdrop-blur-xl h-16 shadow-sm shadow-on-surface/5">

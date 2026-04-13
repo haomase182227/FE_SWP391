@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-
-const NAV_ITEMS = [
-  { icon: 'dashboard', label: 'Account', href: '#' },
-  { icon: 'directions_bike', label: 'Listings', href: '#' },
-  { icon: 'shopping_cart', label: 'Orders', href: '#' },
-  { icon: 'account_balance_wallet', label: 'Wallet', href: '#', active: true, filled: true },
-  { icon: 'verified', label: 'Inspections', href: '#' },
-];
+import { useNavigate } from 'react-router-dom';
+import SellerSidebar from '../../components/SellerSidebar';
 
 const TRANSACTIONS = [
   {
@@ -64,6 +58,7 @@ const BAR_OPACITIES = ['bg-primary/10', 'bg-primary/10', 'bg-primary/20', 'bg-pr
 
 export default function WalletSellerManagement() {
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   const filtered = TRANSACTIONS.filter(
     (t) =>
@@ -73,51 +68,11 @@ export default function WalletSellerManagement() {
 
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
-      {/* Sidebar */}
-      <nav className="fixed left-0 top-0 h-full flex flex-col py-6 w-64 border-r border-outline-variant/20 bg-surface-container-low z-50">
-        <div className="px-6 mb-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary">
-            <span className="material-symbols-outlined">directions_bike</span>
-          </div>
-          <span className="text-xl font-bold tracking-tighter text-primary">Veloce Kinetic</span>
-        </div>
-
-        <div className="flex-1 flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
-                item.active
-                  ? 'text-primary font-bold border-r-4 border-primary bg-surface-container-low scale-95'
-                  : 'text-on-surface-variant hover:text-primary hover:bg-surface-container-low'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={item.active && item.filled ? { fontVariationSettings: '"FILL" 1' } : {}}
-              >
-                {item.icon}
-              </span>
-              <span className="text-xs uppercase tracking-wider">{item.label}</span>
-            </a>
-          ))}
-        </div>
-
-        <div className="px-6 pt-6 mt-auto border-t border-outline-variant/10">
-          <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl">
-            <img
-              alt="Seller Profile Avatar"
-              className="w-10 h-10 rounded-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBh9Q9_fY-ouIys8629M86NNrQJIg92nQPcsJBqsXJZe9JpIhS_4O1BTYPv6fkdx04128V339iWFKnNo_2Qr2SCEeG3KOprb0-a1xryQOoKlWYaroBr_3zxSEq93pDeHfCo5AyQ-ftWamMd7IcvofnitwdqZXx-RAD5G6KMyqeXfLaziiaP1Ig4EEH5mU7CSa1EepNIY7zxxpqShMFh8jA23nv3-zh7sqZpkw48OONfi7nkBORuEiHz0GY2ULX-k-NroVgz4NXuCD3H"
-            />
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold truncate">Verified Merchant</p>
-              <p className="text-[10px] text-on-surface-variant">Profile Settings</p>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <SellerSidebar
+        avatarSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuBh9Q9_fY-ouIys8629M86NNrQJIg92nQPcsJBqsXJZe9JpIhS_4O1BTYPv6fkdx04128V339iWFKnNo_2Qr2SCEeG3KOprb0-a1xryQOoKlWYaroBr_3zxSEq93pDeHfCo5AyQ-ftWamMd7IcvofnitwdqZXx-RAD5G6KMyqeXfLaziiaP1Ig4EEH5mU7CSa1EepNIY7zxxpqShMFh8jA23nv3-zh7sqZpkw48OONfi7nkBORuEiHz0GY2ULX-k-NroVgz4NXuCD3H"
+        merchantName="Verified Merchant"
+        merchantSub="Profile Settings"
+      />
 
       {/* Top App Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-8 ml-64 w-full h-16 bg-surface/80 backdrop-blur-xl shadow-sm shadow-on-surface/5">

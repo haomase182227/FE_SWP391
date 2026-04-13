@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import TopNavBar from './components/TopNavBar';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
@@ -11,12 +11,18 @@ import Wallet from './pages/Buyer/Wallet';
 import AuthPage from './pages/Auth/AuthPage';
 import Dashboard from './pages/Admin/Dashboard';
 import NotFound from './pages/NotFound';
+import AccountSellerManagement from './pages/Seller/AccountSellerManagement';
+import NewListing from './pages/Seller/NewListing';
+import OderManagement from './pages/Seller/OderManagement';
+import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
+import InspectionTracking from './pages/Seller/InspectionTracking';
 
 function AppContent() {
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth';
   const isAdminPage = location.pathname.startsWith('/admin');
-  const hidePublicChrome = isAuthPage || isAdminPage;
+  const isSellerPage = location.pathname.startsWith('/seller');
+  const hidePublicChrome = isAuthPage || isAdminPage || isSellerPage;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -31,7 +37,12 @@ function AppContent() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/inspector" element={<div className="pt-20 p-8 text-center">Inspector Workspace Coming Soon</div>} />
-          <Route path="/seller" element={<div className="pt-20 p-8 text-center">Seller Workspace Coming Soon</div>} />
+          <Route path="/seller" element={<Navigate to="/seller/account" replace />} />
+          <Route path="/seller/account" element={<AccountSellerManagement />} />
+          <Route path="/seller/listings" element={<NewListing />} />
+          <Route path="/seller/orders" element={<OderManagement />} />
+          <Route path="/seller/wallet" element={<WalletSellerManagement />} />
+          <Route path="/seller/inspections" element={<InspectionTracking />} />
           {/* Future Routes for Buyer, Seller, Inspector, Admin */}
           <Route path="/compare" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
           <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
