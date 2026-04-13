@@ -1,167 +1,14 @@
-import React from 'react';
+import AdminSidebar from '../../components/AdminSidebar';
+import AdminTopBar from '../../components/AdminTopBar';
 
 const UserManagement = () => {
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
-      {/* SideNavBar Shell */}
-      <aside
-        className="fixed left-0 h-full w-64 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col py-8 px-4 border-r border-zinc-200/20"
-        style={{ background: 'linear-gradient(to bottom, #fff4f3 0%, #ffedeb 100%)' }}
-      >
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-lg">
-              <span className="material-symbols-outlined text-on-primary">bolt</span>
-            </div>
-            <div>
-              <h1 className="font-headline text-2xl font-black italic text-orange-700 dark:text-orange-500 leading-tight">
-                Kinetic Admin
-              </h1>
-              <p className="font-label uppercase tracking-widest text-[10px] text-zinc-500">
-                Precision Velocity
-              </p>
-            </div>
-          </div>
-        </div>
-        <nav className="flex-1 space-y-1">
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1 group"
-            href="#"
-          >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="font-label uppercase tracking-widest text-[10px]">
-              Dashboard
-            </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 font-bold border-r-4 border-orange-700 transition-transform duration-300 hover:translate-x-1 group"
-            href="#"
-          >
-            <span className="material-symbols-outlined">group</span>
-            <span className="font-label uppercase tracking-widest text-[10px]">
-              User Management
-            </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1 group"
-            href="#"
-          >
-            <span className="material-symbols-outlined">rule</span>
-            <span className="font-label uppercase tracking-widest text-[10px]">
-              Listing Moderation
-            </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1 group"
-            href="#"
-          >
-            <span className="material-symbols-outlined">payments</span>
-            <span className="font-label uppercase tracking-widest text-[10px]">
-              Transactions
-            </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1 group"
-            href="#"
-          >
-            <span className="material-symbols-outlined">engineering</span>
-            <span className="font-label uppercase tracking-widest text-[10px]">
-              Inspectors
-            </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1 group"
-            href="#"
-          >
-            <span className="material-symbols-outlined">analytics</span>
-            <span className="font-label uppercase tracking-widest text-[10px]">
-              Reports
-            </span>
-          </a>
-        </nav>
-        <div className="mt-auto space-y-4 pt-6 border-t border-zinc-200/20">
-          <button className="w-full bg-primary py-3 rounded-lg text-on-primary font-label font-bold uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-            Export Global Data
-          </button>
-          <div className="space-y-1">
-            <a
-              className="flex items-center gap-3 px-4 py-2 text-zinc-600 hover:text-primary transition-colors"
-              href="#"
-            >
-              <span className="material-symbols-outlined text-sm">contact_support</span>
-              <span className="font-label uppercase tracking-widest text-[10px]">
-                Support
-              </span>
-            </a>
-            <a
-              className="flex items-center gap-3 px-4 py-2 text-zinc-600 hover:text-error transition-colors"
-              href="#"
-            >
-              <span className="material-symbols-outlined text-sm">logout</span>
-              <span className="font-label uppercase tracking-widest text-[10px]">
-                Sign Out
-              </span>
-            </a>
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar />
+      <AdminTopBar title="User Directory" searchPlaceholder="Search users, transactions, logs..." />
 
-      {/* Main Canvas */}
-      <main className="pl-64 min-h-screen">
-        {/* TopNavBar Shell */}
-        <header className="fixed top-0 right-0 left-64 h-16 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl z-40 flex justify-between items-center px-8 shadow-[0_20px_40px_rgba(78,33,32,0.06)] border-b border-white/10">
-          <div className="flex items-center gap-8">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-zinc-400 text-lg">
-                search
-              </span>
-              <input
-                className="bg-zinc-100 border-none rounded-full pl-10 pr-4 py-2 text-sm w-80 focus:ring-2 focus:ring-primary/20 transition-all font-body text-on-surface"
-                placeholder="Search across users, transactions, or logs..."
-                type="text"
-              />
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              <a
-                className="text-orange-700 dark:text-orange-500 font-bold border-b-2 border-orange-700 text-sm py-5 px-1 font-['Inter'] tracking-tight transition-colors"
-                href="#"
-              >
-                Dashboard
-              </a>
-              <a
-                className="text-zinc-500 dark:text-zinc-400 font-medium text-sm py-5 px-1 font-['Inter'] tracking-tight hover:text-orange-600 transition-colors"
-                href="#"
-              >
-                Logs
-              </a>
-              <a
-                className="text-zinc-500 dark:text-zinc-400 font-medium text-sm py-5 px-1 font-['Inter'] tracking-tight hover:text-orange-600 transition-colors"
-                href="#"
-              >
-                Settings
-              </a>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-white"></span>
-            </button>
-            <button className="p-2 text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors">
-              <span className="material-symbols-outlined">help_outline</span>
-            </button>
-            <div className="h-8 w-px bg-zinc-200 mx-2"></div>
-            <img
-              alt="Admin Avatar"
-              className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover"
-              data-alt="Close-up portrait of a professional male administrator in his 40s with a clean-shaven look and smart casual attire, neutral background"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeoOEekGUQFnac5mATDxElJfZ0nS4qAjyvZaWRixTqFcme2trFTf6GMJmSys8DY8TjanyyONOmN86xV2G4I6DgIADP-OVni8Ja5n7w7nEjf1ysSyHuhV9OOzmVfDd0QMUvnmkHIU9GR5Mx_vkUQmozUg0o1OV_5oVEBhte7vgK_F63Yfm8AjxksMH2YpD61EtwxiwVOWZ6yokpZOIaYGwToFsoNM-hXWmRM90gOThesHrNvHxKPbh_kRbu8dq2nUD9rH64GX0TWQlt"
-            />
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <div className="mt-16 p-10 space-y-8">
+      {/* Content Area */}
+      <main className="ml-64 pt-16 p-10 space-y-8 min-h-screen">
           {/* Header & Filters */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
@@ -609,7 +456,6 @@ const UserManagement = () => {
               </ul>
             </div>
           </div>
-        </div>
       </main>
     </div>
   );

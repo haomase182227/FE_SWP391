@@ -10,6 +10,11 @@ import Cart from './pages/Buyer/Cart';
 import Wallet from './pages/Buyer/Wallet';
 import AuthPage from './pages/Auth/AuthPage';
 import Dashboard from './pages/Admin/Dashboard';
+import UserManagement from './pages/Admin/UserManagement';
+import ListingModeration from './pages/Admin/ListingModeration';
+import TransactionManagement from './pages/Admin/TransactionManagement';
+import InspectionManagement from './pages/Admin/InspectionManagement';
+import ReportManagement from './pages/Admin/ReportManagement';
 import NotFound from './pages/NotFound';
 import AccountSellerManagement from './pages/Seller/AccountSellerManagement';
 import NewListing from './pages/Seller/NewListing';
@@ -37,6 +42,11 @@ function AppContent() {
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/listings" element={<ListingModeration />} />
+          <Route path="/admin/transactions" element={<TransactionManagement />} />
+          <Route path="/admin/inspections" element={<InspectionManagement />} />
+          <Route path="/admin/reports" element={<ReportManagement />} />
           <Route path="/inspector" element={<div className="pt-20 p-8 text-center">Inspector Workspace Coming Soon</div>} />
           <Route path="/seller" element={<Navigate to="/seller/account" replace />} />
           <Route path="/seller/account" element={<AccountSellerManagement />} />

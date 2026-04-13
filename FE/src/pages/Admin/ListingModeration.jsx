@@ -1,118 +1,14 @@
-import React from 'react';
+import AdminSidebar from '../../components/AdminSidebar';
+import AdminTopBar from '../../components/AdminTopBar';
 
 const ListingModeration = () => {
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
-      {/* SideNavBar */}
-      <aside className="fixed left-0 h-full w-64 z-50 flex flex-col py-8 px-4 border-r border-zinc-200/20 bg-zinc-50 dark:bg-zinc-950">
-        <div className="mb-10 px-4">
-          <div className="font-['Space_Grotesk'] text-2xl font-black italic text-orange-700 dark:text-orange-500 uppercase tracking-tighter">
-            Kinetic Admin
-          </div>
-          <div className="font-['Inter'] uppercase tracking-widest text-[10px] text-zinc-500 mt-1">
-            Precision Velocity
-          </div>
-        </div>
-        <nav className="flex-1 space-y-1">
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-['Inter'] uppercase tracking-widest text-[10px] group transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">dashboard</span>
-            <span>Dashboard</span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-['Inter'] uppercase tracking-widest text-[10px] group transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">group</span>
-            <span>User Management</span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 font-bold border-r-4 border-orange-700 font-['Inter'] uppercase tracking-widest text-[10px] group"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">rule</span>
-            <span>Listing Moderation</span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-['Inter'] uppercase tracking-widest text-[10px] group transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">payments</span>
-            <span>Transactions</span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-['Inter'] uppercase tracking-widest text-[10px] group transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">engineering</span>
-            <span>Inspectors</span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-['Inter'] uppercase tracking-widest text-[10px] group transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">analytics</span>
-            <span>Reports</span>
-          </a>
-        </nav>
-        <div className="mt-auto space-y-1 pt-8 border-t border-zinc-200/10">
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-['Inter'] uppercase tracking-widest text-[10px] hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">contact_support</span>
-            <span>Support</span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-['Inter'] uppercase tracking-widest text-[10px] hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-transform duration-300 hover:translate-x-1"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-lg">logout</span>
-            <span>Sign Out</span>
-          </a>
-        </div>
-      </aside>
+      <AdminSidebar />
+      <AdminTopBar title="Moderation Queue" searchPlaceholder="Search Listings..." />
 
       {/* Main Content Area */}
       <main className="ml-64 min-h-screen">
-        {/* TopNavBar */}
-        <header className="fixed top-0 right-0 left-64 h-16 z-40 flex justify-between items-center px-8 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-headline font-bold tracking-tighter text-orange-700 dark:text-orange-500 uppercase">
-              Moderation Queue
-            </h1>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">
-                search
-              </span>
-              <input
-                className="pl-10 pr-4 py-1.5 rounded-xl border-none bg-zinc-100 dark:bg-zinc-900 text-xs w-64 focus:ring-1 focus:ring-orange-500/30 font-body text-on-surface"
-                placeholder="Search Listings..."
-                type="text"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="flex gap-4">
-              <button className="material-symbols-outlined text-zinc-500 hover:text-orange-600 transition-colors">
-                notifications
-              </button>
-              <button className="material-symbols-outlined text-zinc-500 hover:text-orange-600 transition-colors">
-                help_outline
-              </button>
-            </div>
-            <div className="h-8 w-8 rounded-full overflow-hidden bg-zinc-200">
-              <img
-                alt="Admin Avatar"
-                className="w-full h-full object-cover"
-                data-alt="professional headshot of a mature male administrator with a confident expression in a bright studio setting"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAggxWHx0yFl0dO_ksSfiRIcYoAx_OLUE_OuNm5PJnZbHHobKDz1YF_jexEMq1GxMl2Jr8xJVBH2mzbram9hxAbv3uj9d-9R_uCyPNRV-pCoeBPVFvLneVudmX-PLgu5M6XNPGMzE8oQYEO3dRSxxU0KBNoC1pjpLa3P1LDqZqpUyiE0uwloibBCgsCCza6cjSLfLaRLfZkrJneVyiCNUl7kPPrujn1Kfo0uHd2QGA47-nXEEwPb_USGI4LJNXr-WLCT1qaJxAJxKdp"
-              />
-            </div>
-          </div>
-        </header>
         <div className="pt-24 px-12 pb-12">
           {/* Filter Bar */}
           <div className="mb-12 flex items-end justify-between">
