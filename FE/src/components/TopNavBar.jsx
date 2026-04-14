@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../pages/Context/AuthContext';
 
 export default function TopNavBar() {
@@ -8,7 +8,8 @@ export default function TopNavBar() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const profileMenuRef = useRef(null);
-  const { currentUser, isAuthenticated, login, logout } = useAuth();
+  const navigate = useNavigate();
+  const { currentUser, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -24,16 +25,10 @@ export default function TopNavBar() {
   function handleLogin(event) {
     event.preventDefault();
     setAuthError('');
-    const result = login({ email, password });
-
-    if (!result.success) {
-      setAuthError(result.message);
-      return;
-    }
-
     setEmail('');
     setPassword('');
     setIsMenuOpen(false);
+    navigate('/auth');
   }
 
   function handleLogout() {
@@ -106,7 +101,7 @@ export default function TopNavBar() {
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-headline text-lg font-bold tracking-tight">Đăng nhập nhanh</h3>
-                        <p className="text-xs text-on-surface-variant mt-1">Không chuyển trang, đăng nhập ngay tại menu.</p>
+                        <p className="text-xs text-on-surface-variant mt-1">Nhập thông tin và chuyển sang trang đăng nhập đầy đủ.</p>
                       </div>
 
                       <form className="space-y-3" onSubmit={handleLogin}>
