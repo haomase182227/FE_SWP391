@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 
@@ -7,8 +7,42 @@ const AuthPage = () => {
   const [loginEmail, setLoginEmail] = useState('buyer@kinetic.vn');
   const [loginPassword, setLoginPassword] = useState('123456');
   const [loginError, setLoginError] = useState('');
+
+  // Register state
+  const [reg, setReg] = useState({ username: '', email: '', phone: '', password: '', confirm: '', role: '', terms: false });
+  const [regErrors, setRegErrors] = useState({});
+
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  function setRegField(field, value) {
+    setReg(prev => ({ ...prev, [field]: value }));
+    setRegErrors(prev => ({ ...prev, [field]: '' }));
+  }
+
+  function validateReg() {
+    const errors = {};
+    if (!reg.username.trim()) errors.username = 'Tên đăng nhập không được để trống.';
+    if (!reg.email.trim()) errors.email = 'Email không được để trống.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reg.email)) errors.email = 'Email không đúng định dạng.';
+    if (!reg.phone.trim()) errors.phone = 'Số điện thoại không được để trống.';
+    else if (!/^(\+84|0)[0-9]{9,10}$/.test(reg.phone.replace(/\s/g, ''))) errors.phone = 'Số điện thoại không đúng định dạng.';
+    if (!reg.password) errors.password = 'Mật khẩu không được để trống.';
+    else if (reg.password.length < 6) errors.password = 'Mật khẩu tối thiểu 6 ký tự.';
+    if (!reg.confirm) errors.confirm = 'Vui lòng nhập lại mật khẩu.';
+    else if (reg.confirm !== reg.password) errors.confirm = 'Mật khẩu không khớp.';
+    if (!reg.role) errors.role = 'Vui lòng chọn vai trò.';
+    if (!reg.terms) errors.terms = 'Bạn phải đồng ý điều khoản để tiếp tục.';
+    return errors;
+  }
+
+  function handleRegSubmit(e) {
+    e.preventDefault();
+    const errors = validateReg();
+    if (Object.keys(errors).length > 0) { setRegErrors(errors); return; }
+    // TODO: call API — for now just go back to login
+    setIsLogin(true);
+  }
 
   function handleLoginSubmit(event) {
     event.preventDefault();
@@ -344,7 +378,7 @@ const AuthPage = () => {
               KINETIC
             </h1>
           </div>
-          <div className="w-full max-w-md space-y-10">
+          <div className="w-full max-w-md space-y-8">
             <header className="space-y-3">
               <h3 className="font-headline font-bold text-4xl tracking-tighter text-on-surface">
                 Bắt đầu hành trình
@@ -353,79 +387,135 @@ const AuthPage = () => {
                 Tham gia cộng đồng xe đạp chuyên nghiệp lớn nhất.
               </p>
             </header>
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 gap-6">
-                {/* Username */}
-                <div className="group">
-                  <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
-                    Tên đăng nhập (Username)
-                  </label>
-                  <input
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body"
-                    placeholder="JohnDoe123"
-                    type="text"
-                  />
-                </div>
-                {/* Email */}
-                <div className="group">
-                  <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
-                    Email
-                  </label>
-                  <input
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body"
-                    placeholder="example@kinetic.com"
-                    type="email"
-                  />
-                </div>
-                {/* Phone */}
-                <div className="group">
-                  <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
-                    Số điện thoại (Phone)
-                  </label>
-                  <input
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body"
-                    placeholder="+84 000 000 000"
-                    type="tel"
-                  />
-                </div>
-                {/* Password Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="group">
-                    <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
-                      Mật khẩu
-                    </label>
-                    <input
-                      className="w-full bg-surface-container-low border-none rounded-xl px-4 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body"
-                      placeholder="••••••••"
-                      type="password"
-                    />
-                  </div>
-                  <div className="group">
-                    <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
-                      Nhập lại mật khẩu
-                    </label>
-                    <input
-                      className="w-full bg-surface-container-low border-none rounded-xl px-4 py-4 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body"
-                      placeholder="••••••••"
-                      type="password"
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* Terms Checkbox (UX Enhancement) */}
-              <div className="flex items-center space-x-3">
-                <input
-                  className="h-4 w-4 rounded border-outline-variant/40 text-primary focus:ring-primary/20"
-                  id="terms"
-                  type="checkbox"
-                />
-                <label className="text-xs text-on-surface-variant" htmlFor="terms">
-                  Tôi đồng ý với các Điều khoản và Chính sách bảo mật.
+            <form className="space-y-5" onSubmit={handleRegSubmit} noValidate>
+              {/* Username */}
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                  Tên đăng nhập <span className="text-error">*</span>
                 </label>
+                <input
+                  className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.username ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                  placeholder="JohnDoe123"
+                  type="text"
+                  value={reg.username}
+                  onChange={e => setRegField('username', e.target.value)}
+                />
+                {regErrors.username && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.username}</p>}
               </div>
-              {/* CTA Primary */}
+
+              {/* Email */}
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                  Email <span className="text-error">*</span>
+                </label>
+                <input
+                  className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.email ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                  placeholder="example@kinetic.com"
+                  type="email"
+                  value={reg.email}
+                  onChange={e => setRegField('email', e.target.value)}
+                />
+                {regErrors.email && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.email}</p>}
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                  Số điện thoại <span className="text-error">*</span>
+                </label>
+                <input
+                  className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.phone ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                  placeholder="0912 345 678"
+                  type="tel"
+                  value={reg.phone}
+                  onChange={e => setRegField('phone', e.target.value)}
+                />
+                {regErrors.phone && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.phone}</p>}
+              </div>
+
+              {/* Password */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                    Mật khẩu <span className="text-error">*</span>
+                  </label>
+                  <input
+                    className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.password ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                    placeholder="••••••••"
+                    type="password"
+                    value={reg.password}
+                    onChange={e => setRegField('password', e.target.value)}
+                  />
+                  {regErrors.password && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.password}</p>}
+                </div>
+                <div>
+                  <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                    Nhập lại <span className="text-error">*</span>
+                  </label>
+                  <input
+                    className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.confirm ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                    placeholder="••••••••"
+                    type="password"
+                    value={reg.confirm}
+                    onChange={e => setRegField('confirm', e.target.value)}
+                  />
+                  {regErrors.confirm && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.confirm}</p>}
+                </div>
+              </div>
+
+              {/* Role Selector */}
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                  Vai trò <span className="text-error">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: 'Buyer', label: 'Người mua', icon: 'shopping_cart' },
+                    { value: 'Seller', label: 'Người bán', icon: 'storefront' },
+                  ].map(r => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => setRegField('role', r.value)}
+                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 text-left ${
+                        reg.role === r.value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-surface-container-high bg-surface-container-low text-on-surface-variant hover:border-outline'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-xl"
+                        style={reg.role === r.value ? { fontVariationSettings: '"FILL" 1' } : {}}>
+                        {r.icon}
+                      </span>
+                      <span className="font-label font-bold text-xs uppercase tracking-widest">{r.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {regErrors.role && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.role}</p>}
+              </div>
+
+              {/* Terms */}
+              <div>
+                <div className="flex items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRegField('terms', !reg.terms)}
+                    className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
+                      reg.terms ? 'bg-primary border-primary' : regErrors.terms ? 'border-error' : 'border-outline'
+                    }`}
+                  >
+                    {reg.terms && <span className="material-symbols-outlined text-on-primary" style={{ fontSize: '14px' }}>check</span>}
+                  </button>
+                  <label className="text-xs text-on-surface-variant leading-relaxed cursor-pointer" onClick={() => setRegField('terms', !reg.terms)}>
+                    Tôi đồng ý với các <span className="text-primary font-semibold">Điều khoản sử dụng</span> và <span className="text-primary font-semibold">Chính sách bảo mật</span>.
+                  </label>
+                </div>
+                {regErrors.terms && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.terms}</p>}
+              </div>
+
+              {/* Submit */}
               <button
-                className="w-full py-5 rounded-xl font-headline font-bold text-on-primary uppercase tracking-[0.2em] text-sm shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+                className="w-full py-4 rounded-xl font-headline font-bold text-on-primary uppercase tracking-[0.2em] text-sm shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
                 style={{ background: 'linear-gradient(45deg, #a83100, #ff784d)' }}
                 type="submit"
               >
