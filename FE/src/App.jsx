@@ -22,6 +22,7 @@ import ListingManagement from './pages/Seller/ListingManagement';
 import OderManagement from './pages/Seller/OderManagement';
 import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
 import InspectionTracking from './pages/Seller/InspectionTracking';
+import Support from './pages/Support';
 
 function AppContent() {
   const location = useLocation();
@@ -58,7 +59,7 @@ function AppContent() {
           {/* Future Routes for Buyer, Seller, Inspector, Admin */}
           <Route path="/compare" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
           <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
-          <Route path="/support" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
+          <Route path="/support" element={<Support />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
