@@ -8,6 +8,7 @@ import BikeDetail from './pages/BikeDetail';
 import Wishlist from './pages/Buyer/Wishlist';
 import Cart from './pages/Buyer/Cart';
 import Wallet from './pages/Buyer/Wallet';
+import Order from './pages/Buyer/Order';
 import AuthPage from './pages/Auth/AuthPage';
 import Dashboard from './pages/Admin/Dashboard';
 import UserManagement from './pages/Admin/UserManagement';
@@ -43,6 +44,7 @@ function AppContent() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/order" element={<Order />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />

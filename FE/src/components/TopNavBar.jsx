@@ -62,10 +62,10 @@ export default function TopNavBar() {
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>favorite</span>
               <span className="hidden xl:inline text-xs font-bold uppercase tracking-tighter">Wishlist</span>
             </Link>
-            <button className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
+            <Link to="/order" className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>receipt_long</span>
               <span className="hidden xl:inline text-xs font-bold uppercase tracking-tighter">Orders</span>
-            </button>
+            </Link>
             <Link to="/cart" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>shopping_cart</span>
             </Link>
