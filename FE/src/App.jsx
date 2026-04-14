@@ -23,13 +23,15 @@ import OderManagement from './pages/Seller/OderManagement';
 import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
 import InspectionTracking from './pages/Seller/InspectionTracking';
 import Support from './pages/Support';
+import InspectorManagement from './pages/Inspector/InspectorManagement';
 
 function AppContent() {
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth';
   const isAdminPage = location.pathname.startsWith('/admin');
   const isSellerPage = location.pathname.startsWith('/seller');
-  const hidePublicChrome = isAuthPage || isAdminPage || isSellerPage;
+  const isInspectorPage = location.pathname.startsWith('/inspector');
+  const hidePublicChrome = isAuthPage || isAdminPage || isSellerPage || isInspectorPage;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,7 +50,7 @@ function AppContent() {
           <Route path="/admin/transactions" element={<TransactionManagement />} />
           <Route path="/admin/inspections" element={<InspectionManagement />} />
           <Route path="/admin/reports" element={<ReportManagement />} />
-          <Route path="/inspector" element={<div className="pt-20 p-8 text-center">Inspector Workspace Coming Soon</div>} />
+          <Route path="/inspector" element={<InspectorManagement />} />
           <Route path="/seller" element={<Navigate to="/seller/account" replace />} />
           <Route path="/seller/account" element={<AccountSellerManagement />} />
           <Route path="/seller/listings" element={<ListingManagement />} />
