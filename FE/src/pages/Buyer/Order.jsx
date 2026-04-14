@@ -109,9 +109,14 @@ export default function Order() {
 
   // Handle delete order
   const handleDeleteOrder = (orderId) => {
+    setConfirmDialog({ type: 'cancel', orderId });
+  };
+
+  const confirmCancelOrder = (orderId) => {
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: 'canceled' } : order
     ));
+    setConfirmDialog(null);
   };
 
   const cancelDialog = () => {
@@ -501,6 +506,35 @@ export default function Order() {
                     className="flex-1 px-4 py-2.5 bg-tertiary text-on-tertiary font-bold uppercase tracking-tight rounded-lg hover:opacity-90 transition-all"
                   >
                     Confirm
+                  </button>
+                </div>
+              </>
+            )}
+            {confirmDialog.type === 'cancel' && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-error text-[24px]">cancel</span>
+                  </div>
+                  <h3 className="font-headline text-lg font-bold text-on-surface">Cancel Order</h3>
+                </div>
+
+                <p className="text-on-surface-variant text-sm">
+                  Are you sure you want to cancel this order? This action cannot be undone.
+                </p>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={cancelDialog}
+                    className="flex-1 px-4 py-2.5 bg-surface-container-high text-on-surface font-bold uppercase tracking-tight rounded-lg hover:bg-surface-container-high/80 transition-all"
+                  >
+                    Keep Order
+                  </button>
+                  <button
+                    onClick={() => confirmCancelOrder(confirmDialog.orderId)}
+                    className="flex-1 px-4 py-2.5 bg-error text-on-error font-bold uppercase tracking-tight rounded-lg hover:opacity-90 transition-all"
+                  >
+                    Cancel Order
                   </button>
                 </div>
               </>
