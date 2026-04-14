@@ -4,9 +4,6 @@ import { useAuth } from '../pages/Context/AuthContext';
 
 export default function TopNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState('');
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
   const { currentUser, isAuthenticated, logout } = useAuth();
@@ -22,20 +19,13 @@ export default function TopNavBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function handleLogin(event) {
-    event.preventDefault();
-    setAuthError('');
-    setEmail('');
-    setPassword('');
+  function handleLogin() {
     setIsMenuOpen(false);
     navigate('/auth');
   }
 
   function handleLogout() {
     logout();
-    setEmail('');
-    setPassword('');
-    setAuthError('');
     setIsMenuOpen(false);
   }
 
@@ -98,36 +88,13 @@ export default function TopNavBar() {
               {isMenuOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-surface-container-lowest border border-outline-variant/20 rounded-2xl editorial-shadow p-5 z-50">
                   {!isAuthenticated ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-headline text-lg font-bold tracking-tight">Đăng nhập nhanh</h3>
-                        <p className="text-xs text-on-surface-variant mt-1">Nhập thông tin và chuyển sang trang đăng nhập đầy đủ.</p>
-                      </div>
-
-                      <form className="space-y-3" onSubmit={handleLogin}>
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(event) => setEmail(event.target.value)}
-                          placeholder="Email"
-                          className="w-full rounded-xl bg-surface-container-low px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        />
-                        <input
-                          type="password"
-                          value={password}
-                          onChange={(event) => setPassword(event.target.value)}
-                          placeholder="Mật khẩu"
-                          className="w-full rounded-xl bg-surface-container-low px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        />
-                        {authError && <p className="text-xs font-medium text-error">{authError}</p>}
-                        <button
-                          type="submit"
-                          className="w-full rounded-xl bg-primary text-on-primary py-3 text-xs font-bold uppercase tracking-widest hover:opacity-95 transition-opacity"
-                        >
-                          Đăng nhập
-                        </button>
-                      </form>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLogin}
+                      className="w-full rounded-xl bg-primary text-on-primary py-3 text-xs font-bold uppercase tracking-widest hover:opacity-95 transition-opacity"
+                    >
+                      Đăng nhập
+                    </button>
                   ) : (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
