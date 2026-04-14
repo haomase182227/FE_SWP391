@@ -109,12 +109,9 @@ export default function Order() {
 
   // Handle delete order
   const handleDeleteOrder = (orderId) => {
-    setConfirmDialog({ type: 'delete', orderId });
-  };
-
-  const confirmDeleteOrder = (orderId) => {
-    setOrders(orders.filter(order => order.id !== orderId));
-    setConfirmDialog(null);
+    setOrders(orders.map(order => 
+      order.id === orderId ? { ...order, status: 'canceled' } : order
+    ));
   };
 
   const cancelDialog = () => {
@@ -150,8 +147,12 @@ export default function Order() {
                 <p className="font-headline text-3xl font-bold text-secondary mt-2">{orders.filter(o => o.status === 'pending').length}</p>
               </div>
               <div className="bg-surface-container-low rounded-lg p-4">
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">accept</p>
-                <p className="font-headline text-3xl font-bold text-tertiary mt-2">{orders.filter(o => o.status === 'accept').length}</p>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">cancel</p>
+                <p className="font-headline text-3xl font-bold text-error mt-2">{orders.filter(o => o.status === 'cancel').length}</p>
+              </div>
+              <div className="bg-surface-container-low rounded-lg p-4">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">canceled</p>
+                <p className="font-headline text-3xl font-bold text-error mt-2">{orders.filter(o => o.status === 'canceled').length}</p>
               </div>
               <div className="bg-surface-container-low rounded-lg p-4">
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">received</p>
@@ -212,6 +213,16 @@ export default function Order() {
               cancel
             </button>
             <button
+              onClick={() => setActiveStatus('canceled')}
+              className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                activeStatus === 'canceled'
+                  ? 'text-error border-b-error'
+                  : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+              }`}
+            >
+              canceled
+            </button>
+            <button
               onClick={() => setActiveStatus('received')}
               className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
                 activeStatus === 'received'
@@ -247,7 +258,9 @@ export default function Order() {
                 return (
                   <div
                     key={order.id}
-                    className="hidden md:grid grid-cols-6 gap-4 items-center px-4 py-4 bg-surface-container-lowest border border-outline-variant/10 rounded-lg hover:shadow-md transition-all"
+                    className={`hidden md:grid grid-cols-6 gap-4 items-center px-4 py-4 bg-surface-container-lowest border border-outline-variant/10 rounded-lg hover:shadow-md transition-all ${
+                      order.status === 'canceled' ? 'opacity-40' : ''
+                    }`}
                   >
                     {/* Product Details */}
                     <div className="col-span-3 flex items-center gap-4">
@@ -298,6 +311,12 @@ export default function Order() {
                           received
                         </span>
                       )}
+                      {order.status === 'canceled' && (
+                        <span className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">cancel</span>
+                          canceled
+                        </span>
+                      )}
                       {(order.status === 'cancel' || order.status === 'accept') && (
                         <div className="flex gap-2">
                           <button
@@ -339,7 +358,9 @@ export default function Order() {
                   return (
                     <div
                       key={order.id}
-                      className="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4 space-y-4"
+                      className={`bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4 space-y-4 transition-all ${
+                        order.status === 'canceled' ? 'opacity-40' : ''
+                      }`}
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-20 h-20 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
@@ -368,6 +389,12 @@ export default function Order() {
                             <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
                               <span className="material-symbols-outlined text-[14px]">check_circle</span>
                               received
+                            </span>
+                          )}
+                          {order.status === 'canceled' && (
+                            <span className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">cancel</span>
+                              canceled
                             </span>
                           )}
                           {(order.status === 'cancel' || order.status === 'accept') && (
@@ -474,36 +501,6 @@ export default function Order() {
                     className="flex-1 px-4 py-2.5 bg-tertiary text-on-tertiary font-bold uppercase tracking-tight rounded-lg hover:opacity-90 transition-all"
                   >
                     Confirm
-                  </button>
-                </div>
-              </>
-            )}
-
-            {confirmDialog.type === 'delete' && (
-              <>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-error text-[24px]">warning</span>
-                  </div>
-                  <h3 className="font-headline text-lg font-bold text-on-surface">Delete Order?</h3>
-                </div>
-
-                <p className="text-on-surface-variant text-sm">
-                  Are you sure you want to delete this order? This action cannot be undone.
-                </p>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={cancelDialog}
-                    className="flex-1 px-4 py-2.5 bg-surface-container-high text-on-surface font-bold uppercase tracking-tight rounded-lg hover:bg-surface-container-high/80 transition-all"
-                  >
-                    Keep Order
-                  </button>
-                  <button
-                    onClick={() => confirmDeleteOrder(confirmDialog.orderId)}
-                    className="flex-1 px-4 py-2.5 bg-error text-on-error font-bold uppercase tracking-tight rounded-lg hover:opacity-90 transition-all"
-                  >
-                    Delete Order
                   </button>
                 </div>
               </>
