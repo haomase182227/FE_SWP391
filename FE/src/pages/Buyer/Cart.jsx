@@ -1,49 +1,13 @@
 import React from 'react';
+import TopNavBar from '../../components/TopNavBar';
 
 const Cart = () => {
   return (
     <div className="bg-background text-on-background min-h-screen font-body antialiased">
       {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-stone-950/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
-        <div className="flex justify-between items-center px-8 h-20 max-w-screen-2xl mx-auto">
-          <div className="text-2xl font-bold tracking-tighter text-orange-700 dark:text-orange-500 font-headline uppercase">
-            KINETIC
-          </div>
-          <div className="hidden md:flex gap-x-8 font-['Space_Grotesk'] tracking-tight uppercase">
-            <a
-              className="text-stone-500 dark:text-stone-400 font-medium hover:text-orange-600 transition-colors duration-300"
-              href="#"
-            >
-              Marketplace
-            </a>
-            <a
-              className="text-stone-500 dark:text-stone-400 font-medium hover:text-orange-600 transition-colors duration-300"
-              href="#"
-            >
-              Performance
-            </a>
-            <a
-              className="text-stone-500 dark:text-stone-400 font-medium hover:text-orange-600 transition-colors duration-300"
-              href="#"
-            >
-              Pro-Tour
-            </a>
-          </div>
-          <div className="flex items-center gap-x-6">
-            <button className="material-symbols-outlined text-stone-500 hover:text-orange-700 transition-colors">
-              shopping_cart
-            </button>
-            <button className="material-symbols-outlined text-stone-500 hover:text-orange-700 transition-colors">
-              favorite
-            </button>
-            <button className="material-symbols-outlined text-stone-500 hover:text-orange-700 transition-colors">
-              person
-            </button>
-          </div>
-        </div>
-      </nav>
+      <TopNavBar />
 
-      <main className="pt-32 pb-24 px-8 max-w-screen-2xl mx-auto">
+      <main className="pt-20 pb-24 px-8 max-w-screen-2xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Cart Items Section */}
           <div className="lg:col-span-8 space-y-12">
