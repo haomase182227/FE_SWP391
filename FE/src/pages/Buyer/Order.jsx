@@ -94,6 +94,16 @@ export default function Order() {
   ]);
 
   const [confirmDialog, setConfirmDialog] = useState(null); // { type: 'receive' | 'delete', orderId: number }
+  const [selectedOrder, setSelectedOrder] = useState(null); // For detail modal
+
+  // Handle view order details
+  const handleViewOrderDetails = (order) => {
+    setSelectedOrder(order);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedOrder(null);
+  };
 
   // Handle receive order
   const handleReceiveOrder = (orderId) => {
@@ -305,8 +315,7 @@ export default function Order() {
                     {/* Actions - with status buttons */}
                     <div className="col-span-1 flex items-center justify-end gap-2">
                       {order.status === 'pending' && (
-                        <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">schedule</span>
+                        <span className="bg-yellow-500 text-yellow-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
                           pending
                         </span>
                       )}
@@ -322,26 +331,9 @@ export default function Order() {
                           canceled
                         </span>
                       )}
-                      {(order.status === 'cancel' || order.status === 'accept') && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleReceiveOrder(order.id)}
-                            className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1 hover:opacity-90 transition-all active:scale-95"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                            accept
-                          </button>
-                          <button
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1 hover:opacity-90 transition-all active:scale-95"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">cancel</span>
-                            cancel
-                          </button>
-                        </div>
-                      )}
                       <button
                         title="View Details"
+                        onClick={() => handleViewOrderDetails(order)}
                         className="p-2 text-on-surface hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                       >
                         <span className="material-symbols-outlined text-[20px]">visibility</span>
@@ -385,8 +377,7 @@ export default function Order() {
                       <div className="flex items-center justify-between">
                         <div className="flex gap-2">
                           {order.status === 'pending' && (
-                            <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            <span className="bg-yellow-500 text-yellow-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
                               pending
                             </span>
                           )}
@@ -402,24 +393,6 @@ export default function Order() {
                               canceled
                             </span>
                           )}
-                          {(order.status === 'cancel' || order.status === 'accept') && (
-                            <>
-                              <button
-                                onClick={() => handleReceiveOrder(order.id)}
-                                className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1 hover:opacity-90 transition-all active:scale-95"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                                accept
-                              </button>
-                              <button
-                                onClick={() => handleDeleteOrder(order.id)}
-                                className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1 hover:opacity-90 transition-all active:scale-95"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">cancel</span>
-                                cancel
-                              </button>
-                            </>
-                          )}
                         </div>
                         <p className="font-headline font-bold text-primary">${order.price.toLocaleString()}</p>
                       </div>
@@ -429,7 +402,7 @@ export default function Order() {
                           Ordered: {new Date(order.orderDate).toLocaleDateString('vi-VN')}
                         </p>
                         <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 text-on-surface hover:text-primary rounded-lg">
+                          <button onClick={() => handleViewOrderDetails(order)} className="p-2 text-on-surface hover:text-primary rounded-lg">
                             <span className="material-symbols-outlined">visibility</span>
                           </button>
                           <button className="p-2 text-on-surface hover:text-primary rounded-lg">
@@ -539,6 +512,140 @@ export default function Order() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/10">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Order Details</p>
+                <h2 className="font-headline text-lg font-bold text-on-surface mt-1">Order #{selectedOrder.id}</h2>
+              </div>
+              <button
+                onClick={closeDetailModal}
+                className="p-2 text-on-surface hover:bg-surface-container-high rounded-lg transition-all"
+              >
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              {/* Product Info */}
+              <div className="flex gap-4">
+                <div className="w-24 h-24 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
+                  <img
+                    alt={selectedOrder.productName}
+                    className="w-full h-full object-cover"
+                    src={selectedOrder.image}
+                  />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{selectedOrder.brand}</p>
+                  <p className="font-bold text-base text-on-surface">{selectedOrder.productName}</p>
+                  <p className="text-sm text-on-surface-variant">Order #{selectedOrder.id}</p>
+                  <p className="font-headline text-xl font-bold text-primary">${selectedOrder.price.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Order Info */}
+              <div className="grid grid-cols-2 gap-4 bg-surface-container-low rounded-lg p-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Order Date</p>
+                  <p className="text-sm font-bold text-on-surface mt-1">
+                    {new Date(selectedOrder.orderDate).toLocaleDateString('vi-VN')}
+                  </p>
+                </div>
+                {selectedOrder.deliveryDate && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Delivery Date</p>
+                    <p className="text-sm font-bold text-on-surface mt-1">
+                      {new Date(selectedOrder.deliveryDate).toLocaleDateString('vi-VN')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Specifications */}
+              {selectedOrder.specifications && (
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Specifications</p>
+                  <div className="bg-surface-container-low rounded-lg p-4 space-y-2">
+                    {Object.entries(selectedOrder.specifications).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <p className="text-sm text-on-surface-variant capitalize">{key}:</p>
+                        <p className="text-sm font-bold text-on-surface">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Status */}
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Status</p>
+                <div className="flex gap-2">
+                  {selectedOrder.status === 'pending' && (
+                    <span className="bg-yellow-500 text-yellow-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      pending
+                    </span>
+                  )}
+                  {selectedOrder.status === 'received' && (
+                    <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                      received
+                    </span>
+                  )}
+                  {selectedOrder.status === 'canceled' && (
+                    <span className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">cancel</span>
+                      canceled
+                    </span>
+                  )}
+                  {selectedOrder.status === 'cancel' && (
+                    <span className="border border-error text-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      cancel
+                    </span>
+                  )}
+                  {selectedOrder.status === 'accept' && (
+                    <span className="border border-tertiary text-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      accept
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer with Actions */}
+            <div className="border-t border-outline-variant/10 px-6 py-4 flex gap-3">
+              {(selectedOrder.status === 'cancel' || selectedOrder.status === 'accept') && (
+                <>
+                  <button
+                    onClick={() => {
+                      closeDetailModal();
+                      handleReceiveOrder(selectedOrder.id);
+                    }}
+                    className="flex-1 px-4 py-3 bg-tertiary text-on-tertiary font-bold uppercase tracking-tight rounded-lg hover:opacity-90 transition-all"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeDetailModal();
+                      handleDeleteOrder(selectedOrder.id);
+                    }}
+                    className="flex-1 px-4 py-3 bg-error text-on-error font-bold uppercase tracking-tight rounded-lg hover:opacity-90 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
