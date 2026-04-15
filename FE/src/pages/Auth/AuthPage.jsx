@@ -50,6 +50,7 @@ const AuthPage = () => {
     const result = await register({
       userName: reg.username,
       email: reg.email,
+      phone: reg.phone,
       password: reg.password,
       role: reg.role,
     });
