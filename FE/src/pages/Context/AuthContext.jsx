@@ -3,33 +3,7 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 const AuthContext = createContext(null);
 
 const AUTH_STORAGE_KEY = 'kinetic_auth_user';
-
-const MOCK_USERS = [
-	{
-		email: 'buyer@kinetic.vn',
-		password: '123456',
-		role: 'Buyer',
-		name: 'Buyer Demo',
-	},
-	{
-		email: 'admin@kinetic.vn',
-		password: '123456',
-		role: 'Admin',
-		name: 'Admin Demo',
-	},
-	{
-		email: 'inspector@kinetic.vn',
-		password: '123456',
-		role: 'Inspector',
-		name: 'Inspector Demo',
-	},
-	{
-		email: 'seller@kinetic.vn',
-		password: '123456',
-		role: 'Seller',
-		name: 'Seller Demo',
-	},
-];
+const API_BASE = '/api/v1';
 
 function getRedirectPathByRole(role) {
 	switch (role) {
@@ -48,7 +22,6 @@ function getRedirectPathByRole(role) {
 function getInitialUser() {
 	const raw = localStorage.getItem(AUTH_STORAGE_KEY);
 	if (!raw) return null;
-
 	try {
 		return JSON.parse(raw);
 	} catch {
@@ -60,36 +33,61 @@ function getInitialUser() {
 export function AuthProvider({ children }) {
 	const [currentUser, setCurrentUser] = useState(getInitialUser);
 
-	function login({ email, password }) {
-		const normalizedEmail = email.trim().toLowerCase();
-
-		const matchedUser = MOCK_USERS.find(
-			(user) =>
-				user.email.toLowerCase() === normalizedEmail &&
-				user.password === password
-		);
-
-		if (!matchedUser) {
-			return {
-				success: false,
-				message: 'Sai email hoac mat khau.',
-			};
-		}
-
+	function _saveUser(data, fallbackEmail) {
+		const u = data.user;
 		const safeUser = {
-			email: matchedUser.email,
-			role: matchedUser.role,
-			name: matchedUser.name,
+			id: u.id,
+			email: u.email ?? fallbackEmail,
+			role: u.role ?? 'Buyer',
+			name: u.userName,
+			token: data.token,
 		};
-
 		setCurrentUser(safeUser);
 		localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(safeUser));
+		return safeUser;
+	}
 
-		return {
-			success: true,
-			user: safeUser,
-			redirectPath: getRedirectPathByRole(safeUser.role),
-		};
+	async function login({ email, password }) {
+		try {
+			const res = await fetch(`${API_BASE}/Auth/login`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email, password }),
+			});
+
+			const data = await res.json();
+
+			if (!res.ok) {
+				return { success: false, message: data?.message || 'Sai email hoặc mật khẩu.' };
+			}
+
+			const safeUser = _saveUser(data, email);
+			return { success: true, user: safeUser, redirectPath: getRedirectPathByRole(safeUser.role) };
+		} catch {
+			return { success: false, message: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.' };
+		}
+	}
+
+	async function register({ userName, email, password, role }) {
+		try {
+			const res = await fetch(`${API_BASE}/Auth/register`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ userName, email, password, role }),
+			});
+
+			const data = await res.json();
+
+			if (!res.ok) {
+				return { success: false, message: data?.message || 'Đăng ký thất bại. Vui lòng thử lại.' };
+			}
+
+			// Register trả về token + user luôn → tự login
+			const safeUser = _saveUser(data, email);
+			return { success: true, user: safeUser, redirectPath: getRedirectPathByRole(safeUser.role) };
+		} catch {
+			return { success: false, message: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.' };
+		}
 	}
 
 	function logout() {
@@ -101,9 +99,9 @@ export function AuthProvider({ children }) {
 		() => ({
 			currentUser,
 			isAuthenticated: Boolean(currentUser),
-			mockUsers: MOCK_USERS,
 			login,
 			logout,
+			register,
 			getRedirectPathByRole,
 		}),
 		[currentUser]

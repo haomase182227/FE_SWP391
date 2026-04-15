@@ -8,4 +8,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://swp391-bike-marketplace-backend-1.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })
