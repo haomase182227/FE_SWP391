@@ -4,9 +4,20 @@ import { useAuth } from '../pages/Context/AuthContext';
 
 export default function TopNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(null);
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
   const { currentUser, isAuthenticated, logout } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.token) { setWalletBalance(null); return; }
+    fetch('/api/v1/Auth/users/me', {
+      headers: { Authorization: `Bearer ${currentUser.token}` },
+    })
+      .then(r => r.json())
+      .then(data => setWalletBalance(data?.user?.wallet ?? 0))
+      .catch(() => setWalletBalance(0));
+  }, [isAuthenticated, currentUser?.token]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -53,10 +64,14 @@ export default function TopNavBar() {
         </div>
         <div className="flex items-center gap-6">
           {/* Wallet Balance Integration */}
-          <Link to="/wallet" className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20 hover:opacity-90 transition-opacity">
-            <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Wallet Balance</span>
-            <span className="font-headline font-bold text-secondary">$12,450.00</span>
-          </Link>
+          {isAuthenticated && walletBalance !== null && (
+            <Link to="/wallet" className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20 hover:opacity-90 transition-opacity">
+              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Wallet Balance</span>
+              <span className="font-headline font-bold text-secondary">
+                {walletBalance.toLocaleString('vi-VN')}₫
+              </span>
+            </Link>
+          )}
           <div className="flex items-center gap-4">
             <Link to="/wishlist" className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>favorite</span>
