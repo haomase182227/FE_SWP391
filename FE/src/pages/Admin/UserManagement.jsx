@@ -40,6 +40,9 @@ export default function UserManagement() {
   const [deleteTarget, setDeleteTarget] = useState(null); // { userId, userName }
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Activate
+  const [activateLoading, setActivateLoading] = useState(null); // userId đang loading
+
   const fetchUsers = useCallback(async (p = 1) => {
     setLoading(true);
     setError('');
@@ -92,6 +95,24 @@ export default function UserManagement() {
       setRoleError(e.message);
     } finally {
       setRoleLoading(false);
+    }
+  }
+
+  // ── Activate User ────────────────────────────────────────────
+  async function handleActivate(userId) {
+    setActivateLoading(userId);
+    try {
+      const res = await fetch(`${API_BASE}/Auth/users/${userId}/activate`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      fetchUsers(page);
+    } catch {
+      // refetch để đồng bộ
+      fetchUsers(page);
+    } finally {
+      setActivateLoading(null);
     }
   }
 
@@ -161,9 +182,11 @@ export default function UserManagement() {
               <thead>
                 <tr className="bg-surface-container-low/50">
                   <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Người dùng</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Họ và tên</th>
                   <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Email</th>
                   <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Số điện thoại</th>
                   <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Role</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Wallet</th>
                   <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Trạng thái</th>
                   <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Hành động</th>
                 </tr>
@@ -171,7 +194,7 @@ export default function UserManagement() {
               <tbody className="divide-y divide-surface-container-low">
                 {loading && (
                   <tr>
-                    <td colSpan={6} className="px-8 py-16 text-center text-on-surface-variant text-sm">
+                    <td colSpan={8} className="px-8 py-16 text-center text-on-surface-variant text-sm">
                       <span className="material-symbols-outlined animate-spin text-2xl block mx-auto mb-2">progress_activity</span>
                       Đang tải...
                     </td>
@@ -179,12 +202,12 @@ export default function UserManagement() {
                 )}
                 {!loading && error && (
                   <tr>
-                    <td colSpan={6} className="px-8 py-16 text-center text-error text-sm">{error}</td>
+                    <td colSpan={8} className="px-8 py-16 text-center text-error text-sm">{error}</td>
                   </tr>
                 )}
                 {!loading && !error && users.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-8 py-16 text-center text-on-surface-variant text-sm">Không có người dùng nào.</td>
+                    <td colSpan={8} className="px-8 py-16 text-center text-on-surface-variant text-sm">Không có người dùng nào.</td>
                   </tr>
                 )}
                 {!loading && users.map((user) => (
@@ -197,6 +220,10 @@ export default function UserManagement() {
                         </div>
                         <p className="font-headline text-sm font-bold text-on-surface">{user.userName}</p>
                       </div>
+                    </td>
+                    {/* Full Name */}
+                    <td className="px-8 py-5">
+                      <p className="text-xs text-on-surface">{user.fullName || <span className="text-outline-variant">—</span>}</p>
                     </td>
                     {/* Email */}
                     <td className="px-8 py-5">
@@ -211,6 +238,12 @@ export default function UserManagement() {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${ROLE_BADGE[user.roleName] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
                         {user.roleName}
                       </span>
+                    </td>
+                    {/* Wallet */}
+                    <td className="px-8 py-5">
+                      <p className="font-headline text-sm font-bold text-on-surface">
+                        {(user.wallet ?? 0).toLocaleString('vi-VN')}₫
+                      </p>
                     </td>
                     {/* Status */}
                     <td className="px-8 py-5">
@@ -232,7 +265,21 @@ export default function UserManagement() {
                         >
                           <span className="material-symbols-outlined text-on-surface-variant text-lg">manage_accounts</span>
                         </button>
-                        {/* Xóa */}
+                        {/* Activate (chỉ hiện khi isDeleted) */}
+                        {user.isDeleted && (
+                          <button
+                            onClick={() => handleActivate(user.id)}
+                            disabled={activateLoading === user.id}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-tertiary/10 transition-colors disabled:opacity-50"
+                            title="Kích hoạt lại"
+                          >
+                            {activateLoading === user.id
+                              ? <span className="material-symbols-outlined text-tertiary text-lg animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-tertiary text-lg">restart_alt</span>
+                            }
+                          </button>
+                        )}
+                        {/* Xóa (chỉ hiện khi chưa bị xóa) */}
                         {!user.isDeleted && (
                           <button
                             onClick={() => setDeleteTarget({ userId: user.id, userName: user.userName })}

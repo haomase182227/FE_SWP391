@@ -9,7 +9,7 @@ const AuthPage = () => {
   const [loginError, setLoginError] = useState('');
 
   // Register state
-  const [reg, setReg] = useState({ username: '', email: '', phone: '', password: '', confirm: '', role: '', terms: false });
+  const [reg, setReg] = useState({ username: '', fullname: '', email: '', phone: '', password: '', confirm: '', role: '', terms: false });
   const [regErrors, setRegErrors] = useState({});
 
   const [loginLoading, setLoginLoading] = useState(false);
@@ -27,6 +27,7 @@ const AuthPage = () => {
   function validateReg() {
     const errors = {};
     if (!reg.username.trim()) errors.username = 'Tên đăng nhập không được để trống.';
+    if (!reg.fullname.trim()) errors.fullname = 'Họ và tên không được để trống.';
     if (!reg.email.trim()) errors.email = 'Email không được để trống.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reg.email)) errors.email = 'Email không đúng định dạng.';
     if (!reg.phone.trim()) errors.phone = 'Số điện thoại không được để trống.';
@@ -49,6 +50,7 @@ const AuthPage = () => {
     setRegLoading(true);
     const result = await register({
       userName: reg.username,
+      fullName: reg.fullname,
       email: reg.email,
       phone: reg.phone,
       password: reg.password,
@@ -422,6 +424,21 @@ const AuthPage = () => {
                   onChange={e => setRegField('username', e.target.value)}
                 />
                 {regErrors.username && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.username}</p>}
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                  Họ và tên <span className="text-error">*</span>
+                </label>
+                <input
+                  className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.fullname ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                  placeholder="Nguyễn Văn A"
+                  type="text"
+                  value={reg.fullname}
+                  onChange={e => setRegField('fullname', e.target.value)}
+                />
+                {regErrors.fullname && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.fullname}</p>}
               </div>
 
               {/* Email */}
