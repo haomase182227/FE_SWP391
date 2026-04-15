@@ -111,6 +111,14 @@ export default function TopNavBar() {
                           <p className="text-[11px] text-on-surface-variant">Role: {currentUser?.role}</p>
                         </div>
                       </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl border border-outline-variant/30 py-3 text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface-container-low transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                        Xem hồ sơ
+                      </Link>
                       <button
                         type="button"
                         onClick={handleLogout}
