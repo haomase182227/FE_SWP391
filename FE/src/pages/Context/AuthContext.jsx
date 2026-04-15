@@ -3,7 +3,7 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 const AuthContext = createContext(null);
 
 const AUTH_STORAGE_KEY = 'kinetic_auth_user';
-const API_BASE = 'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1';
+const API_BASE = '/api/v1';
 
 function getRedirectPathByRole(role) {
 	switch (role) {
