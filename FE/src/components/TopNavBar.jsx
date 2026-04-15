@@ -6,7 +6,7 @@ export default function TopNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
-  const { currentUser, isAuthenticated, logout } = useAuth();
+  const { currentUser, isAuthenticated, logout, walletBalance, walletLoading } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -52,11 +52,21 @@ export default function TopNavBar() {
           </div>
         </div>
         <div className="flex items-center gap-6">
-          {/* Wallet Balance Integration */}
-          <Link to="/wallet" className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20 hover:opacity-90 transition-opacity">
-            <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Wallet Balance</span>
-            <span className="font-headline font-bold text-secondary">$12,450.00</span>
-          </Link>
+          {/* Wallet Balance — chỉ hiện khi đã đăng nhập */}
+          {isAuthenticated && (
+            <Link to="/wallet" className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20 hover:opacity-90 transition-opacity">
+              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Wallet Balance</span>
+              {walletLoading ? (
+                <span className="font-headline font-bold text-secondary text-sm animate-pulse">...</span>
+              ) : walletBalance !== null && walletBalance !== undefined ? (
+                <span className="font-headline font-bold text-secondary">
+                  {Number(walletBalance).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                </span>
+              ) : (
+                <span className="font-headline font-bold text-secondary">—</span>
+              )}
+            </Link>
+          )}
           <div className="flex items-center gap-4">
             <Link to="/wishlist" className="flex items-center gap-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>favorite</span>
@@ -111,6 +121,14 @@ export default function TopNavBar() {
                           <p className="text-[11px] text-on-surface-variant">Role: {currentUser?.role}</p>
                         </div>
                       </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl border border-outline-variant/30 py-3 text-xs font-bold uppercase tracking-widest text-on-surface hover:bg-surface-container-low transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                        Xem hồ sơ
+                      </Link>
                       <button
                         type="button"
                         onClick={handleLogout}
