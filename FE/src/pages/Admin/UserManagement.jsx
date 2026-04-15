@@ -1,464 +1,361 @@
+import React, { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminTopBar from '../../components/AdminTopBar';
+import { useAuth } from '../Context/AuthContext';
 
-const UserManagement = () => {
+const API_BASE = '/api/v1';
+const PAGE_SIZE = 10;
+
+const ROLES = ['Buyer', 'Seller', 'Inspector', 'Admin'];
+
+const ROLE_BADGE = {
+  Buyer:    'bg-surface-container-high text-on-surface-variant',
+  Seller:   'bg-secondary text-on-secondary',
+  Inspector:'bg-orange-500/10 text-orange-600',
+  Admin:    'bg-zinc-800 text-white',
+};
+
+function getInitials(name = '') {
+  return name.slice(0, 2).toUpperCase();
+}
+
+export default function UserManagement() {
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
+  const [users, setUsers]           = useState([]);
+  const [totalRecords, setTotal]    = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage]             = useState(1);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
+
+  // Role modal
+  const [roleModal, setRoleModal]   = useState(null); // { userId, currentRole }
+  const [newRole, setNewRole]       = useState('');
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleError, setRoleError]   = useState('');
+
+  // Delete confirm
+  const [deleteTarget, setDeleteTarget] = useState(null); // { userId, userName }
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const fetchUsers = useCallback(async (p = 1) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(
+        `${API_BASE}/Auth/users?pageNumber=${p}&pageSize=${PAGE_SIZE}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setUsers(data.users ?? []);
+      setTotal(data.totalRecords ?? 0);
+      setTotalPages(data.totalPages ?? 1);
+    } catch (e) {
+      setError('Không thể tải danh sách người dùng.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchUsers(page); }, [page, fetchUsers]);
+
+  // ── Change Role ──────────────────────────────────────────────
+  function openRoleModal(user) {
+    setRoleModal({ userId: user.id, userName: user.userName });
+    setNewRole(user.roleName);
+    setRoleError('');
+  }
+
+  async function handleChangeRole() {
+    if (!newRole) return;
+    setRoleLoading(true);
+    setRoleError('');
+    try {
+      const res = await fetch(`${API_BASE}/Auth/users/${roleModal.userId}/role`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || `HTTP ${res.status}`);
+      }
+      setRoleModal(null);
+      fetchUsers(page);
+    } catch (e) {
+      setRoleError(e.message);
+    } finally {
+      setRoleLoading(false);
+    }
+  }
+
+  // ── Delete User ──────────────────────────────────────────────
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/Auth/users/${deleteTarget.userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDeleteTarget(null);
+      // nếu xóa hết trang hiện tại thì lùi 1 trang
+      const newPage = users.length === 1 && page > 1 ? page - 1 : page;
+      setPage(newPage);
+      fetchUsers(newPage);
+    } catch {
+      // vẫn refetch để đồng bộ
+      fetchUsers(page);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  // ── Pagination helpers ───────────────────────────────────────
+  function getPageNumbers() {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push('...');
+      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+      if (page < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  }
+
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
-      <AdminTopBar title="User Directory" searchPlaceholder="Search users, transactions, logs..." />
+      <AdminTopBar title="User Directory" searchPlaceholder="Search users..." />
 
-      {/* Content Area */}
       <main className="ml-64 pt-16 p-10 space-y-8 min-h-screen">
-          {/* Header & Filters */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h2 className="font-headline text-4xl font-black text-on-surface tracking-tighter uppercase mb-2">
-                User Directory
-              </h2>
-              <p className="text-on-surface-variant font-body">
-                Manage permissions, moderate accounts, and review platform activity.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="px-6 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-sm">filter_list</span>
-                All Roles
-                <span className="material-symbols-outlined text-sm">keyboard_arrow_down</span>
-              </button>
-              <button className="px-6 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-sm">sort</span>
-                Latest First
-              </button>
-            </div>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h2 className="font-headline text-4xl font-black text-on-surface tracking-tighter uppercase mb-2">
+              User Directory
+            </h2>
+            <p className="text-on-surface-variant font-body">
+              Manage permissions, moderate accounts, and review platform activity.
+            </p>
+          </div>
+          <p className="text-xs text-on-surface-variant font-label uppercase tracking-widest">
+            Tổng: <span className="font-bold text-on-surface">{totalRecords}</span> người dùng
+          </p>
+        </div>
+
+        {/* Table */}
+        <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low/50">
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Người dùng</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Email</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Số điện thoại</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Role</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Trạng thái</th>
+                  <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-container-low">
+                {loading && (
+                  <tr>
+                    <td colSpan={6} className="px-8 py-16 text-center text-on-surface-variant text-sm">
+                      <span className="material-symbols-outlined animate-spin text-2xl block mx-auto mb-2">progress_activity</span>
+                      Đang tải...
+                    </td>
+                  </tr>
+                )}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={6} className="px-8 py-16 text-center text-error text-sm">{error}</td>
+                  </tr>
+                )}
+                {!loading && !error && users.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-8 py-16 text-center text-on-surface-variant text-sm">Không có người dùng nào.</td>
+                  </tr>
+                )}
+                {!loading && users.map((user) => (
+                  <tr key={user.id} className={`hover:bg-primary-container/5 transition-colors ${user.isDeleted ? 'opacity-50 grayscale' : ''}`}>
+                    {/* Avatar + Name */}
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center font-headline font-bold text-sm text-on-surface-variant flex-shrink-0">
+                          {getInitials(user.userName)}
+                        </div>
+                        <p className="font-headline text-sm font-bold text-on-surface">{user.userName}</p>
+                      </div>
+                    </td>
+                    {/* Email */}
+                    <td className="px-8 py-5">
+                      <p className="text-xs text-on-surface-variant">{user.email}</p>
+                    </td>
+                    {/* Phone */}
+                    <td className="px-8 py-5">
+                      <p className="text-xs text-on-surface-variant">{user.phone || '—'}</p>
+                    </td>
+                    {/* Role */}
+                    <td className="px-8 py-5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${ROLE_BADGE[user.roleName] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                        {user.roleName}
+                      </span>
+                    </td>
+                    {/* Status */}
+                    <td className="px-8 py-5">
+                      {user.isDeleted
+                        ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-error/10 text-error text-[10px] font-bold uppercase tracking-tighter">Đã xóa</span>
+                        : user.isActive
+                          ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">Hoạt động</span>
+                          : <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-bold uppercase tracking-tighter">Không hoạt động</span>
+                      }
+                    </td>
+                    {/* Actions */}
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Cấp role */}
+                        <button
+                          onClick={() => openRoleModal(user)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors"
+                          title="Cấp role"
+                        >
+                          <span className="material-symbols-outlined text-on-surface-variant text-lg">manage_accounts</span>
+                        </button>
+                        {/* Xóa */}
+                        {!user.isDeleted && (
+                          <button
+                            onClick={() => setDeleteTarget({ userId: user.id, userName: user.userName })}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 transition-colors"
+                            title="Xóa người dùng"
+                          >
+                            <span className="material-symbols-outlined text-error text-lg">delete</span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          {/* Bento Grid Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)] group hover:scale-[1.02] transition-transform">
-              <p className="font-label uppercase text-[10px] tracking-widest text-on-surface-variant mb-1">
-                Total Users
-              </p>
-              <h3 className="font-headline text-3xl font-bold text-primary">12,482</h3>
-              <div className="mt-4 flex items-center gap-1 text-tertiary font-bold text-xs">
-                <span className="material-symbols-outlined text-sm">trending_up</span>
-                +14.2%
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)] group hover:scale-[1.02] transition-transform">
-              <p className="font-label uppercase text-[10px] tracking-widest text-on-surface-variant mb-1">
-                Active Sellers
-              </p>
-              <h3 className="font-headline text-3xl font-bold text-secondary">3,105</h3>
-              <div className="mt-4 flex items-center gap-1 text-tertiary font-bold text-xs">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                Live Now
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)] group hover:scale-[1.02] transition-transform">
-              <p className="font-label uppercase text-[10px] tracking-widest text-on-surface-variant mb-1">
-                Pending Verification
-              </p>
-              <h3 className="font-headline text-3xl font-bold text-orange-500">142</h3>
-              <div className="mt-4 flex items-center gap-1 text-error font-bold text-xs">
-                <span className="material-symbols-outlined text-sm">priority_high</span>
-                Action Required
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest p-6 rounded-xl border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)] group hover:scale-[1.02] transition-transform">
-              <p className="font-label uppercase text-[10px] tracking-widest text-on-surface-variant mb-1">
-                Banned Accounts
-              </p>
-              <h3 className="font-headline text-3xl font-bold text-zinc-900">28</h3>
-              <div className="mt-4 flex items-center gap-1 text-zinc-500 font-bold text-xs">
-                <span className="material-symbols-outlined text-sm">block</span>
-                Restricted Access
-              </div>
-            </div>
-          </div>
-
-          {/* Main Table / List View */}
-          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">
-                      User Profile
-                    </th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">
-                      Role &amp; Status
-                    </th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">
-                      Volume (GMV)
-                    </th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">
-                      Last Active
-                    </th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-container-low">
-                  {/* User Row 1 */}
-                  <tr className="hover:bg-primary-container/5 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <img
-                            alt="User Avatar"
-                            className="w-12 h-12 rounded-full object-cover"
-                            data-alt="Portrait of a woman with a confident expression, professional lighting, urban office background"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK1zIdpPpdRHyWFxrpQ58LTDYn6ETKE6g8udI-Ttb921XuK7xTRtjOYnx6FXgD-QgfnnUEDdPM-I-kcMaUSruj9ljzt2l1s5JY81_ucYdQYj1aVPJdvsZ_ibIgsEcZZT4XOBYIu8nkaJwC_wS705c60v9qRy-2F43sajxdYKT9vkkn86183GnK3vVRwNGuzdZeyNpfL9XjgN-tXRr-UEzzpVNG3LEw-0Qtki0lDXpVDpm4iJrwKcT-aTZsYBIrmQu80bxCRI3JQFdu"
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-tertiary border-2 border-white rounded-full flex items-center justify-center">
-                            <span
-                              className="material-symbols-outlined text-[10px] text-white"
-                              style={{ fontVariationSettings: "'FILL' 1" }}
-                            >
-                              verified
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="font-headline text-sm font-bold text-on-surface">
-                            Elena Rodriguez
-                          </p>
-                          <p className="text-xs text-on-surface-variant">
-                            elena.r@veloceshop.com
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-2">
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-secondary text-on-secondary text-[10px] font-bold uppercase tracking-tighter">
-                          Verified Seller
-                        </span>
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">
-                          Active
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="font-headline text-base font-bold text-on-surface">
-                        $14,250.00
-                      </p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        12 Transactions
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm font-medium text-on-surface">2 mins ago</p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        IP: 192.168.1.1
-                      </p>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors"
-                          title="Edit"
-                        >
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">
-                            edit
-                          </span>
-                        </button>
-                        <button
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error-container/10 transition-colors"
-                          title="Ban"
-                        >
-                          <span className="material-symbols-outlined text-error text-lg">
-                            block
-                          </span>
-                        </button>
-                        <button
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors"
-                          title="Settings"
-                        >
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">
-                            more_vert
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* User Row 2 */}
-                  <tr className="hover:bg-primary-container/5 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant font-headline font-bold">
-                          MT
-                        </div>
-                        <div>
-                          <p className="font-headline text-sm font-bold text-on-surface">
-                            Marcus Thorne
-                          </p>
-                          <p className="text-xs text-on-surface-variant">
-                            m.thorne@accounting.io
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-2">
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-zinc-800 text-white text-[10px] font-bold uppercase tracking-tighter">
-                          Accountant
-                        </span>
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">
-                          Active
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="font-headline text-base font-bold text-on-surface">
-                        N/A
-                      </p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        Internal Access
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm font-medium text-on-surface">45 mins ago</p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        London, UK
-                      </p>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors">
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">
-                            edit
-                          </span>
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error-container/10 transition-colors">
-                          <span className="material-symbols-outlined text-error text-lg">
-                            block
-                          </span>
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors">
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">
-                            more_vert
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* User Row 3 */}
-                  <tr className="hover:bg-primary-container/5 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <img
-                          alt="User Avatar"
-                          className="w-12 h-12 rounded-full object-cover"
-                          data-alt="Close-up headshot of a creative male designer with glasses, bright studio lighting, soft colorful background"
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHi053ltk9JklHUP51RoSYSUSkp9JsYnjQcKNTPL5EG3xTv6pLirvtfmCBu3ufKS7Z5Bg8lGLDs5_JdiyofmFx-P6hOli4B2w263BN1NbvuvKglFOXawNEw21hk3aSgfVKep4b74wcrLB-C9iRw26UYpFGtxjs3Y0Jgo7Y0BbMavtdDq30j7MV6VEaajqOHqEa0NDIT0S-jOad3mj-A1Yw8V6UqHaHy3soAu-tkTZfOD9hsWImzN2sV5oP-SYAvkz2SPA-j3H-BISl"
-                        />
-                        <div>
-                          <p className="font-headline text-sm font-bold text-on-surface">
-                            Julian Weber
-                          </p>
-                          <p className="text-xs text-on-surface-variant">
-                            weber.bikes@web.de
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-2">
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-tighter">
-                          Buyer
-                        </span>
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-bold uppercase tracking-tighter">
-                          Pending
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="font-headline text-base font-bold text-on-surface">
-                        $2,890.00
-                      </p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        1 Transaction
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm font-medium text-on-surface">Yesterday</p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        Berlin, DE
-                      </p>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="px-4 py-1.5 bg-primary rounded-lg text-on-primary font-label font-bold uppercase text-[10px] tracking-widest hover:scale-105 transition-transform">
-                          Verify
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors">
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">
-                            more_vert
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* User Row 4 */}
-                  <tr className="hover:bg-primary-container/5 transition-colors group opacity-60 grayscale">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <img
-                          alt="User Avatar"
-                          className="w-12 h-12 rounded-full object-cover"
-                          data-alt="Portrait of a male professional looking slightly off-camera, warm sunset light, outdoor setting"
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaC2nwvFxPb--Q7XdRqoD72E3AMyjIv0wsuf4C6I_EUyVx7fE0CzW1cpF8331FT0QgGlyaT12deey-ioVkQFjOmapPFacSS7a2LTnDx3F2uekTNx8z3dxrz_BH5ivrPi1P10BjzH4n7rZia4eGCov1wtn6Xj4dScPOzDdAGHYzuS7BWJl9kGp9cOpvG-Z_-6O3Fs6hmTZUJpagSoyF8szgUChjBQO9ydQbQbgtwOtICAWSBhI_1XQMhBiuDfhITlN2cKqDuXGHpP6s"
-                        />
-                        <div>
-                          <p className="font-headline text-sm font-bold text-on-surface line-through">
-                            Thomas Kael
-                          </p>
-                          <p className="text-xs text-on-surface-variant">
-                            thomas.k@gmail.com
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-2">
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-tighter">
-                          Seller
-                        </span>
-                        <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-error/10 text-error text-[10px] font-bold uppercase tracking-tighter">
-                          Banned
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="font-headline text-base font-bold text-on-surface">
-                        $0.00
-                      </p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        Flagged Account
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm font-medium text-on-surface">3 weeks ago</p>
-                      <p className="text-[10px] font-label text-zinc-400 uppercase tracking-widest">
-                        Fraud Detection
-                      </p>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="px-4 py-1.5 border border-outline-variant/20 rounded-lg text-on-surface font-label font-bold uppercase text-[10px] tracking-widest hover:bg-surface-container-high transition-colors">
-                          Unban
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors">
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">
-                            more_vert
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
+          {/* Pagination */}
+          {!loading && totalPages > 1 && (
             <div className="px-8 py-5 border-t border-surface-container-low flex items-center justify-between">
               <p className="text-xs text-on-surface-variant font-label uppercase tracking-widest">
-                Showing 1-10 of 12,482 users
+                Trang {page} / {totalPages} — {totalRecords} người dùng
               </p>
               <div className="flex items-center gap-2">
                 <button
-                  className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors disabled:opacity-50"
-                  disabled
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors disabled:opacity-40"
                 >
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold text-xs">
-                  1
-                </button>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-bold text-xs">
-                  2
-                </button>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-bold text-xs">
-                  3
-                </button>
-                <span className="px-2">...</span>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-bold text-xs">
-                  1,248
-                </button>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors">
+                {getPageNumbers().map((p, i) =>
+                  p === '...'
+                    ? <span key={`ellipsis-${i}`} className="px-2 text-on-surface-variant">...</span>
+                    : <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-xs transition-colors ${page === p ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 hover:bg-surface-container-low'}`}
+                      >
+                        {p}
+                      </button>
+                )}
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low transition-colors disabled:opacity-40"
+                >
                   <span className="material-symbols-outlined">chevron_right</span>
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Footer Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-            <div className="bg-primary/5 p-8 rounded-2xl border border-primary/10">
-              <h4 className="font-headline text-lg font-bold text-primary mb-4 uppercase tracking-tighter">
-                Platform Integrity Notice
-              </h4>
-              <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
-                Automated fraud detection is currently monitoring all high-value transactions. Manual verification is required for all new sellers exceeding $5,000 in monthly volume.
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="flex -space-x-3">
-                  <img
-                    className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                    data-alt="Portrait of woman"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtFdoko9W5ijz706QaMD76K-C0jhtBD0WSROCA8s2Nlg4p-y9IkqW3AqYVuTTyHbouX-XTdIDhX0SOHGyxHyO0C4SeFeVLo2xYGNR1qaDsXRkXEtlixBO7-XOBj7h87cqGVdlnPl135TkNCl0Fet9Et3KmdtBoSr90wpOo8tbrr0Lm-bstG4y712pP1dM1vxmWR6q8B5OhrdzN3gTgv0_yS1K78eyhuN-CHl-SGtfVyeSk7KiMU151G1c2TlZIyUhTs24TXhomMyxU"
-                  />
-                  <img
-                    className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                    data-alt="Portrait of man"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPV5YwqAXyDaGH1yzBcDH8Q86dRnWrxPxKPuX9wHCJsG0q3mnk_Y1aHh3ylil0M6pU2geTjwBBu-3T67UJUBNmlw0yK9nNWDOb5UfNW3vwahmXmkOZFxK9jBz880rXBuu0p7aTKkfYb4RJiOh79n1DdG8EMwOpd7Bhv6a3EzdyN2ZmVAY5j_B3MVzBirUU18pQHknjZLPi98yQhKpha28MRBbX660ZSlauN3lmj-r-ljU3iOydl7AM3xyMxkcK46-pyQocTFXKB-nO"
-                  />
-                  <div className="w-8 h-8 rounded-full bg-white border-2 border-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">
-                    +4
-                  </div>
-                </div>
-                <p className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
-                  Active Moderators Online
-                </p>
-              </div>
-            </div>
-            <div className="bg-surface-container-low p-8 rounded-2xl border border-white">
-              <h4 className="font-headline text-lg font-bold text-on-surface mb-4 uppercase tracking-tighter">
-                Recent System Logs
-              </h4>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-error"></span>
-                  <span className="font-bold">Access Denied:</span>
-                  <span className="text-on-surface-variant">
-                    Failed login attempt from unauthorized IP (Shanghai, CN)
-                  </span>
-                </li>
-                <li className="flex items-center gap-3 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-tertiary"></span>
-                  <span className="font-bold">User Verified:</span>
-                  <span className="text-on-surface-variant">
-                    Manual audit completed for 'RoadRider_99'
-                  </span>
-                </li>
-                <li className="flex items-center gap-3 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                  <span className="font-bold">Role Update:</span>
-                  <span className="text-on-surface-variant">
-                    Julian Weber changed from 'Guest' to 'Pending Buyer'
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </div>
+          )}
+        </div>
       </main>
+
+      {/* ── Role Modal ── */}
+      {roleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-white/40">
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-1">Cấp role</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Người dùng: <span className="font-bold text-on-surface">{roleModal.userName}</span>
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {ROLES.map(r => (
+                <button
+                  key={r}
+                  onClick={() => setNewRole(r)}
+                  className={`py-3 rounded-xl border-2 font-label font-bold text-xs uppercase tracking-widest transition-all ${newRole === r ? 'border-primary bg-primary/5 text-primary' : 'border-surface-container-high text-on-surface-variant hover:border-outline'}`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            {roleError && <p className="text-error text-xs mb-4">{roleError}</p>}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRoleModal(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleChangeRole}
+                disabled={roleLoading}
+                className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                {roleLoading ? 'Đang lưu...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-white/40">
+            <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-error text-2xl">delete</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Xóa người dùng?</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Bạn có chắc muốn xóa <span className="font-bold text-on-surface">{deleteTarget.userName}</span>? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="flex-1 py-3 rounded-xl bg-error text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                {deleteLoading ? 'Đang xóa...' : 'Xóa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default UserManagement;
+}
