@@ -4,7 +4,8 @@ import AdminTopBar from '../../components/AdminTopBar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
-const PAGE_SIZE = 10;
+const PENDING_PAGE_SIZE = 5;
+const ALL_PAGE_SIZE = 10;
 
 const STATUS_BADGE = {
   Pending:   'bg-orange-500/10 text-orange-600',
@@ -78,7 +79,7 @@ export default function ListingModeration() {
   const [allPages, setAllPages] = useState(1);
   const [allPage, setAllPage]   = useState(1);
   const [allLoading, setAllLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState('Approved');
 
   // ── Detail modal ─────────────────────────────────────────────
   const [detail, setDetail]         = useState(null);
@@ -95,7 +96,7 @@ export default function ListingModeration() {
   const fetchPending = useCallback(async (p = 1) => {
     setPendingLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/listings/pending?page=${p}&pageSize=${PAGE_SIZE}`,
+      const res = await fetch(`${API_BASE}/admin/listings/pending?page=${p}&pageSize=${PENDING_PAGE_SIZE}`,
         { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       // pending endpoint trả về array hoặc object tuỳ backend
@@ -110,18 +111,31 @@ export default function ListingModeration() {
     finally { setPendingLoading(false); }
   }, [token]);
 
-  // ── Fetch all ────────────────────────────────────────────────
-  const fetchAll = useCallback(async (p = 1, status = '') => {
+  // ── Fetch all (chỉ Approved + Rejected) ─────────────────────
+  const fetchAll = useCallback(async (p = 1, status = 'Approved') => {
     setAllLoading(true);
     try {
-      const qs = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
-      if (status) qs.set('status', status);
-      const res = await fetch(`${API_BASE}/admin/listings?${qs}`,
-        { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setAll(data.items ?? data.listings ?? []);
-      setAllTotal(data.totalCount ?? data.totalRecords ?? 0);
-      setAllPages(data.totalPages ?? 1);
+      if (status === '__all__') {
+        // fetch cả Approved và Rejected rồi merge
+        const [r1, r2] = await Promise.all([
+          fetch(`${API_BASE}/admin/listings?page=${p}&pageSize=${ALL_PAGE_SIZE}&status=Approved`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE}/admin/listings?page=${p}&pageSize=${ALL_PAGE_SIZE}&status=Rejected`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+        const items = [...(d1.items ?? []), ...(d2.items ?? [])];
+        const total = (d1.totalCount ?? 0) + (d2.totalCount ?? 0);
+        const pages = Math.max(d1.totalPages ?? 1, d2.totalPages ?? 1);
+        setAll(items);
+        setAllTotal(total);
+        setAllPages(pages);
+      } else {
+        const qs = new URLSearchParams({ page: p, pageSize: ALL_PAGE_SIZE, status });
+        const res = await fetch(`${API_BASE}/admin/listings?${qs}`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        setAll(data.items ?? data.listings ?? []);
+        setAllTotal(data.totalCount ?? data.totalRecords ?? 0);
+        setAllPages(data.totalPages ?? 1);
+      }
     } catch { setAll([]); }
     finally { setAllLoading(false); }
   }, [token]);
@@ -279,21 +293,21 @@ export default function ListingModeration() {
           </div>
         </section>
 
-        {/* ── BẢNG 2: TẤT CẢ LISTING ── */}
+        {/* ── BẢNG 2: TẤT CẢ LISTING ĐÃ ĐƯỢC ADMIN XỬ LÝ ── */}
         <section>
           <div className="flex items-end justify-between mb-4">
             <div>
               <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
-                Tất cả listing
+                TẤT CẢ LISTING ĐÃ ĐƯỢC ADMIN XỬ LÝ 
               </h2>
               <p className="text-xs text-on-surface-variant mt-1">{allTotal} listing</p>
             </div>
             {/* Filter by status */}
             <div className="flex items-center gap-2">
-              {['', 'Pending', 'Approved', 'Rejected', 'PendingInspection'].map(s => (
-                <button key={s} onClick={() => { setFilterStatus(s); setAllPage(1); }}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${filterStatus === s ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low'}`}>
-                  {s || 'Tất cả'}
+              {[['__all__', 'Tất cả'], ['Approved', 'Approved'], ['Rejected', 'Rejected']].map(([val, label]) => (
+                <button key={val} onClick={() => { setFilterStatus(val); setAllPage(1); }}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${filterStatus === val ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low'}`}>
+                  {label}
                 </button>
               ))}
             </div>
