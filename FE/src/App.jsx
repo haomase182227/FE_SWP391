@@ -25,6 +25,7 @@ import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
 import InspectionTracking from './pages/Seller/InspectionTracking';
 import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
+import UserProfile from './pages/UserProfile';
 
 function AppContent() {
   const location = useLocation();
@@ -64,6 +65,7 @@ function AppContent() {
           <Route path="/compare" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
           <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
           <Route path="/support" element={<Support />} />
+          <Route path="/profile" element={<UserProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

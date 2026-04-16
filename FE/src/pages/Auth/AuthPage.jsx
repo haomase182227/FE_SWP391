@@ -4,16 +4,20 @@ import { useAuth } from '../Context/AuthContext';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [loginEmail, setLoginEmail] = useState('buyer@kinetic.vn');
-  const [loginPassword, setLoginPassword] = useState('123456');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
   // Register state
-  const [reg, setReg] = useState({ username: '', email: '', phone: '', password: '', confirm: '', role: '', terms: false });
+  const [reg, setReg] = useState({ username: '', fullname: '', email: '', phone: '', password: '', confirm: '', role: '', terms: false });
   const [regErrors, setRegErrors] = useState({});
 
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [regLoading, setRegLoading] = useState(false);
+  const [regApiError, setRegApiError] = useState('');
+
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
 
   function setRegField(field, value) {
     setReg(prev => ({ ...prev, [field]: value }));
@@ -23,6 +27,7 @@ const AuthPage = () => {
   function validateReg() {
     const errors = {};
     if (!reg.username.trim()) errors.username = 'Tên đăng nhập không được để trống.';
+    if (!reg.fullname.trim()) errors.fullname = 'Họ và tên không được để trống.';
     if (!reg.email.trim()) errors.email = 'Email không được để trống.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reg.email)) errors.email = 'Email không đúng định dạng.';
     if (!reg.phone.trim()) errors.phone = 'Số điện thoại không được để trống.';
@@ -36,22 +41,42 @@ const AuthPage = () => {
     return errors;
   }
 
-  function handleRegSubmit(e) {
+  async function handleRegSubmit(e) {
     e.preventDefault();
+    setRegApiError('');
     const errors = validateReg();
     if (Object.keys(errors).length > 0) { setRegErrors(errors); return; }
-    // TODO: call API — for now just go back to login
-    setIsLogin(true);
+
+    setRegLoading(true);
+    const result = await register({
+      userName: reg.username,
+      fullName: reg.fullname,
+      email: reg.email,
+      phone: reg.phone,
+      password: reg.password,
+      role: reg.role,
+    });
+    setRegLoading(false);
+
+    if (!result.success) {
+      setRegApiError(result.message);
+      return;
+    }
+
+    navigate(result.redirectPath);
   }
 
-  function handleLoginSubmit(event) {
+  async function handleLoginSubmit(event) {
     event.preventDefault();
     setLoginError('');
+    setLoginLoading(true);
 
-    const result = login({
+    const result = await login({
       email: loginEmail,
       password: loginPassword,
     });
+
+    setLoginLoading(false);
 
     if (!result.success) {
       setLoginError(result.message);
@@ -217,15 +242,13 @@ const AuthPage = () => {
               {loginError && (
                 <p className="text-sm font-medium text-error">{loginError}</p>
               )}
-              <div className="text-[11px] text-on-surface-variant bg-surface-container-low rounded-lg px-3 py-2 leading-relaxed">
-                Tai khoan test: buyer@kinetic.vn, admin@kinetic.vn, inspector@kinetic.vn, seller@kinetic.vn. Mat khau: 123456.
-              </div>
               {/* Submit Button */}
               <button
-                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold uppercase tracking-widest py-4 rounded-lg shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:scale-95 transition-all"
+                disabled={loginLoading}
+                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold uppercase tracking-widest py-4 rounded-lg shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 type="submit"
               >
-                Bắt đầu hành trình
+                {loginLoading ? 'Đang đăng nhập...' : 'Bắt đầu hành trình'}
               </button>
             </form>
             {/* Divider */}
@@ -403,6 +426,21 @@ const AuthPage = () => {
                 {regErrors.username && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.username}</p>}
               </div>
 
+              {/* Full Name */}
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
+                  Họ và tên <span className="text-error">*</span>
+                </label>
+                <input
+                  className={`w-full bg-surface-container-low border-2 rounded-xl px-4 py-3.5 focus:ring-0 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline-variant/50 font-body outline-none ${regErrors.fullname ? 'border-error' : 'border-transparent focus:border-primary/30'}`}
+                  placeholder="Nguyễn Văn A"
+                  type="text"
+                  value={reg.fullname}
+                  onChange={e => setRegField('fullname', e.target.value)}
+                />
+                {regErrors.fullname && <p className="text-error text-xs mt-1.5 font-medium">{regErrors.fullname}</p>}
+              </div>
+
               {/* Email */}
               <div>
                 <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-bold">
@@ -514,12 +552,16 @@ const AuthPage = () => {
               </div>
 
               {/* Submit */}
+              {regApiError && (
+                <p className="text-error text-sm font-medium text-center">{regApiError}</p>
+              )}
               <button
-                className="w-full py-4 rounded-xl font-headline font-bold text-on-primary uppercase tracking-[0.2em] text-sm shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+                disabled={regLoading}
+                className="w-full py-4 rounded-xl font-headline font-bold text-on-primary uppercase tracking-[0.2em] text-sm shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(45deg, #a83100, #ff784d)' }}
                 type="submit"
               >
-                ĐĂNG KÝ NGAY
+                {regLoading ? 'ĐANG ĐĂNG KÝ...' : 'ĐĂNG KÝ NGAY'}
               </button>
             </form>
             {/* Divider */}
