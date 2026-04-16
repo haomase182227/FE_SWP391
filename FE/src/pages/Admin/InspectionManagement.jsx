@@ -244,11 +244,9 @@ const InspectionManagement = () => {
                       </td>
                       {/* Status */}
                       <td className="px-8 py-5">
-                        {user.isDeleted
-                          ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-error/10 text-error text-[10px] font-bold uppercase tracking-tighter">Deleted</span>
-                          : user.isActive
-                            ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">Active</span>
-                            : <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-bold uppercase tracking-tighter">Inactive</span>
+                        {user.isActive
+                          ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">Active</span>
+                          : <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-bold uppercase tracking-tighter">Deactivated</span>
                         }
                       </td>
                       {/* Actions */}
@@ -267,7 +265,7 @@ const InspectionManagement = () => {
                             <button
                               onClick={() => handleActivate(user.id)}
                               disabled={activateLoading === user.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary text-on-tertiary hover:opacity-90 transition-opacity disabled:opacity-50 text-[10px] font-bold uppercase tracking-widest shadow-sm"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary/10 text-tertiary hover:bg-tertiary/20 transition-colors disabled:opacity-50 text-[10px] font-bold uppercase tracking-widest"
                               title="Reactivate account"
                             >
                               {activateLoading === user.id
@@ -484,7 +482,7 @@ const InspectionManagement = () => {
               <div className="flex justify-between">
                 <span className="text-on-surface-variant font-label uppercase text-[10px] tracking-widest">Status</span>
                 <span className="font-medium text-on-surface">
-                  {viewTarget.isDeleted ? 'Deleted' : viewTarget.isActive ? 'Active' : 'Inactive'}
+                  {viewTarget.isDeleted ? 'Deleted' : viewTarget.isActive ? 'Active' : 'Deactivated'}
                 </span>
               </div>
               <div className="flex justify-between">
