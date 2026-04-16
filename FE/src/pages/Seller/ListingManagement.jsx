@@ -1,128 +1,155 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SellerSidebar from '../../components/SellerSidebar';
+import { useAuth } from '../Context/AuthContext';
 
-const MOCK_LISTINGS = [
-  {
-    id: 'LT-001',
-    title: 'S-Works Tarmac SL8',
-    brand: 'Specialized',
-    category: 'Road',
-    year: 2023,
-    price: 12500,
-    condition: 'Pristine',
-    status: 'Active',
-    views: 284,
-    createdAt: 'Oct 10, 2023',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDxxNVOIUzZJyIHgxFdYW9CWPs-f3HkIpgsf0kckwVHjcM1sZoqlAifecpPLhnZoTfgEeTAugVq9rhYg83nQXg_B5l55tvKYsQ7vIpfiWYIYRHIerZLAetavaVBz2mii7ZLmgjAC8Z7vLfhN-i_GJJFmLGhGk2K3v_9729n1Bf4LDbV1i0yGtoGXLRVgSs4-UODvb7h0FO6v4Z1vTOt6wrdf_JkumgDSvANVrfVTyFy5sxwpNfS52GtF_550HGs45xkkCDki8hNuEyE',
-    inspected: true,
-  },
-  {
-    id: 'LT-002',
-    title: 'Canyon Aeroad CFR Mover',
-    brand: 'Canyon',
-    category: 'Road',
-    year: 2022,
-    price: 9200,
-    condition: 'Excellent',
-    status: 'Active',
-    views: 157,
-    createdAt: 'Oct 12, 2023',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmDr2Bcujoxe0MQvTQiunFRUUOnBUn5SB6aBWL7PaQuBfbnEfn4GnXo2OnJLrp69gmS6iadU7P7vNTd4xlJYONOX1gvPupJtzcBq_Rwo9P0BWJdCLN-l_LEP2xKFb9LXXzD4z3c7p76igfcoMgKVYXCEKdlqt0C1VdfjY5k_KndCoYAuvUA6pXQ8I5K2nVEtUObigiVJdSE4NoH9cznsrBxWnfHJCdoHL21hdypCkomWDEhoyAPWsX0K7q_OLRWPy7qP9CmX9-eRi1',
-    inspected: true,
-  },
-  {
-    id: 'LT-003',
-    title: 'Pinarello Dogma F12 Custom',
-    brand: 'Pinarello',
-    category: 'Road',
-    year: 2021,
-    price: 14750,
-    condition: 'Good',
-    status: 'Sold',
-    views: 412,
-    createdAt: 'Sep 28, 2023',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC4TK36_hf1uOj5fPXSn4R5WayehxN6KfURyOo1ie_bMeS2arH79GkFV3N_3OHHVZI6A-3LKqVtflERxfTWIFKuND5oLa3_Iuw1AW5ndj7HMH_5DXKXhrU84elLtQufuE90141Rqf121zZK6GwAtQFg9eaesLNSTbuzag4_snO2aMUQPWB3AovYpRIctcseLwe9D7OwWUu5lNWWmj3RpzQ85CeK3R7wp-EnxTsCergEQT3UdWgVXaNpqCcGVphRU0DS3W6NQ4Opo56a',
-    inspected: false,
-  },
-  {
-    id: 'LT-004',
-    title: 'Bianchi Oltre XR4',
-    brand: 'Bianchi',
-    category: 'Road',
-    year: 2022,
-    price: 6400,
-    condition: 'Excellent',
-    status: 'Sold',
-    views: 198,
-    createdAt: 'Sep 15, 2023',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkoH_Rmx4tiI91Zy6zVsWsflDeQ8NWu4wBNPjGGqLayl-caEMlmfLl7KGFHLn5PcT0ZExw6Kf9g9k7ZscWtKCoXCFALOXrtN79qBE7kj0QU_92eHqMYeTqoCWjgap9Dd6VcvqE5jYVeeooYaDp-LU0CLU663xKtHom7-0-8kZgndsOlh1NPTOB2y4XSoK7Pfz2lTlTVfqBGcbY0p5YnyKxTJ5B8dlJkhR_NHPunssqaGA5uiTCVWfliDOnk_pM3hwOIlE8sTA16TNv',
-    inspected: true,
-  },
-  {
-    id: 'LT-005',
-    title: 'Trek Émonda SLR 9',
-    brand: 'Trek',
-    category: 'Road',
-    year: 2023,
-    price: 11200,
-    condition: 'Pristine',
-    status: 'Draft',
-    views: 0,
-    createdAt: 'Oct 16, 2023',
-    img: null,
-    inspected: false,
-  },
-  {
-    id: 'LT-006',
-    title: 'Santa Cruz Hightower CC',
-    brand: 'Santa Cruz',
-    category: 'MTB',
-    year: 2022,
-    price: 7800,
-    condition: 'Good',
-    status: 'Active',
-    views: 93,
-    createdAt: 'Oct 05, 2023',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCY1mgDFs04s2iMDkhAKGq_ZDoOLDUSddniDMcbC1HLwwQm8F68y7JGMY4WsxZHEC2XTup-h13VqoHqrqs5Vm1NbVuSU02_w_j45MBsWVT_XKFzjQjL1H_rij0Mk4RLuDQossMvTZ024hxNEhbJ6pUzJxp1Xz60yDAW5pEtlnLF7SLF8oI4g5bEmrUZrM-rBnCTLGeF0HoVJSUc2ZiEl_D8d8ud3xRF4rChthtNuSM8-zMZX9z98TiSpr92oiFV2R77gMSWW7pM-tn1',
-    inspected: false,
-  },
-];
+const API_BASE = '/api/v1';
 
 const STATUS_STYLES = {
-  Active: 'bg-tertiary text-on-tertiary',
-  Sold: 'bg-surface-container-highest text-on-surface-variant',
-  Draft: 'border border-outline-variant/40 text-on-surface-variant',
+  Active:  'bg-tertiary text-on-tertiary',
+  Sold:    'bg-surface-container-highest text-on-surface-variant',
+  Draft:   'border border-outline-variant/40 text-on-surface-variant',
+  Pending: 'bg-orange-500/10 text-orange-600',
 };
 
-const TABS = ['All', 'Active', 'Sold', 'Draft'];
+const TABS = ['All', 'Active', 'Sold', 'Draft', 'Pending'];
 
 export default function ListingManagement() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
-  const [search, setSearch] = useState('');
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
 
-  const filtered = MOCK_LISTINGS.filter((l) => {
-    const matchSearch =
-      l.title.toLowerCase().includes(search.toLowerCase()) ||
-      l.brand.toLowerCase().includes(search.toLowerCase()) ||
-      l.id.toLowerCase().includes(search.toLowerCase());
+  const [listings, setListings]   = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [activeTab, setActiveTab] = useState(0);
+  const [search, setSearch]       = useState('');
+
+  // ── Edit modal ────────────────────────────────────────────────
+  const [editTarget,  setEditTarget]  = useState(null); // listing object
+  const [editForm,    setEditForm]    = useState({ title: '', description: '', price: '', frameSize: '', requestInspection: false });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError,   setEditError]   = useState('');
+
+  // ── Delete confirm ────────────────────────────────────────────
+  const [deleteTarget,  setDeleteTarget]  = useState(null); // listing object
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ── Fetch listings ────────────────────────────────────────────
+  const fetchListings = useCallback(async (status = '') => {
+    setLoading(true);
+    setError('');
+    try {
+      const url = status
+        ? `${API_BASE}/seller/Listings?status=${encodeURIComponent(status)}`
+        : `${API_BASE}/seller/Listings`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // API may return array directly or wrapped in a property
+      setListings(Array.isArray(data) ? data : (data.listings ?? data.items ?? []));
+    } catch {
+      setError('Failed to load listings.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  // ── Open edit modal ───────────────────────────────────────────
+  function openEdit(listing) {
+    setEditTarget(listing);
+    setEditForm({
+      title:             listing.title ?? '',
+      description:       listing.description ?? '',
+      price:             listing.price ?? '',
+      frameSize:         listing.frameSize ?? '',
+      requestInspection: listing.requestInspection ?? false,
+    });
+    setEditError('');
+  }
+
+  // ── Save edit ─────────────────────────────────────────────────
+  async function handleEdit(e) {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const res = await fetch(`${API_BASE}/seller/Listings/${editTarget.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title:             editForm.title,
+          description:       editForm.description,
+          price:             Number(editForm.price),
+          frameSize:         editForm.frameSize,
+          requestInspection: editForm.requestInspection,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || `HTTP ${res.status}`);
+      }
+      setEditTarget(null);
+      fetchListings();
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  // ── Delete ────────────────────────────────────────────────────
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/seller/Listings/${deleteTarget.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDeleteTarget(null);
+      fetchListings();
+    } catch {
+      fetchListings();
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  // ── Client-side filter (search + tab) ────────────────────────
+  const filtered = listings.filter((l) => {
+    const title    = (l.title ?? '').toLowerCase();
+    const brand    = (l.brand ?? l.brandName ?? '').toLowerCase();
+    const id       = String(l.id ?? '').toLowerCase();
+    const matchSearch = title.includes(search.toLowerCase())
+      || brand.includes(search.toLowerCase())
+      || id.includes(search.toLowerCase());
     if (activeTab === 0) return matchSearch;
-    const tabMap = ['', 'Active', 'Sold', 'Draft'];
-    return matchSearch && l.status === tabMap[activeTab];
+    const tabStatus = TABS[activeTab];
+    return matchSearch && (l.status ?? '').toLowerCase() === tabStatus.toLowerCase();
   });
 
+  const countByStatus = (s) => listings.filter(l => (l.status ?? '').toLowerCase() === s.toLowerCase()).length;
+
   const stats = {
-    total: MOCK_LISTINGS.length,
-    active: MOCK_LISTINGS.filter((l) => l.status === 'Active').length,
-    sold: MOCK_LISTINGS.filter((l) => l.status === 'Sold').length,
-    draft: MOCK_LISTINGS.filter((l) => l.status === 'Draft').length,
+    total:   listings.length,
+    active:  countByStatus('Active'),
+    sold:    countByStatus('Sold'),
+    draft:   countByStatus('Draft'),
+    pending: countByStatus('Pending'),
   };
 
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
       <SellerSidebar
-        avatarSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuBh9Q9_fY-ouIys8629M86NNrQJIg92nQPcsJBqsXJZe9JpIhS_4O1BTYPv6fkdx04128V339iWFKnNo_2Qr2SCEeG3KOprb0-a1xryQOoKlWYaroBr_3zxSEq93pDeHfCo5AyQ-ftWamMd7IcvofnitwdqZXx-RAD5G6KMyqeXfLaziiaP1Ig4EEH5mU7CSa1EepNIY7zxxpqShMFh8jA23nv3-zh7sqZpkw48OONfi7nkBORuEiHz0GY2ULX-k-NroVgz4NXuCD3H"
         merchantName="Verified Merchant"
         merchantSub="Seller Dashboard"
         bottomButton="+ New Listing"
@@ -168,10 +195,11 @@ export default function ListingManagement() {
             {/* Stats */}
             <div className="flex gap-6">
               {[
-                { label: 'Total', value: stats.total, color: 'text-on-surface' },
-                { label: 'Active', value: stats.active, color: 'text-tertiary' },
-                { label: 'Sold', value: stats.sold, color: 'text-secondary' },
-                { label: 'Draft', value: stats.draft, color: 'text-on-surface-variant' },
+                { label: 'Total',   value: stats.total,   color: 'text-on-surface' },
+                { label: 'Active',  value: stats.active,  color: 'text-tertiary' },
+                { label: 'Sold',    value: stats.sold,    color: 'text-secondary' },
+                { label: 'Draft',   value: stats.draft,   color: 'text-on-surface-variant' },
+                { label: 'Pending', value: stats.pending, color: 'text-orange-500' },
               ].map((s, i) => (
                 <React.Fragment key={s.label}>
                   {i > 0 && <div className="w-px h-10 bg-outline-variant/20 self-center" />}
@@ -201,9 +229,7 @@ export default function ListingManagement() {
               >
                 {tab}
                 {tab !== 'All' && (
-                  <span className="ml-1.5 opacity-60">
-                    ({MOCK_LISTINGS.filter((l) => l.status === tab).length})
-                  </span>
+                  <span className="ml-1.5 opacity-60">({countByStatus(tab)})</span>
                 )}
               </button>
             ))}
@@ -216,13 +242,36 @@ export default function ListingManagement() {
 
         {/* Listing Cards */}
         <div className="grid grid-cols-1 gap-4">
-          {filtered.length === 0 ? (
+          {loading && (
+            <div className="text-center py-20 text-on-surface-variant">
+              <span className="material-symbols-outlined text-5xl mb-4 block opacity-30 animate-spin">progress_activity</span>
+              <p className="font-bold uppercase tracking-widest text-xs">Loading...</p>
+            </div>
+          )}
+          {!loading && error && (
+            <div className="text-center py-20 text-error">
+              <span className="material-symbols-outlined text-5xl mb-4 block opacity-40">error</span>
+              <p className="font-bold uppercase tracking-widest text-xs">{error}</p>
+            </div>
+          )}
+          {!loading && !error && filtered.length === 0 && (
             <div className="text-center py-20 text-on-surface-variant">
               <span className="material-symbols-outlined text-5xl mb-4 block opacity-30">directions_bike</span>
               <p className="font-bold uppercase tracking-widest text-xs">No listings found</p>
             </div>
-          ) : (
-            filtered.map((listing) => (
+          )}
+          {!loading && !error && filtered.map((listing) => {
+            const brand     = listing.brand ?? listing.brandName ?? '—';
+            const category  = listing.category ?? listing.categoryName ?? '—';
+            const condition = listing.condition ?? '—';
+            const status    = listing.status ?? 'Draft';
+            const price     = listing.price ?? 0;
+            const year      = listing.year ?? '';
+            const views     = listing.views ?? listing.viewCount ?? 0;
+            const inspected = listing.requestInspection ?? listing.inspected ?? false;
+            const imgSrc    = listing.primaryImage ?? listing.primaryImageUrl ?? null;
+
+            return (
               <div
                 key={listing.id}
                 className="group bg-surface-container-lowest rounded-xl p-5 flex items-center gap-6 hover:bg-primary-container/5 transition-all"
@@ -230,9 +279,9 @@ export default function ListingManagement() {
               >
                 {/* Image */}
                 <div className="w-28 h-20 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
-                  {listing.img ? (
+                  {imgSrc ? (
                     <img
-                      src={listing.img}
+                      src={imgSrc}
                       alt={listing.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -247,11 +296,11 @@ export default function ListingManagement() {
                 <div className="flex-1 grid grid-cols-12 gap-4 items-center">
                   {/* Title */}
                   <div className="col-span-4">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{listing.id}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">#{listing.id}</p>
                     <h3 className="font-headline font-bold text-base leading-tight mt-0.5">{listing.title}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] text-on-surface-variant">{listing.brand} · {listing.category} · {listing.year}</span>
-                      {listing.inspected && (
+                      <span className="text-[10px] text-on-surface-variant">{brand} · {category} · {year}</span>
+                      {inspected && (
                         <span className="flex items-center gap-0.5 text-[10px] text-tertiary font-bold">
                           <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
                           Inspected
@@ -264,14 +313,14 @@ export default function ListingManagement() {
                   <div className="col-span-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Price</p>
                     <p className="font-headline font-bold text-lg text-primary">
-                      ${listing.price.toLocaleString()}
+                      ${price.toLocaleString()}
                     </p>
                   </div>
 
                   {/* Condition */}
                   <div className="col-span-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Condition</p>
-                    <p className="text-sm font-semibold">{listing.condition}</p>
+                    <p className="text-sm font-semibold">{condition}</p>
                   </div>
 
                   {/* Views */}
@@ -279,20 +328,20 @@ export default function ListingManagement() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Views</p>
                     <p className="text-sm font-semibold flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm text-on-surface-variant">visibility</span>
-                      {listing.views}
+                      {views}
                     </p>
                   </div>
 
                   {/* Status */}
                   <div className="col-span-1">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${STATUS_STYLES[listing.status]}`}>
-                      {listing.status}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${STATUS_STYLES[status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                      {status}
                     </span>
                   </div>
 
                   {/* Actions */}
                   <div className="col-span-2 flex justify-end gap-2">
-                    {listing.status === 'Draft' ? (
+                    {status === 'Draft' ? (
                       <button
                         onClick={() => navigate('/seller/new-listing')}
                         className="text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/30 px-3 py-2 rounded-lg hover:bg-primary/5 transition-colors"
@@ -301,10 +350,16 @@ export default function ListingManagement() {
                       </button>
                     ) : (
                       <>
-                        <button className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/30 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors">
+                        <button
+                          onClick={() => openEdit(listing)}
+                          className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/30 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors"
+                        >
                           Edit
                         </button>
-                        <button className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors px-2 py-2 rounded-lg hover:bg-error-container/10">
+                        <button
+                          onClick={() => setDeleteTarget(listing)}
+                          className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors px-2 py-2 rounded-lg hover:bg-error-container/10"
+                        >
                           <span className="material-symbols-outlined text-sm">delete</span>
                         </button>
                       </>
@@ -312,14 +367,14 @@ export default function ListingManagement() {
                   </div>
                 </div>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
 
         {/* Footer */}
         <div className="mt-10 pt-8 border-t border-outline-variant/10 flex justify-between items-center">
           <p className="text-sm text-on-surface-variant italic">
-            Showing {filtered.length} of {MOCK_LISTINGS.length} listings
+            Showing {filtered.length} of {listings.length} listings
           </p>
           <button
             onClick={() => navigate('/seller/new-listing')}
@@ -330,6 +385,117 @@ export default function ListingManagement() {
           </button>
         </div>
       </main>
+
+      {/* ── Edit Modal ── */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40">
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-1">Edit Listing</h3>
+            <p className="text-xs text-on-surface-variant mb-6 uppercase tracking-widest font-bold">#{editTarget.id} · {editTarget.title}</p>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Title</label>
+                <input
+                  required
+                  value={editForm.title}
+                  onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Price</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editForm.price}
+                    onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Frame Size</label>
+                  <input
+                    value={editForm.frameSize}
+                    onChange={e => setEditForm(f => ({ ...f, frameSize: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary"
+                    placeholder="e.g. 54 cm"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={editForm.requestInspection}
+                  onClick={() => setEditForm(f => ({ ...f, requestInspection: !f.requestInspection }))}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${editForm.requestInspection ? 'bg-secondary' : 'bg-outline-variant'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${editForm.requestInspection ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+                <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Request Inspection</span>
+              </div>
+              {editError && <p className="text-error text-xs">{editError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditTarget(null)}
+                  className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-white/40">
+            <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-error text-2xl">delete</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Delete Listing?</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Are you sure you want to delete <span className="font-bold text-on-surface">"{deleteTarget.title}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="flex-1 py-3 rounded-xl bg-error text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

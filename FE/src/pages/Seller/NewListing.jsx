@@ -1,48 +1,141 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SellerSidebar from '../../components/SellerSidebar';
+import { useAuth } from '../Context/AuthContext';
 
+const API_BASE = '/api/v1';
 const CONDITIONS = ['Pristine', 'Excellent', 'Good', 'Fair'];
 
-const PLACEHOLDER_IMAGES = [
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuBrNc09gNCpwKbW1b9g9bfzMyjUhRg-n6riYmNWBFrMMGJZXjzMLq-4Z1mwhmrlf17D2WkL5y0JvuWwBG8sbvS8Iuuo9sd4hJEUvI-5wlbM0oG608eeURY46m642li_9HgLggc-H3yIfrQSTea02HHImamBbiyO8nwmwZogR7DVRfggBEnPHlgJLmJGvnmMUrQ-ZGZW2NmB2642XU2X7hV9NCVJJcmx4ltC277koB7LqXw4LaY7-dkpM6nF3wlSEn8BApQMqQq7Wmf5',
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuDFnoSogguWO9DqUhgjMak24CCbwZu3nIrPu_0MHhZA2LACR7P_UoCJIHrrnJzAAI2EE539u5dG3PhNMbiLsWQ4CV5v0WLCYWgavqIhilbPi1WelASOXUKnONrLyq0P7A4-oKVCDa-ETWqfzP-e6SzYKs4BlzNFEJ3sYAZmxvZYphSb1X5ylaa_Xak21YBY5d2h_fO3mCnEuTGHiSI7F9XEP8Z3JXLBTeHJDiqKaQjBbz9xpogMVPnzxjVKbQ9OCvjfubtNLuAz-0Sk',
-];
-
 export default function NewListing() {
-  const [condition, setCondition] = useState('Pristine');
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
+  // ── Lookup data ───────────────────────────────────────────────
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const headers = { Authorization: `Bearer ${token}` };
+    fetch(`${API_BASE}/seller/Listings/lookups/categories`, { headers })
+      .then(r => r.ok ? r.json() : [])
+      .then(c => setCategories(Array.isArray(c) ? c : (c.data ?? c.items ?? [])))
+      .catch(() => {});
+  }, [token]);
+
+  // ── Form state ────────────────────────────────────────────────
+  const [condition,         setCondition]         = useState('Pristine');
   const [inspectionEnabled, setInspectionEnabled] = useState(true);
-  const [images, setImages] = useState(PLACEHOLDER_IMAGES);
+  const [primaryImageFile,  setPrimaryImageFile]  = useState(null);
+  const [additionalFiles,   setAdditionalFiles]   = useState([]);
+  const [previewImages,     setPreviewImages]      = useState([]);
   const [form, setForm] = useState({
-    title: '', brand: 'Specialized', model: '', category: 'Road',
-    year: '', price: '', frameMaterial: '', groupset: '',
-    wheelset: '', weight: '', frameSize: '52 cm',
-    description: '', usageKm: '', lastService: '',
+    title:         '',
+    brandName:     '',
+    modelName:     '',
+    categoryId:    '',
+    categorySlug:  '',
+    year:          '',
+    price:         '',
+    frameSize:     '',
+    description:   '',
+    usageHistory:  '',
+    lastService:   '',
   });
-  const fileInputRef = useRef(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError,   setSubmitError]   = useState('');
+
+  const fileInputRef    = useRef(null);
+  const primaryInputRef = useRef(null);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleImageUpload = (e) => {
+  // ── Image handlers ────────────────────────────────────────────
+  const handlePrimaryUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPrimaryImageFile(file);
+    setPreviewImages((prev) => {
+      const next = [...prev];
+      next[0] = URL.createObjectURL(file);
+      return next;
+    });
+  };
+
+  const handleAdditionalUpload = (e) => {
     const files = Array.from(e.target.files);
+    setAdditionalFiles((prev) => [...prev, ...files]);
     files.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      setImages((prev) => [...prev, url]);
+      setPreviewImages((prev) => [...prev, URL.createObjectURL(file)]);
     });
   };
 
   const removeImage = (idx) => {
-    setImages((prev) => prev.filter((_, i) => i !== idx));
+    if (idx === 0) {
+      setPrimaryImageFile(null);
+    } else {
+      setAdditionalFiles((prev) => prev.filter((_, i) => i !== idx - 1));
+    }
+    setPreviewImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e) => {
+  // ── Submit ────────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ form, condition, inspectionEnabled, images });
-  };
+    setSubmitLoading(true);
+    setSubmitError('');
+    try {
+      const fd = new FormData();
 
-  const navigate = useNavigate();
+      // Required
+      fd.append('Title', form.title);
+      fd.append('Condition', condition);
+      fd.append('RequestInspection', String(inspectionEnabled));
+
+      // Integer fields — only append if valid number
+      if (form.categoryId && !isNaN(form.categoryId)) fd.append('CategoryId', parseInt(form.categoryId, 10));
+      if (form.categorySlug) fd.append('CategorySlug', form.categorySlug);
+
+      // String fields — brand & model as names
+      if (form.brandName) fd.append('BrandName', form.brandName);
+      if (form.modelName) fd.append('ModelName', form.modelName);
+      if (form.year       && !isNaN(form.year))       fd.append('Year',       parseInt(form.year, 10));
+
+      // Double fields
+      if (form.price  && !isNaN(form.price))  fd.append('Price',  parseFloat(form.price));
+
+      // String fields
+      if (form.frameSize)     fd.append('FrameSize',     form.frameSize);
+      if (form.description)   fd.append('Description',   form.description);
+      if (form.usageHistory)  fd.append('UsageHistory',  form.usageHistory);
+
+      // DateTime — must be ISO 8601
+      if (form.lastService) {
+        const dt = new Date(form.lastService);
+        if (!isNaN(dt.getTime())) fd.append('LastServiceDate', dt.toISOString());
+      }
+
+      // Files
+      if (primaryImageFile) fd.append('PrimaryImage', primaryImageFile);
+      additionalFiles.forEach((f) => fd.append('AdditionalImages', f));
+
+      const res = await fetch(`${API_BASE}/seller/Listings`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.title || `HTTP ${res.status}`);
+      }
+      navigate('/seller/listings');
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
@@ -98,38 +191,37 @@ export default function NewListing() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">Brand</label>
-                  <select
-                    name="brand"
-                    value={form.brand}
+                  <input
+                    name="brandName"
+                    value={form.brandName}
                     onChange={handleChange}
-                    className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body text-on-surface rounded"
-                  >
-                    {['Specialized', 'Trek', 'Canyon', 'Pinarello'].map((b) => (
-                      <option key={b}>{b}</option>
-                    ))}
-                  </select>
+                    className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body text-on-surface placeholder-on-surface-variant/40 rounded"
+                    placeholder="e.g. Specialized"
+                    type="text"
+                  />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">Model</label>
                   <input
-                    name="model"
-                    value={form.model}
+                    name="modelName"
+                    value={form.modelName}
                     onChange={handleChange}
-                    className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body rounded"
-                    placeholder="Tarmac SL7"
+                    className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body placeholder-on-surface-variant/40 rounded"
+                    placeholder="e.g. Tarmac SL7"
                     type="text"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">Category</label>
                   <select
-                    name="category"
-                    value={form.category}
+                    name="categorySlug"
+                    value={form.categorySlug}
                     onChange={handleChange}
                     className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body rounded"
                   >
-                    {['Road', 'MTB', 'Gravel', 'Time Trial'].map((c) => (
-                      <option key={c}>{c}</option>
+                    <option value="">— Select Category —</option>
+                    {categories.map((c) => (
+                      <option key={c.categoryId} value={c.categorySlug}>{c.categoryName}</option>
                     ))}
                   </select>
                 </div>
@@ -152,125 +244,88 @@ export default function NewListing() {
                       value={form.price}
                       onChange={handleChange}
                       className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-headline font-bold text-primary rounded"
-                      placeholder="12,500"
-                      type="text"
+                      placeholder="12500"
+                      type="number"
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 02: Technical Specs */}
-          <section id="specs">
-            <div className="flex flex-col md:flex-row gap-12">
-              <div className="md:w-1/4">
-                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">02</span>
-                <h2 className="font-headline font-bold uppercase text-xs tracking-widest text-primary">Technical Specs</h2>
-              </div>
-              <div className="md:w-3/4">
-                <div className="bg-surface-container-low p-8 rounded-xl border-l-4 border-primary">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-                    {[
-                      { label: 'Frame Material', name: 'frameMaterial', placeholder: 'Carbon Fiber' },
-                      { label: 'Groupset', name: 'groupset', placeholder: 'Shimano Dura-Ace Di2' },
-                      { label: 'Wheelset', name: 'wheelset', placeholder: 'Roval Rapide CLX' },
-                      { label: 'Weight (KG)', name: 'weight', placeholder: '6.8 kg' },
-                    ].map((spec) => (
-                      <div key={spec.name} className="flex justify-between items-end border-b border-outline-variant/20 pb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant font-body">
-                          {spec.label}
-                        </span>
-                        <input
-                          name={spec.name}
-                          value={form[spec.name]}
-                          onChange={handleChange}
-                          className="bg-transparent border-none p-0 focus:ring-0 text-right font-headline font-bold text-on-surface placeholder-on-surface-variant/30 w-40"
-                          placeholder={spec.placeholder}
-                          type="text"
-                        />
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-end border-b border-outline-variant/20 pb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant font-body">Frame Size</span>
-                      <select
-                        name="frameSize"
-                        value={form.frameSize}
-                        onChange={handleChange}
-                        className="bg-transparent border-none p-0 focus:ring-0 text-right font-headline font-bold text-on-surface appearance-none"
-                      >
-                        {['52 cm', '54 cm', '56 cm', '58 cm'].map((s) => (
-                          <option key={s}>{s}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">Frame Size</label>
+                  <input
+                    name="frameSize"
+                    value={form.frameSize}
+                    onChange={handleChange}
+                    className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body placeholder-on-surface-variant/40 rounded"
+                    placeholder="e.g. 54 cm"
+                    type="text"
+                  />
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Section 03: Media Assets */}
+          {/* Section 02: Media Assets */}
           <section id="media">
             <div className="flex flex-col md:flex-row gap-12">
               <div className="md:w-1/4">
-                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">03</span>
+                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">02</span>
                 <h2 className="font-headline font-bold uppercase text-xs tracking-widest text-primary">Media Assets</h2>
               </div>
               <div className="md:w-3/4">
                 <div className="grid grid-cols-4 grid-rows-2 gap-4 h-[400px]">
                   {/* Primary upload slot */}
                   <div
-                    className="col-span-2 row-span-2 bg-surface-container-high rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-outline-variant group cursor-pointer hover:bg-surface-container-highest transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
+                    className="col-span-2 row-span-2 bg-surface-container-high rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-outline-variant group cursor-pointer hover:bg-surface-container-highest transition-colors relative overflow-hidden"
+                    onClick={() => primaryInputRef.current?.click()}
                   >
-                    <span className="material-symbols-outlined text-4xl text-primary mb-4">add_a_photo</span>
-                    <span className="font-headline font-bold text-xs uppercase tracking-widest text-on-surface">Upload Primary Hero</span>
-                    <span className="text-[10px] text-on-surface-variant mt-1 font-body">Recommend 4000x3000px</span>
+                    {previewImages[0] ? (
+                      <>
+                        <img src={previewImages[0]} alt="primary" className="w-full h-full object-cover" />
+                        <div
+                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-primary/20 backdrop-blur-sm transition-opacity cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); removeImage(0); }}
+                        >
+                          <span className="material-symbols-outlined text-white text-3xl">delete</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-4xl text-primary mb-4">add_a_photo</span>
+                        <span className="font-headline font-bold text-xs uppercase tracking-widest text-on-surface">Upload Primary Hero</span>
+                        <span className="text-[10px] text-on-surface-variant mt-1 font-body">Recommend 4000x3000px</span>
+                      </>
+                    )}
                     <input
-                      ref={fileInputRef}
+                      ref={primaryInputRef}
                       type="file"
                       accept="image/*"
-                      multiple
                       className="hidden"
-                      onChange={handleImageUpload}
+                      onChange={handlePrimaryUpload}
                     />
                   </div>
 
-                  {/* Uploaded images */}
-                  {images.slice(0, 2).map((src, idx) => (
-                    <div key={idx} className="bg-surface-container-high rounded-xl overflow-hidden relative group">
-                      <img
-                        src={src}
-                        alt={`bike detail ${idx + 1}`}
-                        className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div
-                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-primary/20 backdrop-blur-sm transition-opacity cursor-pointer"
-                        onClick={() => removeImage(idx)}
-                      >
-                        <span className="material-symbols-outlined text-on-primary">delete</span>
+                  {/* Additional images (slots 1-4) */}
+                  {[0, 1, 2, 3].map((slotIdx) => {
+                    const imgSrc = previewImages[slotIdx + 1];
+                    return imgSrc ? (
+                      <div key={slotIdx} className="bg-surface-container-high rounded-xl overflow-hidden relative group">
+                        <img
+                          src={imgSrc}
+                          alt={`bike detail ${slotIdx + 1}`}
+                          className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div
+                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-primary/20 backdrop-blur-sm transition-opacity cursor-pointer"
+                          onClick={() => removeImage(slotIdx + 1)}
+                        >
+                          <span className="material-symbols-outlined text-white">delete</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-
-                  {/* Empty slots */}
-                  {Array.from({ length: Math.max(0, 2 - images.length) }).map((_, i) => (
-                    <div
-                      key={`empty-${i}`}
-                      className="bg-surface-container-high rounded-xl overflow-hidden relative group cursor-pointer"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-outline-variant/40">
-                        <span className="material-symbols-outlined text-outline">add</span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Always show 2 add slots at the end */}
-                  {images.length >= 2 && (
-                    <>
+                    ) : (
                       <div
+                        key={slotIdx}
                         className="bg-surface-container-high rounded-xl overflow-hidden relative group cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
                       >
@@ -278,26 +333,26 @@ export default function NewListing() {
                           <span className="material-symbols-outlined text-outline">add</span>
                         </div>
                       </div>
-                      <div
-                        className="bg-surface-container-high rounded-xl overflow-hidden relative group cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-outline-variant/40">
-                          <span className="material-symbols-outlined text-outline">add</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                    );
+                  })}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleAdditionalUpload}
+                  />
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Section 04: Provenance */}
+          {/* Section 03: Provenance */}
           <section id="details">
             <div className="flex flex-col md:flex-row gap-12">
               <div className="md:w-1/4">
-                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">04</span>
+                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">03</span>
                 <h2 className="font-headline font-bold uppercase text-xs tracking-widest text-primary">Provenance</h2>
               </div>
               <div className="md:w-3/4 space-y-8">
@@ -338,11 +393,11 @@ export default function NewListing() {
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">
-                      Usage History (KM)
+                      Usage History
                     </label>
                     <input
-                      name="usageKm"
-                      value={form.usageKm}
+                      name="usageHistory"
+                      value={form.usageHistory}
                       onChange={handleChange}
                       className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body rounded"
                       placeholder="~1,500 km"
@@ -366,11 +421,11 @@ export default function NewListing() {
             </div>
           </section>
 
-          {/* Section 05: Trust Program */}
+          {/* Section 04: Trust Program */}
           <section id="inspection">
             <div className="flex flex-col md:flex-row gap-12">
               <div className="md:w-1/4">
-                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">05</span>
+                <span className="block font-headline font-bold text-3xl text-on-surface tracking-tight mb-2">04</span>
                 <h2 className="font-headline font-bold uppercase text-xs tracking-widest text-primary">Trust Program</h2>
               </div>
               <div className="md:w-3/4">
@@ -423,24 +478,30 @@ export default function NewListing() {
           <footer className="pt-12 border-t border-outline-variant/10 flex justify-between items-center">
             <button
               type="button"
+              onClick={() => navigate('/seller/listings')}
               className="flex items-center gap-2 font-headline font-bold text-xs uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <span className="material-symbols-outlined text-sm">close</span>
               Discard Draft
             </button>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                className="px-10 py-5 bg-surface-container-highest text-on-surface font-headline font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-surface-container-low transition-colors"
-              >
-                Save as Draft
-              </button>
-              <button
-                type="submit"
-                className="px-12 py-5 bg-primary text-on-primary font-headline font-bold text-xs uppercase tracking-[0.2em] rounded-lg shadow-[0_20px_40px_rgba(168,49,0,0.25)] hover:bg-primary-dim transition-all active:scale-95"
-              >
-                Publish Listing
-              </button>
+            <div className="flex flex-col items-end gap-2">
+              {submitError && <p className="text-error text-xs font-bold">{submitError}</p>}
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  className="px-10 py-5 bg-surface-container-highest text-on-surface font-headline font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-surface-container-low transition-colors"
+                  disabled={submitLoading}
+                >
+                  Save as Draft
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitLoading}
+                  className="px-12 py-5 bg-primary text-on-primary font-headline font-bold text-xs uppercase tracking-[0.2em] rounded-lg shadow-[0_20px_40px_rgba(168,49,0,0.25)] hover:bg-primary-dim transition-all active:scale-95 disabled:opacity-60"
+                >
+                  {submitLoading ? 'Publishing...' : 'Publish Listing'}
+                </button>
+              </div>
             </div>
           </footer>
         </form>
