@@ -27,6 +27,30 @@ function SectionCard({ title, icon, children }) {
   );
 }
 
+function MsgBanner({ msg }) {
+  if (!msg.text) return null;
+  return (
+    <p className={`text-xs font-medium mt-2 ${msg.type === 'success' ? 'text-tertiary' : 'text-error'}`}>
+      {msg.text}
+    </p>
+  );
+}
+
+function InputField({ label, type = 'text', value, onChange, placeholder }) {
+  return (
+    <div>
+      <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1.5 font-bold">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none transition-all"
+      />
+    </div>
+  );
+}
+
 export default function UserProfile() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -144,30 +168,6 @@ export default function UserProfile() {
     } finally {
       setDeleteLoading(false);
     }
-  }
-
-  function MsgBanner({ msg }) {
-    if (!msg.text) return null;
-    return (
-      <p className={`text-xs font-medium mt-2 ${msg.type === 'success' ? 'text-tertiary' : 'text-error'}`}>
-        {msg.text}
-      </p>
-    );
-  }
-
-  function InputField({ label, type = 'text', value, onChange, placeholder }) {
-    return (
-      <div>
-        <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1.5 font-bold">{label}</label>
-        <input
-          type={type}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none transition-all"
-        />
-      </div>
-    );
   }
 
   return (

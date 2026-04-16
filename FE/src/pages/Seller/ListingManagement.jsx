@@ -48,8 +48,10 @@ export default function ListingManagement() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      // API may return array directly or wrapped in a property
-      setListings(Array.isArray(data) ? data : (data.listings ?? data.items ?? []));
+      const list = Array.isArray(data) ? data : (data.listings ?? data.items ?? []);
+      // Debug: log first item to inspect image field names
+      if (list.length > 0) console.log('[ListingManagement] sample listing keys:', Object.keys(list[0]), list[0]);
+      setListings(list);
     } catch {
       setError('Failed to load listings.');
     } finally {
@@ -269,7 +271,7 @@ export default function ListingManagement() {
             const year      = listing.year ?? '';
             const views     = listing.views ?? listing.viewCount ?? 0;
             const inspected = listing.requestInspection ?? listing.inspected ?? false;
-            const imgSrc    = listing.primaryImage ?? listing.primaryImageUrl ?? null;
+            const imgSrc    = listing.primaryImage ?? listing.primaryImageUrl ?? listing.imageUrl ?? listing.image ?? listing.thumbnail ?? listing.thumbnailUrl ?? null;
 
             return (
               <div

@@ -55,20 +55,21 @@ export default function NewListing() {
   const handlePrimaryUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const url = URL.createObjectURL(file);
     setPrimaryImageFile(file);
     setPreviewImages((prev) => {
       const next = [...prev];
-      next[0] = URL.createObjectURL(file);
+      next[0] = url;
       return next;
     });
   };
 
   const handleAdditionalUpload = (e) => {
     const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const urls = files.map((f) => URL.createObjectURL(f));
     setAdditionalFiles((prev) => [...prev, ...files]);
-    files.forEach((file) => {
-      setPreviewImages((prev) => [...prev, URL.createObjectURL(file)]);
-    });
+    setPreviewImages((prev) => [...prev, ...urls]);
   };
 
   const removeImage = (idx) => {
