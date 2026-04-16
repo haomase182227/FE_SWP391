@@ -1,355 +1,500 @@
+import React, { useCallback, useEffect, useState } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminTopBar from '../../components/AdminTopBar';
+import { useAuth } from '../Context/AuthContext';
 
-const ListingModeration = () => {
+const API_BASE = '/api/v1';
+const PAGE_SIZE = 10;
+
+const STATUS_BADGE = {
+  Pending:   'bg-orange-500/10 text-orange-600',
+  Approved:  'bg-tertiary/10 text-tertiary',
+  Rejected:  'bg-error/10 text-error',
+  PendingInspection: 'bg-blue-500/10 text-blue-600',
+};
+
+function formatPrice(p) {
+  return (p ?? 0).toLocaleString('vi-VN') + '₫';
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// ── Reusable table pagination ────────────────────────────────
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+  const pages = [];
+  if (totalPages <= 5) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (page > 3) pages.push('...');
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+  }
+  return (
+    <div className="px-8 py-5 border-t border-surface-container-low flex items-center justify-between">
+      <p className="text-xs text-on-surface-variant font-label uppercase tracking-widest">
+        Trang {page} / {totalPages}
+      </p>
+      <div className="flex items-center gap-2">
+        <button onClick={() => onChange(p => Math.max(1, p - 1))} disabled={page === 1}
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low disabled:opacity-40 transition-colors">
+          <span className="material-symbols-outlined text-sm">chevron_left</span>
+        </button>
+        {pages.map((p, i) => p === '...'
+          ? <span key={`e${i}`} className="px-1 text-on-surface-variant text-xs">...</span>
+          : <button key={p} onClick={() => onChange(p)}
+              className={`w-9 h-9 flex items-center justify-center rounded-lg font-bold text-xs transition-colors ${page === p ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 hover:bg-surface-container-low'}`}>
+              {p}
+            </button>
+        )}
+        <button onClick={() => onChange(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 hover:bg-surface-container-low disabled:opacity-40 transition-colors">
+          <span className="material-symbols-outlined text-sm">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function ListingModeration() {
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
+  // ── Pending table ────────────────────────────────────────────
+  const [pending, setPending]         = useState([]);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [pendingPages, setPendingPages] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [pendingLoading, setPendingLoading] = useState(false);
+
+  // ── All listings table ───────────────────────────────────────
+  const [all, setAll]           = useState([]);
+  const [allTotal, setAllTotal] = useState(0);
+  const [allPages, setAllPages] = useState(1);
+  const [allPage, setAllPage]   = useState(1);
+  const [allLoading, setAllLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('');
+
+  // ── Detail modal ─────────────────────────────────────────────
+  const [detail, setDetail]         = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // ── Action modal (approve / reject / approve-with-inspection) ─
+  const [actionModal, setActionModal] = useState(null);
+  // { listingId, type: 'approve'|'reject'|'inspection', title }
+  const [actionNote, setActionNote]   = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
+
+  // ── Fetch pending ────────────────────────────────────────────
+  const fetchPending = useCallback(async (p = 1) => {
+    setPendingLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/listings/pending?page=${p}&pageSize=${PAGE_SIZE}`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      // pending endpoint trả về array hoặc object tuỳ backend
+      if (Array.isArray(data)) {
+        setPending(data); setPendingTotal(data.length); setPendingPages(1);
+      } else {
+        setPending(data.items ?? data.listings ?? []);
+        setPendingTotal(data.totalCount ?? data.totalRecords ?? 0);
+        setPendingPages(data.totalPages ?? 1);
+      }
+    } catch { setPending([]); }
+    finally { setPendingLoading(false); }
+  }, [token]);
+
+  // ── Fetch all ────────────────────────────────────────────────
+  const fetchAll = useCallback(async (p = 1, status = '') => {
+    setAllLoading(true);
+    try {
+      const qs = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
+      if (status) qs.set('status', status);
+      const res = await fetch(`${API_BASE}/admin/listings?${qs}`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setAll(data.items ?? data.listings ?? []);
+      setAllTotal(data.totalCount ?? data.totalRecords ?? 0);
+      setAllPages(data.totalPages ?? 1);
+    } catch { setAll([]); }
+    finally { setAllLoading(false); }
+  }, [token]);
+
+  useEffect(() => { fetchPending(pendingPage); }, [pendingPage, fetchPending]);
+  useEffect(() => { fetchAll(allPage, filterStatus); }, [allPage, filterStatus, fetchAll]);
+
+  // ── Open detail ──────────────────────────────────────────────
+  async function openDetail(listingId) {
+    setDetailLoading(true);
+    setDetail(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/listings/${listingId}/detail`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setDetail(data);
+    } catch { setDetail(null); }
+    finally { setDetailLoading(false); }
+  }
+
+  // ── Submit action ────────────────────────────────────────────
+  async function submitAction() {
+    if (!actionModal) return;
+    setActionLoading(true);
+    setActionError('');
+    const { listingId, type } = actionModal;
+    const url = type === 'approve'
+      ? `${API_BASE}/admin/listings/${listingId}/approve`
+      : type === 'reject'
+        ? `${API_BASE}/admin/listings/${listingId}/reject`
+        : `${API_BASE}/admin/listings/${listingId}/approve-with-inspection`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(actionNote),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || `HTTP ${res.status}`);
+      }
+      setActionModal(null);
+      setActionNote('');
+      fetchPending(pendingPage);
+      fetchAll(allPage, filterStatus);
+    } catch (e) {
+      setActionError(e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  const ACTION_CONFIG = {
+    approve:    { label: 'Duyệt listing',          color: 'bg-tertiary text-white',  icon: 'check_circle' },
+    reject:     { label: 'Từ chối listing',         color: 'bg-error text-white',     icon: 'cancel' },
+    inspection: { label: 'Gửi kiểm định',           color: 'bg-blue-600 text-white',  icon: 'search' },
+  };
+
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
-      <AdminTopBar title="Moderation Queue" searchPlaceholder="Search Listings..." />
+      <AdminTopBar title="Listing Moderation" searchPlaceholder="Search listings..." />
 
-      {/* Main Content Area */}
-      <main className="ml-64 min-h-screen">
-        <div className="pt-24 px-12 pb-12">
-          {/* Filter Bar */}
-          <div className="mb-12 flex items-end justify-between">
+      <main className="ml-64 pt-16 p-10 space-y-10 min-h-screen">
+
+        {/* ── BẢNG 1: PENDING ── */}
+        <section>
+          <div className="flex items-end justify-between mb-4">
             <div>
-              <span className="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mb-2 block">
-                Moderation Workflow
-              </span>
-              <h2 className="font-headline text-4xl font-bold tracking-tight text-on-surface">
-                Pending Approval
+              <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
+                Chờ duyệt
               </h2>
-            </div>
-            <div className="flex gap-3">
-              <button className="px-6 py-2 bg-surface-container-high text-on-surface-variant font-label text-[10px] uppercase tracking-widest font-bold rounded-lg hover:bg-orange-100 transition-colors">
-                Urgent Only
-              </button>
-              <button className="px-6 py-2 bg-primary text-on-primary font-label text-[10px] uppercase tracking-widest font-bold rounded-lg hover:brightness-110 transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">download</span>
-                Export Global Data
-              </button>
+              <p className="text-xs text-on-surface-variant mt-1">
+                {pendingTotal} listing đang chờ xử lý
+              </p>
             </div>
           </div>
 
-          {/* Bento Queue Grid */}
-          <div className="grid grid-cols-12 gap-8">
-            {/* Listing Card 1 (Large Featured Style) */}
-            <div
-              className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col md:flex-row group"
-              style={{ boxShadow: '0 10px 30px -15px rgba(78, 33, 32, 0.1)' }}
-            >
-              <div className="w-full md:w-1/2 relative h-80 md:h-auto overflow-hidden">
-                <img
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  data-alt="high-end carbon fiber road bike in matte black leaning against a white studio background with dramatic lighting highlights"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiB6zR0XYQuEwjrGU-YMC96hO94PeEWtSRnNVQI8ggEy1-TM2eUKULsSAcASmByLez5DL3v63UiPT3LU6KPuUnexs8q0E_J8gE3TxHUagQZhXUaOqdi7nHQAaCqPo1UTzA9wraMzzN434fbrAOK0WnDxv4p6uaUVxI9Onkc-Y2ZMpoioL-qrkd4AVl8ao7OrQ3Iv4_of2gCpzzQEQxOfhya-_eTzRndwYgCXHHi8aobz7vaLEuF9Iv7it8gvGRlCU_CULG6-K-cfCO"
-                />
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <span className="px-3 py-1 bg-secondary text-on-secondary font-label text-[8px] uppercase tracking-widest font-bold rounded-full">
-                    New Arrival
-                  </span>
-                  <span className="px-3 py-1 bg-tertiary text-on-tertiary font-label text-[8px] uppercase tracking-widest font-bold rounded-full flex items-center gap-1">
-                    <span
-                      className="material-symbols-outlined text-[10px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      verified
-                    </span>{' '}
-                    Verified Seller
-                  </span>
-                </div>
-              </div>
-              <div className="flex-1 p-8 flex flex-col">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface uppercase italic">
-                      S-Works Tarmac SL7
-                    </h3>
-                    <p className="text-on-surface-variant font-label text-sm">
-                      Listed by: <span className="text-secondary font-bold">Julian Alaphilippe</span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-headline text-2xl font-black text-primary">$12,500</span>
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">
-                      Fixed Price
-                    </p>
-                  </div>
-                </div>
-                {/* Spec-Grid Asymmetric Layout */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8">
-                  <div className="flex flex-col border-l border-primary/20 pl-4">
-                    <span className="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1 font-label">
-                      Frame Material
-                    </span>
-                    <span className="font-headline text-xs font-bold text-on-surface uppercase">
-                      Fact 12r Carbon
-                    </span>
-                  </div>
-                  <div className="flex flex-col border-l border-primary/20 pl-4">
-                    <span className="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1 font-label">
-                      Weight
-                    </span>
-                    <span className="font-headline text-xs font-bold text-on-surface uppercase">
-                      6.8kg (Pro Setup)
-                    </span>
-                  </div>
-                  <div className="flex flex-col border-l border-primary/20 pl-4">
-                    <span className="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1 font-label">
-                      Groupset
-                    </span>
-                    <span className="font-headline text-xs font-bold text-on-surface uppercase">
-                      SRAM Red eTap AXS
-                    </span>
-                  </div>
-                  <div className="flex flex-col border-l border-primary/20 pl-4">
-                    <span className="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1 font-label">
-                      Condition
-                    </span>
-                    <span className="font-headline text-xs font-bold text-on-surface uppercase">
-                      Near Mint
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-auto pt-6 flex gap-3">
-                  <button className="flex-1 py-3 bg-primary text-on-primary font-label text-[10px] uppercase tracking-widest font-bold rounded-lg hover:brightness-110 transition-all">
-                    Approve Listing
-                  </button>
-                  <button className="px-4 py-3 bg-surface-container-high text-on-surface-variant font-label text-[10px] uppercase tracking-widest font-bold rounded-lg hover:bg-error-container/10 hover:text-error transition-colors">
-                    Reject
-                  </button>
-                  <button className="px-4 py-3 bg-surface-container-high text-on-surface-variant font-label text-[10px] uppercase tracking-widest font-bold rounded-lg hover:bg-secondary-container/20 hover:text-secondary transition-colors material-symbols-outlined">
-                    engineering
-                  </button>
-                </div>
-              </div>
+          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-low/50">
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Listing</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Giá</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Ngày tạo</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container-low">
+                  {pendingLoading && (
+                    <tr><td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant text-sm">
+                      <span className="material-symbols-outlined animate-spin text-2xl block mx-auto mb-2">progress_activity</span>Đang tải...
+                    </td></tr>
+                  )}
+                  {!pendingLoading && pending.length === 0 && (
+                    <tr><td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant text-sm">
+                      Không có listing nào đang chờ duyệt.
+                    </td></tr>
+                  )}
+                  {!pendingLoading && pending.map(item => (
+                    <tr key={item.id} className="hover:bg-primary-container/5 transition-colors">
+                      {/* Listing info */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl
+                            ? <img src={item.imageUrl} alt={item.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                            : <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                                <span className="material-symbols-outlined text-outline-variant">directions_bike</span>
+                              </div>
+                          }
+                          <div>
+                            <p className="font-headline text-sm font-bold text-on-surface line-clamp-1">{item.title}</p>
+                            <p className="text-[10px] text-on-surface-variant">ID #{item.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-headline text-sm font-bold text-on-surface">{formatPrice(item.price)}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-xs text-on-surface-variant">{formatDate(item.createdAt)}</p>
+                      </td>
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Chi tiết */}
+                          <button onClick={() => openDetail(item.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors" title="Xem chi tiết">
+                            <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
+                          </button>
+                          {/* Duyệt */}
+                          <button onClick={() => { setActionModal({ listingId: item.id, type: 'approve', title: item.title }); setActionNote(''); setActionError(''); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-tertiary/10 transition-colors" title="Duyệt">
+                            <span className="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                          </button>
+                          {/* Gửi kiểm định */}
+                          <button onClick={() => { setActionModal({ listingId: item.id, type: 'inspection', title: item.title }); setActionNote(''); setActionError(''); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-500/10 transition-colors" title="Gửi kiểm định">
+                            <span className="material-symbols-outlined text-blue-600 text-lg">search</span>
+                          </button>
+                          {/* Từ chối */}
+                          <button onClick={() => { setActionModal({ listingId: item.id, type: 'reject', title: item.title }); setActionNote(''); setActionError(''); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 transition-colors" title="Từ chối">
+                            <span className="material-symbols-outlined text-error text-lg">cancel</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            <Pagination page={pendingPage} totalPages={pendingPages} onChange={setPendingPage} />
+          </div>
+        </section>
 
-            {/* Listing Statistics (Bento Element) */}
-            <div
-              className="col-span-12 lg:col-span-4 bg-primary text-on-primary p-8 rounded-xl flex flex-col justify-between relative overflow-hidden"
-              style={{ boxShadow: '0 10px 30px -15px rgba(78, 33, 32, 0.1)' }}
-            >
-              <div className="absolute -right-12 -bottom-12 opacity-10">
-                <span
-                  className="material-symbols-outlined text-[200px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  speed
-                </span>
-              </div>
-              <div>
-                <h4 className="font-headline text-3xl font-bold tracking-tighter uppercase italic leading-none mb-2">
-                  Queue Velocity
-                </h4>
-                <p className="text-[10px] font-label uppercase tracking-[0.2em] opacity-80">
-                  24h Moderation KPI
-                </p>
-              </div>
-              <div className="space-y-4 my-8">
-                <div className="flex justify-between items-center border-b border-white/20 pb-2">
-                  <span className="text-xs font-label">Pending Reviews</span>
-                  <span className="font-headline text-2xl font-bold">42</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/20 pb-2">
-                  <span className="text-xs font-label">Avg. Wait Time</span>
-                  <span className="font-headline text-2xl font-bold">1.4h</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-label">Trust Score Avg</span>
-                  <span className="font-headline text-2xl font-bold">98%</span>
-                </div>
-              </div>
-              <button className="w-full py-4 bg-white text-primary font-label text-[10px] uppercase tracking-widest font-black rounded-lg hover:bg-orange-50 transition-colors z-10 relative">
-                View All Analytics
-              </button>
+        {/* ── BẢNG 2: TẤT CẢ LISTING ── */}
+        <section>
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
+                Tất cả listing
+              </h2>
+              <p className="text-xs text-on-surface-variant mt-1">{allTotal} listing</p>
             </div>
+            {/* Filter by status */}
+            <div className="flex items-center gap-2">
+              {['', 'Pending', 'Approved', 'Rejected', 'PendingInspection'].map(s => (
+                <button key={s} onClick={() => { setFilterStatus(s); setAllPage(1); }}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${filterStatus === s ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low'}`}>
+                  {s || 'Tất cả'}
+                </button>
+              ))}
+            </div>
+          </div>
 
-            {/* Listing Card 2 (Standard Grid) */}
-            <div
-              className="col-span-12 md:col-span-6 lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 group flex flex-col"
-              style={{ boxShadow: '0 10px 30px -15px rgba(78, 33, 32, 0.1)' }}
-            >
-              <div className="relative h-48 rounded-lg overflow-hidden mb-6">
-                <img
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  data-alt="professional photography of a gravel bike with wide tires on a dusty trail at sunset, focus on the textured frame"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYoLrVaqQ2HLdM1K9LNm3pS_OYb3RwT6<ctrl42>_LD7PzBQRrVBB_P5ld-_9b758g51SQDcc75c1-3EzljIfLOIGXugHb7vpoFR7_749Cm7gn0blGsyt1Un8oQZn_JGRQpz_-4wV-Xf2jIRCIgJPNEVK7T_jVBvFetGTSsxfitzTJZxoX_451bhsUYXX64WngkCdY6yP_Xqh9d3n4dWciydubScDwiApBflL1j9rigw4cdyEi0oYmSrsJ676S02hPCInQj-lVhcVc62-"
-                />
-                <div className="absolute bottom-3 left-3 px-2 py-1 bg-surface-container-lowest/90 backdrop-blur rounded-md">
-                  <span className="text-[10px] font-headline font-black text-on-surface uppercase">
-                    $4,200
-                  </span>
-                </div>
+          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-low/50">
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Listing</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Giá</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Trạng thái</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Ngày tạo</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Chi tiết</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container-low">
+                  {allLoading && (
+                    <tr><td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant text-sm">
+                      <span className="material-symbols-outlined animate-spin text-2xl block mx-auto mb-2">progress_activity</span>Đang tải...
+                    </td></tr>
+                  )}
+                  {!allLoading && all.length === 0 && (
+                    <tr><td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant text-sm">Không có listing nào.</td></tr>
+                  )}
+                  {!allLoading && all.map(item => (
+                    <tr key={item.id} className="hover:bg-primary-container/5 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl
+                            ? <img src={item.imageUrl} alt={item.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                            : <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                                <span className="material-symbols-outlined text-outline-variant">directions_bike</span>
+                              </div>
+                          }
+                          <div>
+                            <p className="font-headline text-sm font-bold text-on-surface line-clamp-1">{item.title}</p>
+                            <p className="text-[10px] text-on-surface-variant">ID #{item.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-headline text-sm font-bold text-on-surface">{formatPrice(item.price)}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[item.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-xs text-on-surface-variant">{formatDate(item.createdAt)}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => openDetail(item.id)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors" title="Xem chi tiết">
+                          <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={allPage} totalPages={allPages} onChange={setAllPage} />
+          </div>
+        </section>
+      </main>
+
+      {/* ── DETAIL MODAL ── */}
+      {(detailLoading || detail) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setDetail(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl border border-white/40" onClick={e => e.stopPropagation()}>
+            {detailLoading && (
+              <div className="p-12 text-center text-on-surface-variant">
+                <span className="material-symbols-outlined animate-spin text-3xl block mx-auto mb-2">progress_activity</span>Đang tải...
               </div>
-              <div className="mb-6">
-                <h3 className="font-headline text-lg font-bold tracking-tight text-on-surface uppercase italic">
-                  Canyon Grizl CF SL
-                </h3>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">
-                  Listed by: Mark Cavendish
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-8">
+            )}
+            {!detailLoading && detail && (() => {
+              const l = detail.listing;
+              const coverImg = l.images?.find(i => i.isCover)?.imageUrl ?? l.images?.[0]?.imageUrl;
+              return (
                 <div>
-                  <span className="text-[8px] uppercase tracking-widest text-on-surface-variant font-label block">
-                    Size
-                  </span>
-                  <span className="text-[11px] font-bold text-on-surface">54cm (Medium)</span>
-                </div>
-                <div>
-                  <span className="text-[8px] uppercase tracking-widest text-on-surface-variant font-label block">
-                    Mileage
-                  </span>
-                  <span className="text-[11px] font-bold text-on-surface">450km</span>
-                </div>
-              </div>
-              <div className="mt-auto flex gap-2">
-                <button className="flex-1 py-2 bg-primary text-on-primary font-label text-[9px] uppercase tracking-widest font-bold rounded hover:brightness-110 transition-all">
-                  Approve
-                </button>
-                <button className="px-3 py-2 bg-surface-container-high text-on-surface-variant font-label text-[9px] uppercase tracking-widest font-bold rounded hover:bg-error-container/10 hover:text-error transition-colors">
-                  Reject
-                </button>
-              </div>
-            </div>
+                  {coverImg && <img src={coverImg} alt={l.title} className="w-full h-56 object-cover rounded-t-2xl" />}
+                  <div className="p-8 space-y-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter">{l.title}</h3>
+                        <p className="text-sm text-on-surface-variant mt-1">ID #{l.id}</p>
+                      </div>
+                      <p className="font-headline text-xl font-bold text-primary flex-shrink-0">{formatPrice(l.price)}</p>
+                    </div>
 
-            {/* Listing Card 3 (Standard Grid) */}
-            <div
-              className="col-span-12 md:col-span-6 lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 group flex flex-col"
-              style={{ boxShadow: '0 10px 30px -15px rgba(78, 33, 32, 0.1)' }}
-            >
-              <div className="relative h-48 rounded-lg overflow-hidden mb-6">
-                <img
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  data-alt="vintage restoration of a colnago road bike with chrome accents and celeste green paint, set against a concrete wall"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmuJFIMGbRDQ38x7SlKUKercLvtFxvhZWsvKvf2zbIz1AJTuhC4ifyZAYdfGjhFEUW_80fh96Oz456KW0xo3kiJGFzVakWykHNR9c8O2bz-EgYfOk353a7853tnLZmzspE5YRRfjHNujBEK71YbensWCOBeNlITAlkt337IF__byUc8oFd7_bLH-pzvyJqbxNAGY-JF2edi6az-lchzm1WByIMHBx1p_Fo8fSt6BL61okT7p0V9K3Q0fZThEj-mIKEoDatld7H46Qa"
-                />
-                <div className="absolute bottom-3 left-3 px-2 py-1 bg-surface-container-lowest/90 backdrop-blur rounded-md">
-                  <span className="text-[10px] font-headline font-black text-on-surface uppercase">
-                    $2,850
-                  </span>
-                </div>
-              </div>
-              <div className="mb-6">
-                <h3 className="font-headline text-lg font-bold tracking-tight text-on-surface uppercase italic">
-                  Colnago Master Vintage
-                </h3>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">
-                  Listed by: Eddy Merckx
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div>
-                  <span className="text-[8px] uppercase tracking-widest text-on-surface-variant font-label block">
-                    Frame
-                  </span>
-                  <span className="text-[11px] font-bold text-on-surface">Steel Lugged</span>
-                </div>
-                <div>
-                  <span className="text-[8px] uppercase tracking-widest text-on-surface-variant font-label block">
-                    Year
-                  </span>
-                  <span className="text-[11px] font-bold text-on-surface">1988</span>
-                </div>
-              </div>
-              <div className="mt-auto flex gap-2">
-                <button className="flex-1 py-2 bg-primary text-on-primary font-label text-[9px] uppercase tracking-widest font-bold rounded hover:brightness-110 transition-all">
-                  Approve
-                </button>
-                <button className="px-3 py-2 bg-surface-container-high text-on-surface-variant font-label text-[9px] uppercase tracking-widest font-bold rounded hover:bg-error-container/10 hover:text-error transition-colors">
-                  Reject
-                </button>
-              </div>
-            </div>
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[l.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                        {typeof l.status === 'number' ? ['Pending','Approved','Rejected','PendingInspection'][l.status] ?? l.status : l.status}
+                      </span>
+                      {detail.hasInspectionRequest && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-blue-500/10 text-blue-600">Có yêu cầu kiểm định</span>
+                      )}
+                      {detail.inspectionPassed && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-tertiary/10 text-tertiary">Đã qua kiểm định</span>
+                      )}
+                    </div>
 
-            {/* Modals Overlay (Conceptual Placement for design demo) */}
-            <div className="col-span-12 lg:col-span-4 bg-surface-container-low rounded-xl p-8 border border-outline-variant/10">
-              <div className="flex items-center gap-3 mb-6">
-                <span
-                  className="material-symbols-outlined text-error"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  report
-                </span>
-                <h4 className="font-headline text-sm font-bold uppercase tracking-tight">
-                  Rejection Protocol
-                </h4>
-              </div>
-              <p className="text-xs text-on-surface-variant mb-6 leading-relaxed">
-                Select a mandatory reason for listing rejection. This will be sent as an official notification to the seller.
-              </p>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 p-3 bg-surface-container-lowest rounded-lg cursor-pointer hover:bg-primary/5 transition-colors">
-                  <input
-                    className="text-primary focus:ring-primary h-3 w-3 border-outline-variant"
-                    name="reason"
-                    type="radio"
-                  />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">
-                    Image Quality
-                  </span>
-                </label>
-                <label className="flex items-center gap-3 p-3 bg-surface-container-lowest rounded-lg cursor-pointer hover:bg-primary/5 transition-colors">
-                  <input
-                    className="text-primary focus:ring-primary h-3 w-3 border-outline-variant"
-                    name="reason"
-                    type="radio"
-                  />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">
-                    Suspicious Pricing
-                  </span>
-                </label>
-                <label className="flex items-center gap-3 p-3 bg-surface-container-lowest rounded-lg cursor-pointer hover:bg-primary/5 transition-colors">
-                  <input
-                    defaultChecked
-                    className="text-primary focus:ring-primary h-3 w-3 border-outline-variant"
-                    name="reason"
-                    type="radio"
-                  />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">
-                    Incomplete Specs
-                  </span>
-                </label>
-              </div>
-              <textarea
-                className="w-full mt-4 bg-surface-container-lowest border-none rounded-lg text-xs p-4 focus:ring-1 focus:ring-primary/30 h-24"
-                placeholder="Optional notes for the seller..."
-              ></textarea>
-              <button className="w-full mt-4 py-3 bg-error text-on-error font-label text-[10px] uppercase tracking-widest font-bold rounded-lg hover:brightness-110 transition-all">
-                Confirm Rejection
-              </button>
-            </div>
+                    {/* Info grid */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {[
+                        ['Frame Size', l.frameSize],
+                        ['Material', l.material],
+                        ['Gear Count', l.gearCount],
+                        ['Ngày tạo', formatDate(l.createdAt)],
+                      ].map(([k, v]) => (
+                        <div key={k}>
+                          <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
+                          <p className="font-medium text-on-surface">{v || '—'}</p>
+                        </div>
+                      ))}
+                    </div>
 
-            {/* Inspection Request Box */}
-            <div className="col-span-12 lg:col-span-8 bg-secondary-container/30 rounded-xl p-8 flex items-center gap-8 border border-secondary/10">
-              <div className="h-20 w-20 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0">
-                <span
-                  className="material-symbols-outlined text-4xl"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  engineering
-                </span>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-headline text-xl font-bold text-on-secondary-container uppercase italic">
-                  Inspection Pipeline
-                </h4>
-                <p className="text-sm text-on-secondary-container/70 max-w-lg mt-1">
-                  High-value listings over $8,000 can be flagged for physical inspection by our certified Kinetic Technicians before going live.
-                </p>
-              </div>
-              <div className="shrink-0">
-                <button className="px-8 py-4 bg-secondary text-on-secondary font-label text-[10px] uppercase tracking-widest font-black rounded-lg hover:shadow-lg transition-all">
-                  Assign To Inspector
-                </button>
-              </div>
-            </div>
+                    {/* Attributes */}
+                    {l.attributes?.length > 0 && (
+                      <div>
+                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3">Thuộc tính</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {l.attributes.map(a => (
+                            <div key={a.id} className="bg-surface-container-low rounded-lg px-3 py-2">
+                              <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{a.key}</p>
+                              <p className="text-sm font-medium text-on-surface">{a.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Description */}
+                    {l.description && (
+                      <div>
+                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</p>
+                        <p className="text-sm text-on-surface-variant leading-relaxed">{l.description}</p>
+                      </div>
+                    )}
+
+                    <button onClick={() => setDetail(null)}
+                      className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                      Đóng
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
-      </main>
+      )}
+
+      {/* ── ACTION MODAL ── */}
+      {actionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40">
+            {(() => {
+              const cfg = ACTION_CONFIG[actionModal.type];
+              return (
+                <>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${cfg.color} opacity-90`}>
+                    <span className="material-symbols-outlined text-2xl">{cfg.icon}</span>
+                  </div>
+                  <h3 className="font-headline text-xl font-bold text-on-surface mb-1">{cfg.label}</h3>
+                  <p className="text-sm text-on-surface-variant mb-6 line-clamp-2">{actionModal.title}</p>
+
+                  <div className="mb-4">
+                    <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">
+                      {actionModal.type === 'reject' ? 'Lý do từ chối *' : 'Ghi chú (tuỳ chọn)'}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={actionNote}
+                      onChange={e => setActionNote(e.target.value)}
+                      placeholder={actionModal.type === 'reject' ? 'Nhập lý do...' : 'Nhập ghi chú...'}
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none resize-none transition-all"
+                    />
+                  </div>
+
+                  {actionError && <p className="text-error text-xs mb-4">{actionError}</p>}
+
+                  <div className="flex gap-3">
+                    <button onClick={() => setActionModal(null)}
+                      className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                      Hủy
+                    </button>
+                    <button onClick={submitAction} disabled={actionLoading}
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-opacity disabled:opacity-60 ${cfg.color}`}>
+                      {actionLoading ? 'Đang xử lý...' : 'Xác nhận'}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default ListingModeration;
+}
