@@ -5,6 +5,7 @@ import TopNavBar from '../../components/TopNavBar';
 export default function Order() {
   const navigate = useNavigate();
   const [activeStatus, setActiveStatus] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [orders, setOrders] = useState([
     {
       id: 1,
@@ -341,16 +342,11 @@ export default function Order() {
                         </div>
                       )}
                       <button
+                        onClick={() => setSelectedOrder(order)}
                         title="View Details"
                         className="p-2 text-on-surface hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                       >
                         <span className="material-symbols-outlined text-[20px]">visibility</span>
-                      </button>
-                      <button
-                        title="Download"
-                        className="p-2 text-on-surface hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">download</span>
                       </button>
                     </div>
                   </div>
@@ -429,11 +425,8 @@ export default function Order() {
                           Ordered: {new Date(order.orderDate).toLocaleDateString('vi-VN')}
                         </p>
                         <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 text-on-surface hover:text-primary rounded-lg">
+                          <button onClick={() => setSelectedOrder(order)} className="p-2 text-on-surface hover:text-primary rounded-lg">
                             <span className="material-symbols-outlined">visibility</span>
-                          </button>
-                          <button className="p-2 text-on-surface hover:text-primary rounded-lg">
-                            <span className="material-symbols-outlined">download</span>
                           </button>
                         </div>
                       </div>
@@ -539,6 +532,142 @@ export default function Order() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Order Details</p>
+                <h2 className="font-headline text-2xl font-bold text-on-surface mt-1">Order #{selectedOrder.id}</h2>
+              </div>
+            </div>
+
+            {/* Product Image and Basic Info */}
+            <div className="flex gap-6">
+              <div className="w-40 h-40 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
+                <img
+                  alt={selectedOrder.productName}
+                  className="w-full h-full object-cover"
+                  src={selectedOrder.image}
+                />
+              </div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Brand</p>
+                  <p className="text-lg font-bold text-on-surface">{selectedOrder.brand}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Product Name</p>
+                  <p className="text-lg font-bold text-on-surface">{selectedOrder.productName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Price</p>
+                  <p className="text-2xl font-bold text-primary">${selectedOrder.price.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-outline-variant/20"></div>
+
+            {/* Order Status and Dates */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Status</p>
+                <div className="mt-2">
+                  {selectedOrder.status === 'pending' && (
+                    <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">schedule</span>
+                      pending
+                    </span>
+                  )}
+                  {selectedOrder.status === 'received' && (
+                    <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                      received
+                    </span>
+                  )}
+                  {selectedOrder.status === 'canceled' && (
+                    <span className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">cancel</span>
+                      canceled
+                    </span>
+                  )}
+                  {(selectedOrder.status === 'cancel' || selectedOrder.status === 'accept') && (
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          confirmReceiveOrder(selectedOrder.id);
+                          setSelectedOrder(null);
+                        }}
+                        className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1 hover:opacity-90 transition-all active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        accept
+                      </button>
+                      <button
+                        onClick={() => {
+                          confirmCancelOrder(selectedOrder.id);
+                          setSelectedOrder(null);
+                        }}
+                        className="bg-error text-on-error text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full inline-flex items-center gap-1 hover:opacity-90 transition-all active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">cancel</span>
+                        cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Order Date</p>
+                <p className="text-base font-bold text-on-surface mt-2">{new Date(selectedOrder.orderDate).toLocaleDateString('vi-VN')}</p>
+              </div>
+              {selectedOrder.deliveryDate && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Delivery Date</p>
+                  <p className="text-base font-bold text-on-surface mt-2">{new Date(selectedOrder.deliveryDate).toLocaleDateString('vi-VN')}</p>
+                </div>
+              )}
+              {selectedOrder.cancelReason && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Cancel Reason</p>
+                  <p className="text-base font-bold text-error mt-2">{selectedOrder.cancelReason}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-outline-variant/20"></div>
+
+            {/* Specifications */}
+            {selectedOrder.specifications && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-3">Specifications</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.entries(selectedOrder.specifications).map(([key, value]) => (
+                    <div key={key} className="bg-surface-container-low rounded-lg p-3">
+                      <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{key}</p>
+                      <p className="text-sm font-bold text-on-surface mt-1">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t border-outline-variant/20">
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="flex-1 px-4 py-2.5 bg-surface-container-high text-on-surface font-bold uppercase tracking-tight rounded-lg hover:bg-surface-container-high/80 transition-all"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

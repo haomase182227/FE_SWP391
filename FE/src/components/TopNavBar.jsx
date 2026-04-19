@@ -4,6 +4,7 @@ import { useAuth } from '../pages/Context/AuthContext';
 
 export default function TopNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [walletBalance, setWalletBalance] = useState(null);
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
@@ -42,8 +43,8 @@ export default function TopNavBar() {
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(168,49,0,0.04)]">
-      <div className="flex justify-between items-center px-8 h-20 w-full max-w-screen-2xl mx-auto font-['Space_Grotesk'] tracking-tight">
-        <div className="flex items-center gap-12">
+      <div className="flex items-center px-8 h-20 w-full max-w-screen-2xl mx-auto font-['Space_Grotesk'] tracking-tight gap-6">
+        <div className="flex items-center gap-12 flex-shrink-0">
           <Link to="/" className="text-2xl font-bold italic tracking-tighter text-orange-700">
             The Kinetic Editorial
           </Link>
@@ -51,18 +52,28 @@ export default function TopNavBar() {
             <Link to="/" className="text-orange-700 font-bold border-b-2 border-orange-700 transition-colors duration-300">
               Marketplace
             </Link>
-            <Link to="/compare" className="text-stone-600 font-medium hover:text-orange-600 transition-colors duration-300">
-              Compare
-            </Link>
-            <Link to="/feed" className="text-stone-600 font-medium hover:text-orange-600 transition-colors duration-300">
-              Feed
-            </Link>
             <Link to="/support" className="text-stone-600 font-medium hover:text-orange-600 transition-colors duration-300">
               Support
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-6">
+        {/* Search Input */}
+        <div className="hidden md:flex max-w-lg flex-1 items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg hover:border-orange-300 transition-colors">
+          <span className="material-symbols-outlined text-orange-600 flex-shrink-0" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20"}}>search</span>
+          <input
+            type="text"
+            placeholder="Title"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && searchQuery.trim()) {
+                navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+              }
+            }}
+            className="outline-none bg-orange-50 px-2 py-1 text-sm text-stone-700 placeholder-gray-600 font-medium flex-1"
+          />
+        </div>
+        <div className="flex items-center gap-6 flex-shrink-0 ml-auto">
           {/* Wallet Balance Integration */}
           {isAuthenticated && walletBalance !== null && (
             <Link to="/wallet" className="hidden md:flex flex-col items-end px-4 border-r border-outline-variant/20 hover:opacity-90 transition-opacity">
