@@ -1,8 +1,68 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './Context/AuthContext';
+
+const API_BASE = '/api/v1';
+const PAGE_SIZE = 8;
 
 export default function Home() {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
+  const [listings, setListings]     = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage]             = useState(1);
+  const [loading, setLoading]       = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState({}); // { [listingId]: bool }
+  const [wishlistDone, setWishlistDone]       = useState({}); // { [listingId]: bool }
+
+  const fetchListings = useCallback(async (p = 1, append = false) => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/listings?Page=${p}&PageSize=${PAGE_SIZE}`,
+        { headers: { accept: '*/*' } }
+      );
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const items = data.items ?? [];
+      setTotalCount(data.totalCount ?? 0);
+      setListings(prev => append ? [...prev, ...items] : items);
+    } catch {
+      // silently fail — keep existing data
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchListings(1, false); }, [fetchListings]);
+
+  async function handleWishlist(e, listingId) {
+    e.stopPropagation();
+    if (!token) { navigate('/auth'); return; }
+    if (wishlistDone[listingId] || wishlistLoading[listingId]) return;
+    setWishlistLoading(prev => ({ ...prev, [listingId]: true }));
+    try {
+      await fetch(`${API_BASE}/buyer/Wishlist/${listingId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setWishlistDone(prev => ({ ...prev, [listingId]: true }));
+    } catch {
+      // ignore
+    } finally {
+      setWishlistLoading(prev => ({ ...prev, [listingId]: false }));
+    }
+  }
+
+  function handleLoadMore() {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchListings(nextPage, true);
+  }
+
+  const hasMore = listings.length < totalCount;
   return (
     <main className="pt-20">
       {/* Hero Section */}
@@ -113,7 +173,7 @@ export default function Home() {
           <div className="flex justify-between items-end">
             <div className="space-y-1">
               <h2 className="font-headline text-3xl font-bold tracking-tight">Available Inventory</h2>
-              <p className="text-on-surface-variant text-sm">Showing 128 high-performance machines ready for delivery.</p>
+              <p className="text-on-surface-variant text-sm">Showing {listings.length} of {totalCount} listings.</p>
             </div>
             <div className="flex items-center gap-4 text-sm font-bold">
               <span className="text-on-surface-variant">Sort By:</span>
@@ -123,167 +183,96 @@ export default function Home() {
           
           {/* Bento Grid for Featured/Standard items */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {/* Bike Card 1 (Premium Focus) */}
-            <div onClick={() => navigate('/bike/1')} className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer">
-              <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  alt="Bike 1" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRkQsMPGOc6gqi3HjMeFMCeAJDh-sz0JfKU80UpWOF9ELAPUWz0-8hTUGPvpKbwvpPLf1jJNQ45tixiDP8FrzzV8RVBUKBdJiYzqEc0i--NKPo2R_cGVelBR_rcIkyF53lR_Z9EMh3kt7w0YRdq50syMPXcVtSN-hGnnRZrqeNIpWDlWQ56kyiA21tiBh0FuSl67dgASYjXcRvLDVw7OjDieOkjiH3l5_--uQ3AR_OyFv89R0how7V7zLx2P8P66VjEWdNVxUNmnu5"
-                />
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
-                    Đã kiểm định
-                  </span>
-                  <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                    Inspected
-                  </span>
-                </div>
-                <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center bg-white/40 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-primary transition-all">
-                  <span className="material-symbols-outlined">favorite</span>
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <div className="flex justify-between items-start">
-                    <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Specialized</span>
-                    <span className="font-headline font-bold text-lg text-primary">$12,400</span>
-                  </div>
-                  <h3 className="font-headline text-xl font-bold tracking-tight">S-Works Tarmac SL8</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/10">
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Frame</p>
-                    <p className="text-xs font-bold">Fact 12r Carbon</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Groupset</p>
-                    <p className="text-xs font-bold">Dura-Ace Di2</p>
+            {loading && listings.length === 0 && (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow animate-pulse">
+                  <div className="aspect-[4/3] bg-surface-container-high" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-3 bg-surface-container-high rounded w-1/3" />
+                    <div className="h-5 bg-surface-container-high rounded w-2/3" />
                   </div>
                 </div>
-              </div>
-            </div>
+              ))
+            )}
+            {listings.map((bike) => (
+              <div
+                key={bike.id}
+                onClick={() => navigate(`/bike/${bike.id}`)}
+                className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer"
+              >
+                <div className="aspect-[4/3] overflow-hidden relative">
+                  {bike.imageUrl ? (
+                    <img
+                      src={bike.imageUrl}
+                      alt={bike.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
+                      <span className="material-symbols-outlined text-5xl text-on-surface-variant/20">directions_bike</span>
+                    </div>
+                  )}
 
-            {/* Bike Card 2 */}
-            <div className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer">
-              <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  alt="Bike 2" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw_lBeAYF9Rl_Bv1bjYgbrsLKNuEo76Yvve-XWw4MLhn1-mBSqXRq_GhUZarPRNT0AcnLGN293DqOLQ9g68Cikba5bAtYFZCdpTO1EI9yc8UyrXVKChoRoaMhqntjcy_TJZbhXXAhDhI6f6G5MBvlkHkhqNd8oYI2FvT2kOjTQoHFx_g0CNNz97HB1emhD3vHIdyhYl8Zw3m7Y4b5utzQ-6YqGaYtjUU2lx779qZ4r-dovDYiRa6Uon9Mzicsy06IarRkNKCz3ho0k"
-                />
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
-                    Đã kiểm định
-                  </span>
-                </div>
-                <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center bg-white/40 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-primary transition-all">
-                  <span className="material-symbols-outlined">favorite</span>
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <div className="flex justify-between items-start">
-                    <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Pinarello</span>
-                    <span className="font-headline font-bold text-lg text-primary">$14,500</span>
-                  </div>
-                  <h3 className="font-headline text-xl font-bold tracking-tight">Dogma F Red Etap</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/10">
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Weight</p>
-                    <p className="text-xs font-bold">6.8kg (Size 54)</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Wheels</p>
-                    <p className="text-xs font-bold">Princeton Peak</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  {/* Verified badge */}
+                  {bike.isVerified && (
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                        Đã kiểm định
+                      </span>
+                    </div>
+                  )}
 
-            {/* Bike Card 3 */}
-            <div className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer">
-              <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  alt="Bike 3" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJcR1Hm_kuSZEWMwrNCE7xkGc1yzORhldlHpWlzvYBKs01LSyrBA6BvAYH0pXwW18KUOWPB2Mj1wpu884uX0upNGYnXt5IwQjnlNUpfvf45IqL8ImBxVfxQ7iCe4WM_irct13LTouRZjoYt7H5Y3c1CdqcvRBLTF9PaUUT995CTv6r0Z41MURnNlM6DIKZhNMsFhwe9vsS4pOaoRTIkcsvKJP-n4rS4jTYmfkvepwIDQqaG7jXvvvdYhwz7IRGs1N2XygqwDo9lm7l"
-                />
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                    Inspected
-                  </span>
+                  {/* Wishlist button */}
+                  <button
+                    onClick={(e) => handleWishlist(e, bike.id)}
+                    className={`absolute top-4 right-4 h-10 w-10 flex items-center justify-center backdrop-blur-md rounded-full transition-all
+                      ${wishlistDone[bike.id]
+                        ? 'bg-primary text-on-primary'
+                        : 'bg-white/40 text-white hover:bg-white hover:text-primary'
+                      }`}
+                    title={wishlistDone[bike.id] ? 'Added to wishlist' : 'Add to wishlist'}
+                  >
+                    {wishlistLoading[bike.id]
+                      ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                      : <span className="material-symbols-outlined" style={{ fontVariationSettings: wishlistDone[bike.id] ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+                    }
+                  </button>
                 </div>
-                <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center bg-white/40 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-primary transition-all">
-                  <span className="material-symbols-outlined">favorite</span>
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <div className="flex justify-between items-start">
-                    <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Canyon</span>
-                    <span className="font-headline font-bold text-lg text-primary">$8,200</span>
-                  </div>
-                  <h3 className="font-headline text-xl font-bold tracking-tight">Grizl CF SLX 8</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/10">
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Tires</p>
-                    <p className="text-xs font-bold">45mm Schwalbe</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Tech</p>
-                    <p className="text-xs font-bold">Leaf Spring Seatpost</p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Bike Card 4 */}
-            <div className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer">
-              <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  alt="Bike 4" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkPEuDlD9uSzUfxq7KbBcyvDIyGIBisVM0icblsGOYBajh51dJ2PnGKkjkTmL4dyvYwy9zDS5MyYufbTHOIuVg2sxM3FutDrtDNxcs8CPWBYYFHovKsE2xnDkik6qknduczDgPsc2mV3FwrwX9KXu4RrItMMKa_DrTBEgavwYlJrY3MiPmVCbotfJikO13cm9p_8cCQk-sVeVbrdzUYmeJ2vDixRgE_fPnkN59Hr_V9xfaumwl3Mw9B2THriz5jBYFqCISDm3BcYio"
-                />
-                <button className="absolute top-4 right-4 h-10 w-10 flex items-center justify-center bg-white/40 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-primary transition-all">
-                  <span className="material-symbols-outlined">favorite</span>
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <div className="flex justify-between items-start">
-                    <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Cannondale</span>
-                    <span className="font-headline font-bold text-lg text-primary">$6,800</span>
-                  </div>
-                  <h3 className="font-headline text-xl font-bold tracking-tight">SuperSix EVO Hi-MOD</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/10">
+                <div className="p-6 space-y-4">
                   <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Cockpit</p>
-                    <p className="text-xs font-bold">Integrated HollowGram</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Condition</p>
-                    <p className="text-xs font-bold text-tertiary">Mint</p>
+                    <div className="flex justify-between items-start">
+                      <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
+                        {bike.status ?? ''}
+                      </span>
+                      <span className="font-headline font-bold text-lg text-primary">
+                        {(bike.price ?? 0).toLocaleString('vi-VN')}₫
+                      </span>
+                    </div>
+                    <h3 className="font-headline text-xl font-bold tracking-tight">{bike.title}</h3>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Pagination / Load More */}
+          {/* Load More */}
           <div className="flex justify-center pt-12">
-            <button className="flex items-center gap-4 px-12 py-4 border-2 border-primary text-primary font-headline font-bold uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all cursor-pointer">
-              Load More Machines
-              <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
+            {hasMore ? (
+              <button
+                onClick={handleLoadMore}
+                disabled={loading}
+                className="flex items-center gap-4 px-12 py-4 border-2 border-primary text-primary font-headline font-bold uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : 'Load More Machines'}
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+            ) : (
+              !loading && listings.length > 0 && (
+                <p className="text-sm text-on-surface-variant font-label uppercase tracking-widest">All {totalCount} listings shown</p>
+              )
+            )}
           </div>
         </div>
       </div>
