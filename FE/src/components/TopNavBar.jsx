@@ -95,9 +95,6 @@ export default function TopNavBar() {
             <Link to="/cart" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>shopping_cart</span>
             </Link>
-            <button className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
-              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"}}>notifications</span>
-            </button>
             <div className="relative" ref={profileMenuRef}>
               <button
                 type="button"

@@ -16,6 +16,8 @@ export default function Home() {
   const [loading, setLoading]       = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState({}); // { [listingId]: bool }
   const [wishlistDone, setWishlistDone]       = useState({}); // { [listingId]: bool }
+  const [cartLoading, setCartLoading]         = useState({}); // { [listingId]: bool }
+  const [cartDone, setCartDone]               = useState({}); // { [listingId]: bool }
 
   const fetchListings = useCallback(async (p = 1, append = false) => {
     setLoading(true);
@@ -56,6 +58,41 @@ export default function Home() {
     }
   }
 
+  async function handleAddToCart(e, listingId) {
+    e.stopPropagation();
+    if (!token) { navigate('/auth'); return; }
+    if (cartDone[listingId] || cartLoading[listingId]) return;
+    setCartLoading(prev => ({ ...prev, [listingId]: true }));
+    try {
+      await fetch(`${API_BASE}/buyer/cart/${listingId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCartDone(prev => ({ ...prev, [listingId]: true }));
+    } catch {
+      // ignore
+    } finally {
+      setCartLoading(prev => ({ ...prev, [listingId]: false }));
+    }
+  }
+
+  async function handleBuyNow(e, listingId) {
+    e.stopPropagation();
+    if (!token) { navigate('/auth'); return; }
+    setCartLoading(prev => ({ ...prev, [listingId]: true }));
+    try {
+      await fetch(`${API_BASE}/buyer/cart/${listingId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      navigate('/cart');
+    } catch {
+      // ignore
+    } finally {
+      setCartLoading(prev => ({ ...prev, [listingId]: false }));
+    }
+  }
+
   function handleLoadMore() {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -86,31 +123,29 @@ export default function Home() {
             <p className="text-on-surface-variant text-lg leading-relaxed max-w-lg">
               The world's most curated marketplace for high-performance cycling engineering. Every machine is verified, inspected, and ready for the podium.
             </p>
-            {/* Search Bar Shell */}
-            <div className="flex items-center p-2 bg-surface-container-lowest/90 backdrop-blur-md rounded-xl editorial-shadow max-w-xl group focus-within:ring-2 ring-primary/20 transition-all">
-              <div className="flex-1 flex items-center px-4 gap-3">
-                <span className="material-symbols-outlined text-primary">search</span>
-                <input 
-                  className="w-full bg-transparent border-none focus:ring-0 text-on-surface font-body py-3 outline-none" 
-                  placeholder="Search by brand, model, or discipline..." 
-                  type="text"
-                />
-              </div>
-              <button className="bg-primary text-on-primary px-8 py-3 rounded-lg font-headline font-bold uppercase tracking-tight scale-100 hover:scale-[1.02] active:scale-95 transition-all">
-                Explore
-              </button>
-            </div>
             <div className="flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => navigate('/auth')}
-                className="inline-flex items-center gap-2 bg-surface-container-lowest text-primary px-6 py-3 rounded-lg font-headline font-bold uppercase tracking-tight border border-outline-variant/15 hover:bg-surface-container-low transition-all"
-              >
-                Đăng nhập / Đăng ký
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </button>
-              <span className="text-sm text-on-surface-variant">
-                Có thể chuyển giữa login và register ngay trong trang này.
-              </span>
+              {currentUser ? (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="inline-flex items-center gap-2 bg-surface-container-lowest text-primary px-6 py-3 rounded-lg font-headline font-bold uppercase tracking-tight border border-outline-variant/15 hover:bg-surface-container-low transition-all"
+                >
+                  Đổi tài khoản
+                  <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => navigate('/auth')}
+                    className="inline-flex items-center gap-2 bg-surface-container-lowest text-primary px-6 py-3 rounded-lg font-headline font-bold uppercase tracking-tight border border-outline-variant/15 hover:bg-surface-container-low transition-all"
+                  >
+                    Đăng nhập / Đăng ký
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </button>
+                  <span className="text-sm text-on-surface-variant">
+                    Có thể chuyển giữa login và register ngay trong trang này.
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -251,6 +286,29 @@ export default function Home() {
                       </span>
                     </div>
                     <h3 className="font-headline text-xl font-bold tracking-tight">{bike.title}</h3>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="grid grid-cols-2 gap-2 pt-2" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={(e) => handleAddToCart(e, bike.id)}
+                      disabled={cartLoading[bike.id] || cartDone[bike.id]}
+                      className={`py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5
+                        ${cartDone[bike.id]
+                          ? 'bg-tertiary text-on-tertiary'
+                          : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high border border-outline-variant/20'
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-base">shopping_cart</span>
+                      {cartLoading[bike.id] ? '...' : cartDone[bike.id] ? 'Đã thêm' : 'Add to cart'}
+                    </button>
+                    <button
+                      onClick={(e) => handleBuyNow(e, bike.id)}
+                      disabled={cartLoading[bike.id]}
+                      className="py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider bg-primary text-on-primary hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
+                    >
+                      <span className="material-symbols-outlined text-base">bolt</span>
+                      Mua ngay
+                    </button>
                   </div>
                 </div>
               </div>

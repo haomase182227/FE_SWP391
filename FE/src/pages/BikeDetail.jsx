@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from './Context/AuthContext';
+
+const API_BASE = '/api/v1';
 
 export default function BikeDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
   const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartDone, setCartDone] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [wishlistDone, setWishlistDone] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
+      setLoading(true);
       try {
-        const response = await fetch(`https://swp391-bike-marketplace-backend-1.onrender.com/api/v1/listings/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch listing');
-        }
+        const response = await fetch(`${API_BASE}/listings/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch listing');
         const data = await response.json();
         setListing(data);
       } catch (err) {
@@ -22,11 +32,51 @@ export default function BikeDetail() {
         setLoading(false);
       }
     };
-
-    if (id) {
-      fetchListing();
-    }
+    if (id) fetchListing();
   }, [id]);
+
+  async function addToCart(listingId) {
+    if (!token) { navigate('/auth'); return false; }
+    setCartLoading(true);
+    try {
+      await fetch(`${API_BASE}/buyer/cart/${listingId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setCartLoading(false);
+    }
+  }
+
+  async function handleBuyNow() {
+    const ok = await addToCart(id);
+    if (ok) navigate('/cart');
+  }
+
+  async function handleAddToCart() {
+    const ok = await addToCart(id);
+    if (ok) setCartDone(true);
+  }
+
+  async function handleAddToWishlist() {
+    if (!token) { navigate('/auth'); return; }
+    setWishlistLoading(true);
+    try {
+      await fetch(`${API_BASE}/buyer/Wishlist/${id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setWishlistDone(true);
+      navigate('/wishlist');
+    } catch {
+      // ignore
+    } finally {
+      setWishlistLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -67,10 +117,9 @@ export default function BikeDetail() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-6xl font-headline font-bold tracking-tighter text-on-surface">{listing.title}</h1>
-            <p className="text-xl text-on-surface-variant font-light mt-2">{listing.description || 'No description available'}</p>
           </div>
           <div className="text-right">
-            <div className="text-5xl font-headline font-bold text-primary tracking-tight">${listing.price.toLocaleString()}</div>
+            <div className="text-5xl font-headline font-bold text-primary tracking-tight">{(listing.price ?? 0).toLocaleString('vi-VN')}₫</div>
             <div className="flex gap-2 justify-end mt-2">
               {listing.isVerified && (
                 <span className="px-3 py-1 bg-tertiary text-on-tertiary rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
@@ -86,53 +135,47 @@ export default function BikeDetail() {
       </div>
 
       {/* Asymmetric Editorial Gallery */}
-      <section className="grid grid-cols-12 gap-6 mb-24">
-        <div className="col-span-12 md:col-span-8 aspect-[16/9] bg-surface-container-low rounded-xl overflow-hidden relative group cursor-zoom-in">
-          <img 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-            alt={listing.title} 
-            src={listing.imageUrl}
-          />
-          <div className="absolute bottom-6 left-6 flex gap-2">
-            <span className="bg-white/90 backdrop-blur-md p-2 rounded-lg editorial-shadow material-symbols-outlined">fullscreen</span>
+      <section className="mb-24 space-y-6">
+        {/* Main image row */}
+        <div className="flex gap-6">
+          <div className={`${listing.additionalImages && listing.additionalImages.length > 0 ? 'flex-[2]' : 'w-full'} aspect-[16/9] bg-surface-container-low rounded-xl overflow-hidden relative group cursor-zoom-in`}>
+            <img 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+              alt={listing.title} 
+              src={listing.imageUrl}
+            />
+            <div className="absolute bottom-6 left-6 flex gap-2">
+              <span className="bg-white/90 backdrop-blur-md p-2 rounded-lg editorial-shadow material-symbols-outlined">fullscreen</span>
+            </div>
           </div>
+          {listing.additionalImages && listing.additionalImages.length > 0 && (
+            <div className="flex-1 flex flex-col gap-6">
+              {listing.additionalImages.slice(0, 2).map((img, index) => (
+                <div key={index} className="flex-1 bg-surface-container-low rounded-xl overflow-hidden">
+                  <img 
+                    className="w-full h-full object-cover" 
+                    alt={`Additional image ${index + 1}`} 
+                    src={img}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="col-span-12 md:col-span-4 grid grid-rows-2 gap-6">
-          {listing.additionalImages && listing.additionalImages.length > 0 ? (
-            listing.additionalImages.slice(0, 2).map((img, index) => (
-              <div key={index} className="bg-surface-container-low rounded-xl overflow-hidden aspect-square">
+        {/* Thumbnail strip — only when there are extra images */}
+        {listing.additionalImages && listing.additionalImages.length > 0 && (
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+            {listing.additionalImages.map((img, index) => (
+              <div key={index} className="flex-none w-40 aspect-square bg-surface-container-lowest rounded-lg border border-outline-variant/10 overflow-hidden">
                 <img 
                   className="w-full h-full object-cover" 
-                  alt={`Additional image ${index + 1}`} 
+                  alt={`Thumbnail ${index + 1}`} 
                   src={img}
                 />
               </div>
-            ))
-          ) : (
-            <>
-              <div className="bg-surface-container-low rounded-xl overflow-hidden aspect-square flex items-center justify-center">
-                <span className="text-on-surface-variant">No additional images</span>
-              </div>
-              <div className="bg-surface-container-low rounded-xl overflow-hidden aspect-square flex items-center justify-center">
-                <span className="text-on-surface-variant">No additional images</span>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="col-span-12 flex gap-6 overflow-x-auto no-scrollbar pb-4">
-          {listing.additionalImages && listing.additionalImages.map((img, index) => (
-            <div key={index} className="flex-none w-48 aspect-square bg-surface-container-lowest rounded-lg border border-outline-variant/10 overflow-hidden">
-              <img 
-                className="w-full h-full object-cover" 
-                alt={`Thumbnail ${index + 1}`} 
-                src={img}
-              />
-            </div>
-          ))}
-          <div className="flex-none w-48 aspect-square bg-surface-container-lowest rounded-lg border border-outline-variant/10 flex items-center justify-center bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors">
-            <span className="material-symbols-outlined text-primary text-4xl">add</span>
+            ))}
           </div>
-        </div>
+        )}
       </section>
 
       {/* Product Details Grid */}
@@ -223,10 +266,34 @@ export default function BikeDetail() {
           
           {/* Action Card */}
           <div className="sticky top-28 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10 editorial-shadow">
-            <div className="space-y-4 mb-8">
-              <button className="w-full bg-gradient-to-r from-primary to-primary-fixed text-on-primary py-5 rounded-lg font-headline font-bold text-xl uppercase tracking-widest scale-[0.98] hover:scale-100 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer">
-                  Đặt cọc / Mua ngay
+            <div className="space-y-3 mb-8">
+              <button
+                onClick={handleBuyNow}
+                disabled={cartLoading}
+                className="w-full bg-gradient-to-r from-primary to-primary-fixed text-on-primary py-5 rounded-lg font-headline font-bold text-xl uppercase tracking-widest scale-[0.98] hover:scale-100 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-60"
+              >
+                {cartLoading ? 'Đang xử lý...' : 'Mua ngay'}
               </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={cartLoading || cartDone}
+                  className={`py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer
+                    ${cartDone ? 'bg-tertiary text-on-tertiary' : 'bg-surface-container-low text-on-background hover:bg-surface-container-high'}`}
+                >
+                  <span className="material-symbols-outlined text-lg">shopping_cart</span>
+                  {cartDone ? 'Đã thêm' : 'Add to cart'}
+                </button>
+                <button
+                  onClick={handleAddToWishlist}
+                  disabled={wishlistLoading || wishlistDone}
+                  className={`py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer
+                    ${wishlistDone ? 'bg-tertiary text-on-tertiary' : 'bg-surface-container-low text-on-background hover:bg-surface-container-high'}`}
+                >
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: wishlistDone ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+                  {wishlistDone ? 'Đã thêm' : 'Wishlist'}
+                </button>
+              </div>
               <button className="w-full bg-surface-container-low text-on-background py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider hover:bg-secondary-container/30 transition-colors flex items-center justify-center gap-2 cursor-pointer">
                 <span className="material-symbols-outlined text-lg">chat_bubble</span> Chat với người bán
               </button>
