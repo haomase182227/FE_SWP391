@@ -233,7 +233,7 @@ export default function Home() {
               <div
                 key={bike.id}
                 onClick={() => navigate(`/bike/${bike.id}`)}
-                className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer"
+                className="group relative bg-surface-container-lowest rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300 editorial-shadow cursor-pointer flex flex-col"
               >
                 <div className="aspect-[4/3] overflow-hidden relative">
                   {bike.imageUrl ? (
@@ -275,7 +275,7 @@ export default function Home() {
                   </button>
                 </div>
 
-                <div className="p-6 space-y-4">
+                <div className="p-6 flex flex-col flex-1 gap-4">
                   <div className="space-y-1">
                     <div className="flex justify-between items-start">
                       <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
@@ -288,7 +288,7 @@ export default function Home() {
                     <h3 className="font-headline text-xl font-bold tracking-tight">{bike.title}</h3>
                   </div>
                   {/* Action buttons */}
-                  <div className="grid grid-cols-2 gap-2 pt-2" onClick={e => e.stopPropagation()}>
+                  <div className="grid grid-cols-2 gap-2 mt-auto" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={(e) => handleAddToCart(e, bike.id)}
                       disabled={cartLoading[bike.id] || cartDone[bike.id]}
