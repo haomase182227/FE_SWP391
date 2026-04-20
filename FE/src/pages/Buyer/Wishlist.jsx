@@ -7,7 +7,7 @@ const API_BASE = '/api/v1';
 
 export default function Wishlist() {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const token = currentUser?.token;
 
   const [items, setItems]     = useState([]);
@@ -21,31 +21,36 @@ export default function Wishlist() {
       const res = await fetch(`${API_BASE}/buyer/Wishlist`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error();
+      if (res.status === 401) { logout(); navigate('/auth'); return; }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setItems(Array.isArray(data) ? data : (data.items ?? data.wishlist ?? []));
-    } catch {
+      const list = Array.isArray(data)
+        ? data
+        : (data.items ?? data.wishlist ?? data.data ?? []);
+      setItems(list);
+    } catch (err) {
+      console.error('[Wishlist] fetch error:', err);
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, logout, navigate]);
 
   useEffect(() => {
     if (!token) { navigate('/auth'); return; }
     fetchWishlist();
-  }, [token, fetchWishlist, navigate]);
+  }, [fetchWishlist]); // fetchWishlist đã depend on token, không cần thêm token ở đây
 
   async function handleRemove(listingId) {
     setRemoving(prev => ({ ...prev, [listingId]: true }));
     try {
-      await fetch(`${API_BASE}/buyer/Wishlist/${listingId}`, {
+      const res = await fetch(`${API_BASE}/buyer/Wishlist/${listingId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) { logout(); navigate('/auth'); return; }
       setItems(prev => prev.filter(i => (i.listingId ?? i.id) !== listingId));
     } catch {
-      // refetch to sync
       fetchWishlist();
     } finally {
       setRemoving(prev => ({ ...prev, [listingId]: false }));
@@ -58,10 +63,11 @@ export default function Wishlist() {
     if (!token) { navigate('/auth'); return; }
     setAddingToCart(prev => ({ ...prev, [listingId]: true }));
     try {
-      await fetch(`${API_BASE}/buyer/cart/${listingId}`, {
+      const res = await fetch(`${API_BASE}/buyer/cart/${listingId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) { logout(); navigate('/auth'); return; }
       navigate('/cart');
     } catch {
       navigate('/cart');
@@ -71,7 +77,8 @@ export default function Wishlist() {
   }
   function isAvailable(item) {
     const status = (item.status ?? item.listingStatus ?? '').toLowerCase();
-    return status === 'approved' || status === 'active' || status === '';
+    // Available if status is approved, active, or not set
+    return status === 'approved' || status === 'active' || status === '' || status === 'available';
   }
 
   return (
