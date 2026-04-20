@@ -176,6 +176,9 @@ export default function TopNavBar() {
             <Link to="/cart" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>shopping_cart</span>
             </Link>
+            <Link to="/chat" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all" title="Lịch sử chat">
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>chat</span>
+            </Link>
             <div className="relative" ref={profileMenuRef}>
               <button type="button" onClick={() => setIsMenuOpen(prev => !prev)}
                 className="h-10 w-10 rounded-full bg-surface-container-high border-2 border-primary/10 overflow-hidden hover:scale-95 transition-transform">

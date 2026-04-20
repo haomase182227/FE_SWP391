@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TopNavBar from '../components/TopNavBar';
-import Footer from '../components/Footer';
 import { useAuth } from './Context/AuthContext';
 
 const API_BASE = '/api/v1';
@@ -172,7 +170,6 @@ export default function UserProfile() {
 
   return (
     <div className="bg-surface font-body text-on-surface min-h-screen antialiased">
-      <TopNavBar />
       <main className="pt-24 pb-16 px-6 max-w-3xl mx-auto space-y-8">
 
         {/* Header */}
@@ -272,7 +269,6 @@ export default function UserProfile() {
           </>
         )}
       </main>
-      <Footer />
 
       {/* Delete confirm modal */}
       {showDeleteConfirm && (

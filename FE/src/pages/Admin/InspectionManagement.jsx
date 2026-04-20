@@ -331,37 +331,7 @@ const InspectionManagement = () => {
           </div>
         </section>
 
-        {/* Table 2: Inspected Bikes */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-headline text-xl font-bold text-on-surface uppercase tracking-tight">
-              Inspected Bikes
-            </h3>
-          </div>
-
-          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Bike</th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Inspector</th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Inspection Date</th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Result</th>
-                    <th className="px-8 py-5 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-container-low">
-                  <tr>
-                    <td colSpan={5} className="px-8 py-16 text-center text-on-surface-variant text-sm">
-                      No inspected bikes yet.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+        {/* Table 2: Inspected Bikes removed */}
 
       </main>
 
