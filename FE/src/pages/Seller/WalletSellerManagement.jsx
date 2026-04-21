@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SellerSidebar from '../../components/SellerSidebar';
+import { useAuth } from '../Context/AuthContext';
+
+const API_BASE = '/api/v1';
 
 const TRANSACTIONS = [
   {
@@ -59,6 +62,36 @@ const BAR_OPACITIES = ['bg-primary/10', 'bg-primary/10', 'bg-primary/20', 'bg-pr
 export default function WalletSellerManagement() {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
+  // Top-up state
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  const [topUpError, setTopUpError] = useState('');
+
+  async function handleTopUp() {
+    const amount = Number(topUpAmount);
+    if (!amount || amount <= 0) { setTopUpError('Vui lòng nhập số tiền hợp lệ.'); return; }
+    setTopUpLoading(true);
+    setTopUpError('');
+    try {
+      const res = await fetch(`${API_BASE}/wallet/top-up/vnpay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount }),
+      });
+      if (!res.ok) throw new Error('Nạp tiền thất bại.');
+      const data = await res.json();
+      const paymentUrl = data.paymentUrl ?? data.url ?? data.redirectUrl;
+      if (paymentUrl) window.location.href = paymentUrl;
+    } catch (err) {
+      setTopUpError(err.message || 'Có lỗi xảy ra.');
+    } finally {
+      setTopUpLoading(false);
+    }
+  }
 
   const filtered = TRANSACTIONS.filter(
     (t) =>
@@ -152,6 +185,13 @@ export default function WalletSellerManagement() {
                   <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-xl font-bold uppercase tracking-wider shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center gap-3">
                     <span className="material-symbols-outlined">payments</span>
                     Withdraw Funds
+                  </button>
+                  <button
+                    onClick={() => { setShowTopUp(true); setTopUpAmount(''); setTopUpError(''); }}
+                    className="border border-outline/20 hover:bg-surface-container-high transition-colors px-8 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined">add_card</span>
+                    Top Up
                   </button>
                   <button className="border border-outline/20 hover:bg-surface-container-high transition-colors px-8 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center gap-3">
                     <span className="material-symbols-outlined">schedule</span>
@@ -305,6 +345,57 @@ export default function WalletSellerManagement() {
           </div>
         </div>
       </main>
+
+      {/* Top Up Modal */}
+      {showTopUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-surface rounded-2xl p-8 w-full max-w-md shadow-2xl space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold font-headline">Nạp tiền qua VNPay</h2>
+              <button onClick={() => setShowTopUp(false)} className="text-on-surface-variant hover:text-on-surface transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Số tiền (VND)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1000}
+                  step={1000}
+                  value={topUpAmount}
+                  onChange={(e) => { setTopUpAmount(e.target.value); setTopUpError(''); }}
+                  placeholder="Nhập số tiền..."
+                  className="w-full bg-surface-container-high rounded-xl px-4 py-3 pr-14 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-on-surface-variant">₫</span>
+              </div>
+              <div className="flex gap-2 pt-1">
+                {[50000, 100000, 200000, 500000].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setTopUpAmount(String(v))}
+                    className="flex-1 py-1.5 text-[10px] font-bold uppercase border border-outline-variant/20 rounded-lg hover:border-primary/40 hover:bg-surface-container-low transition-all"
+                  >
+                    {v.toLocaleString('vi-VN')}₫
+                  </button>
+                ))}
+              </div>
+              {topUpError && <p className="text-xs text-error">{topUpError}</p>}
+            </div>
+            <button
+              onClick={handleTopUp}
+              disabled={topUpLoading}
+              className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-xl font-bold uppercase tracking-wider hover:opacity-90 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {topUpLoading
+                ? <><span className="material-symbols-outlined animate-spin text-base">progress_activity</span> Đang xử lý...</>
+                : <><span className="material-symbols-outlined text-base">add_card</span> Thanh toán VNPay</>
+              }
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
