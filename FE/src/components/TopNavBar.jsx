@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../pages/Context/AuthContext';
 
@@ -7,6 +7,7 @@ const API_BASE = '/api/v1';
 export default function TopNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
   const { currentUser, isAuthenticated, logout } = useAuth();
@@ -28,6 +29,31 @@ export default function TopNavBar() {
       .then(data => setWalletBalance(data?.user?.wallet ?? 0))
       .catch(() => setWalletBalance(0));
   }, [isAuthenticated, currentUser?.token]);
+
+  // Fetch unread message count for Buyer role
+  const fetchUnread = useCallback(async () => {
+    if (!isAuthenticated || !currentUser?.token || currentUser?.role !== 'Buyer') {
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/messaging/unread-count`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      if (!res.ok) { setUnreadCount(0); return; }
+      const data = await res.json();
+      setUnreadCount(data?.unreadCount ?? data?.count ?? (typeof data === 'number' ? data : 0));
+    } catch {
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated, currentUser?.token, currentUser?.role]);
+
+  useEffect(() => {
+    fetchUnread();
+    // Poll every 30s
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -176,8 +202,13 @@ export default function TopNavBar() {
             <Link to="/cart" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>shopping_cart</span>
             </Link>
-            <Link to="/chat" className="p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all" title="Lịch sử chat">
+            <Link to="/chat" className="relative p-2 text-stone-600 hover:text-orange-600 scale-95 active:scale-90 transition-all" title="Lịch sử chat">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>chat</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
             <div className="relative" ref={profileMenuRef}>
               <button type="button" onClick={() => setIsMenuOpen(prev => !prev)}

@@ -61,6 +61,74 @@ export default function BikeDetail() {
     if (ok) setCartDone(true);
   }
 
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError]     = useState('');
+
+  async function handleChat() {
+    if (!token) { navigate('/auth'); return; }
+    // Guard: sellerId phải có
+    if (!listing?.sellerId) {
+      setChatError('Không tìm thấy thông tin Seller. Vui lòng thử lại.');
+      console.error('[handleChat] sellerId is missing. listing:', listing);
+      return;
+    }
+    setChatLoading(true);
+    setChatError('');
+    try {
+      const payload = {
+        sellerId: listing.sellerId,
+        listingId: Number(id),
+        initialMessage: `Tôi quan tâm đến chiếc xe này.`,
+      };
+      console.log('[handleChat] payload:', payload);
+
+      // Dùng URL trực tiếp để tránh proxy timeout
+      const res = await fetch(
+        'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1/messaging/conversations',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log('[handleChat] status:', res.status);
+
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+          const parsed = await res.json();
+          console.error('[handleChat] error body:', parsed);
+          msg = parsed?.message ?? parsed?.title ?? parsed?.errors ?? parsed?.error ?? JSON.stringify(parsed);
+        } catch { /* ignore parse error */ }
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      console.log('[handleChat] response data:', data);
+
+      const convId = data?.conversation?.id
+        ?? data?.id
+        ?? data?.conversationId
+        ?? data?.data?.id
+        ?? data?.data?.conversationId;
+
+      if (!convId) throw new Error(`Server trả về: ${JSON.stringify(data)}`);
+      navigate(`/chat?conversationId=${convId}`);
+    } catch (err) {
+      console.error('[handleChat] error:', err.message);
+      if (err.message.includes('ERR_CONNECTION') || err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+        setChatError('Server đang khởi động, vui lòng thử lại sau 30 giây.');
+      } else {
+        setChatError(err.message || 'Không thể tạo cuộc trò chuyện. Vui lòng thử lại.');
+      }
+    } finally {
+      setChatLoading(false);
+    }
+  }
   async function handleAddToWishlist() {
     if (!token) { navigate('/auth'); return; }
     setWishlistLoading(true);
@@ -294,9 +362,19 @@ export default function BikeDetail() {
                   {wishlistDone ? 'Đã thêm' : 'Wishlist'}
                 </button>
               </div>
-              <button className="w-full bg-surface-container-low text-on-background py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider hover:bg-secondary-container/30 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-                <span className="material-symbols-outlined text-lg">chat_bubble</span> Chat với người bán
+              <button
+                onClick={handleChat}
+                disabled={chatLoading}
+                className="w-full bg-surface-container-low text-on-background py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider hover:bg-secondary-container/30 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
+                {chatLoading
+                  ? <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                  : <span className="material-symbols-outlined text-lg">chat_bubble</span>
+                }
+                {chatLoading ? 'Đang kết nối...' : 'Chat với người bán'}
               </button>
+              {chatError && (
+                <p className="text-xs text-red-500 text-center mt-1 px-2 break-words">{chatError}</p>
+              )}
             </div>
             
             <div className="space-y-6 pt-8 border-t border-outline-variant/10">

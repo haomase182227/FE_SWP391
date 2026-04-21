@@ -9,6 +9,7 @@ import Wishlist from './pages/Buyer/Wishlist';
 import Cart from './pages/Buyer/Cart';
 import Wallet from './pages/Buyer/Wallet';
 import Order from './pages/Buyer/Order';
+import Message from './pages/Buyer/Message';
 import AuthPage from './pages/Auth/AuthPage';
 import Dashboard from './pages/Admin/Dashboard';
 import UserManagement from './pages/Admin/UserManagement';
@@ -33,12 +34,13 @@ function AppContent() {
   const isAdminPage = location.pathname.startsWith('/admin');
   const isSellerPage = location.pathname.startsWith('/seller');
   const isInspectorPage = location.pathname.startsWith('/inspector');
+  const isChatPage = location.pathname === '/chat';
   const hidePublicChrome = isAuthPage || isAdminPage || isSellerPage || isInspectorPage;
 
   return (
     <div className="flex flex-col min-h-screen">
       {!hidePublicChrome && <TopNavBar />}
-      <div className="flex-grow">
+      <div className={isChatPage ? 'contents' : 'flex-grow'}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/bike/:id" element={<BikeDetail />} />
@@ -46,6 +48,7 @@ function AppContent() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/order" element={<Order />} />
+          <Route path="/chat" element={<Message />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
@@ -69,8 +72,8 @@ function AppContent() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
-      {!hidePublicChrome && <Footer />}
-      {!hidePublicChrome && <MobileNav />}
+      {!hidePublicChrome && !isChatPage && <Footer />}
+      {!hidePublicChrome && !isChatPage && <MobileNav />}
     </div>
   );
 }
