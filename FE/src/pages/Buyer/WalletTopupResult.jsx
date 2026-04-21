@@ -64,8 +64,8 @@ export default function WalletTopupResult() {
       <div className="bg-surface rounded-2xl p-10 max-w-md w-full text-center shadow-xl space-y-6">
         {result.isSuccess ? (
           <>
-            <div className="w-20 h-20 rounded-full bg-tertiary/10 flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-tertiary text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div className="flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-tertiary text-[96px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                 check_circle
               </span>
             </div>

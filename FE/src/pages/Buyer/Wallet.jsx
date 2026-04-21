@@ -23,10 +23,9 @@ export default function Wallet() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount }),
       });
-      if (!res.ok) throw new Error('Nạp tiền thất bại.');
       const data = await res.json();
-      const paymentUrl = data.paymentUrl ?? data.url ?? data.redirectUrl;
-      if (paymentUrl) window.location.href = paymentUrl;
+      if (!res.ok) throw new Error(data.message || 'Top-up thất bại.');
+      if (data.paymentUrl) window.location.href = data.paymentUrl;
     } catch (err) {
       setTopUpError(err.message || 'Có lỗi xảy ra.');
     } finally {
