@@ -20,6 +20,20 @@ export default function Home() {
 
   // Search
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Price Range Filter
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(50000000); // 50 triệu VND
+  const [priceFilterActive, setPriceFilterActive] = useState(false);
+
+  // Sort
+  const [sortMode, setSortMode] = useState('lowest'); // 'lowest' | 'highest'
+
+  // Brand filter
+  const [selectedBrand, setSelectedBrand] = useState(null);
+
+  // Frame size filter
+  const [selectedFrameSize, setSelectedFrameSize] = useState(null);
 
   // ── Fetch main grid ──────────────────────────────────────────────────────────
   const fetchListings = useCallback(async (p = 1, append = false, title = '') => {
@@ -37,10 +51,73 @@ export default function Home() {
     finally { setLoading(false); }
   }, []);
 
+  // ── Fetch by sort ───────────────────────────────────────────────────────────
+  const fetchSorted = useCallback(async (mode, p = 1, append = false) => {
+    setLoading(true);
+    try {
+      const endpoint = mode === 'lowest' ? 'sort/price-lowest' : 'sort/price-highest';
+      const params = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
+      const res = await fetch(`${API_BASE}/listings/${endpoint}?${params}`, { headers: { accept: '*/*' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const items = data.items ?? [];
+      setTotalCount(data.totalCount ?? 0);
+      setListings(prev => append ? [...prev, ...items] : items);
+    } catch { /* silently fail */ }
+    finally { setLoading(false); }
+  }, []);
+
+  // ── Fetch by brand ───────────────────────────────────────────────────────────
+  const fetchByBrand = useCallback(async (brand, p = 1, append = false) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
+      const res = await fetch(`${API_BASE}/listings/filter/brand/${encodeURIComponent(brand)}?${params}`, { headers: { accept: '*/*' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const items = data.items ?? [];
+      setTotalCount(data.totalCount ?? 0);
+      setListings(prev => append ? [...prev, ...items] : items);
+    } catch { /* silently fail */ }
+    finally { setLoading(false); }
+  }, []);
+
+  // ── Fetch by frame size ──────────────────────────────────────────────────────
+  const fetchByFrameSize = useCallback(async (size, p = 1, append = false) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
+      const res = await fetch(`${API_BASE}/listings/filter/frame-size/${encodeURIComponent(size)}?${params}`, { headers: { accept: '*/*' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const items = data.items ?? [];
+      setTotalCount(data.totalCount ?? 0);
+      setListings(prev => append ? [...prev, ...items] : items);
+    } catch { /* silently fail */ }
+    finally { setLoading(false); }
+  }, []);
+
+  // ── Fetch by price range ─────────────────────────────────────────────────────
+  const fetchByPriceRange = useCallback(async (p = 1, append = false) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ minPrice, maxPrice, page: p, pageSize: PAGE_SIZE });
+      const res = await fetch(`${API_BASE}/listings/filter/price-range?${params}`, {
+        headers: { accept: '*/*' }
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const items = data.items ?? [];
+      setTotalCount(data.totalCount ?? 0);
+      setListings(prev => append ? [...prev, ...items] : items);
+    } catch { /* silently fail */ }
+    finally { setLoading(false); }
+  }, [minPrice, maxPrice]);
+
   useEffect(() => {
     setPage(1);
-    fetchListings(1, false, searchQuery);
-  }, [fetchListings, searchQuery]);
+    fetchSorted('lowest', 1, false);
+  }, [fetchSorted]);
 
   // ── Cart / Wishlist / Buy ────────────────────────────────────────────────────
   async function handleWishlist(e, listingId) {
@@ -87,7 +164,66 @@ export default function Home() {
   function handleLoadMore() {
     const next = page + 1;
     setPage(next);
-    fetchListings(next, true, searchQuery);
+    if (priceFilterActive) {
+      fetchByPriceRange(next, true);
+    } else if (selectedBrand) {
+      fetchByBrand(selectedBrand, next, true);
+    } else if (selectedFrameSize) {
+      fetchByFrameSize(selectedFrameSize, next, true);
+    } else {
+      fetchSorted(sortMode, next, true);
+    }
+  }
+
+  function handleBrandSelect(brand) {
+    const next = selectedBrand === brand ? null : brand;
+    setSelectedBrand(next);
+    setSelectedFrameSize(null);
+    setPriceFilterActive(false);
+    setPage(1);
+    if (next) {
+      fetchByBrand(next, 1, false);
+    } else {
+      fetchSorted(sortMode, 1, false);
+    }
+  }
+
+  function handleFrameSizeSelect(size) {
+    const next = selectedFrameSize === size ? null : size;
+    setSelectedFrameSize(next);
+    setSelectedBrand(null);
+    setPriceFilterActive(false);
+    setPage(1);
+    if (next) {
+      fetchByFrameSize(next, 1, false);
+    } else {
+      fetchSorted(sortMode, 1, false);
+    }
+  }
+
+  function handleSortChange(mode) {
+    setSortMode(mode);
+    setPriceFilterActive(false);
+    setPage(1);
+    fetchSorted(mode, 1, false);
+  }
+
+  function handlePriceRangeChange(value) {
+    setMaxPrice(Number(value));
+  }
+
+  function applyPriceFilter() {
+    setPriceFilterActive(true);
+    setPage(1);
+    fetchByPriceRange(1, false);
+  }
+
+  function clearPriceFilter() {
+    setPriceFilterActive(false);
+    setMinPrice(0);
+    setMaxPrice(50000000);
+    setPage(1);
+    fetchListings(1, false, searchQuery);
   }
 
   const hasMore = listings.length < totalCount;
@@ -151,12 +287,18 @@ export default function Home() {
           <div className="space-y-6">
             <h3 className="font-headline text-xl font-bold tracking-tight">Refine Results</h3>
             <div className="space-y-4">
-              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Discipline</span>
+              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Brand Name</span>
               <div className="space-y-2">
-                {['Road Performance', 'Gravel & Adventure', 'Mountain Tech', 'Time Trial'].map((label, i) => (
-                  <label key={label} className="flex items-center gap-3 cursor-pointer group">
-                    <input defaultChecked={i === 0} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox" />
-                    <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">{label}</span>
+                {['RAPTOR', 'MEREC', 'HYPER', 'GIANT', 'Java', 'Trek'].map((brand) => (
+                  <label key={brand} className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="brand"
+                      checked={selectedBrand === brand}
+                      onChange={() => handleBrandSelect(brand)}
+                      className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/20"
+                    />
+                    <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">{brand}</span>
                   </label>
                 ))}
               </div>
@@ -164,17 +306,49 @@ export default function Home() {
             <div className="space-y-4 pt-6 border-t border-outline-variant/10">
               <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Investment Range</span>
               <div className="space-y-4">
-                <input className="w-full accent-primary h-1.5 bg-surface-container-high rounded-full appearance-none cursor-pointer" type="range" />
+                <input 
+                  className="w-full accent-primary h-1.5 bg-surface-container-high rounded-full appearance-none cursor-pointer" 
+                  type="range"
+                  min={minPrice}
+                  max={50000000}
+                  step={500000}
+                  value={maxPrice}
+                  onChange={(e) => handlePriceRangeChange(e.target.value)}
+                />
                 <div className="flex justify-between text-xs font-bold font-headline">
-                  <span>$1,500</span><span>$25,000+</span>
+                  <span>{minPrice.toLocaleString('vi-VN')}₫</span>
+                  <span>{maxPrice.toLocaleString('vi-VN')}₫</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={applyPriceFilter}
+                    className="flex-1 py-2 px-3 bg-primary text-on-primary rounded text-xs font-bold uppercase hover:opacity-90 transition-all"
+                  >
+                    Áp dụng
+                  </button>
+                  {priceFilterActive && (
+                    <button
+                      onClick={clearPriceFilter}
+                      className="py-2 px-3 border border-outline-variant/20 rounded text-xs font-bold uppercase hover:bg-surface-container-low transition-all"
+                    >
+                      Xóa
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
             <div className="space-y-4 pt-6 border-t border-outline-variant/10">
-              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Elite Partners</span>
-              <div className="grid grid-cols-2 gap-2">
-                {['S-Works', 'Pinarello', 'Canyon', 'Colnago'].map(b => (
-                  <button key={b} className="py-2 px-3 border border-outline-variant/20 rounded text-[10px] font-bold uppercase hover:border-primary/40 hover:bg-surface-container-low transition-all cursor-pointer">{b}</button>
+              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Frame Size</span>
+              <div className="flex gap-2">
+                {['S', 'M', 'L'].map(size => (
+                  <button
+                    key={size}
+                    onClick={() => handleFrameSizeSelect(size)}
+                    className={`flex-1 py-2 px-3 rounded text-[11px] font-bold uppercase tracking-wide transition-all cursor-pointer
+                      ${selectedFrameSize === size ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-low'}`}
+                  >
+                    {size}
+                  </button>
                 ))}
               </div>
             </div>
@@ -195,9 +369,14 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-4 text-sm font-bold">
               <span className="text-on-surface-variant">Sort By:</span>
-              <button className="flex items-center gap-1 text-primary cursor-pointer">
-                Newest Arrivals <span className="material-symbols-outlined text-sm">expand_more</span>
-              </button>
+              <select
+                value={sortMode}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="border border-outline-variant/20 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wide bg-surface-container-lowest text-on-surface cursor-pointer focus:outline-none focus:border-primary/40"
+              >
+                <option value="lowest">Lowest Price</option>
+                <option value="highest">Highest Price</option>
+              </select>
             </div>
           </div>
 
