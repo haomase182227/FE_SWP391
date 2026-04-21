@@ -25,7 +25,10 @@ export default function Wallet() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Top-up thất bại.');
-      if (data.paymentUrl) window.location.href = data.paymentUrl;
+      if (data.paymentUrl) {
+        sessionStorage.setItem('topup_role', 'Buyer');
+        window.location.href = data.paymentUrl;
+      }
     } catch (err) {
       setTopUpError(err.message || 'Có lỗi xảy ra.');
     } finally {

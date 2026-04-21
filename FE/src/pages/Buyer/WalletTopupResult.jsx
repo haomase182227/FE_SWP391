@@ -7,6 +7,9 @@ export default function WalletTopupResult() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  const role = sessionStorage.getItem('topup_role');
+  const walletPath = role === 'Seller' ? '/seller/wallet' : '/wallet';
+
   const [result, setResult] = useState(null); // { isSuccess, message, txnRef, amount }
   const [countdown, setCountdown] = useState(5);
 
@@ -44,7 +47,7 @@ export default function WalletTopupResult() {
     if (!result) return;
     const timer = setInterval(() => {
       setCountdown(c => {
-        if (c <= 1) { clearInterval(timer); navigate('/wallet'); }
+        if (c <= 1) { clearInterval(timer); sessionStorage.removeItem('topup_role'); navigate(walletPath); }
         return c - 1;
       });
     }, 1000);
@@ -102,7 +105,7 @@ export default function WalletTopupResult() {
         </p>
 
         <button
-          onClick={() => navigate('/wallet')}
+          onClick={() => { sessionStorage.removeItem('topup_role'); navigate(walletPath); }}
           className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-3 rounded-xl font-bold uppercase tracking-wider hover:opacity-90 transition-all"
         >
           Về ví ngay

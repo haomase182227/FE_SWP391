@@ -23,8 +23,9 @@ export default function Home() {
   
   // Price Range Filter
   const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(50000000); // 50 triệu VND
+  const [maxPrice, setMaxPrice] = useState(50000000);
   const [priceFilterActive, setPriceFilterActive] = useState(false);
+  const PRICE_MAX = 50000000;
 
   // Sort
   const [sortMode, setSortMode] = useState('lowest'); // 'lowest' | 'highest' | 'newest' | 'oldest'
@@ -107,7 +108,7 @@ export default function Home() {
   const fetchByPriceRange = useCallback(async (p = 1, append = false) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ minPrice, maxPrice, page: p, pageSize: PAGE_SIZE });
+      const params = new URLSearchParams({ minPrice: minPrice ?? 0, maxPrice: maxPrice ?? 50000000, page: p, pageSize: PAGE_SIZE });
       const res = await fetch(`${API_BASE}/listings/filter/price-range?${params}`, {
         headers: { accept: '*/*' }
       });
@@ -229,7 +230,7 @@ export default function Home() {
     setMinPrice(0);
     setMaxPrice(50000000);
     setPage(1);
-    fetchListings(1, false, searchQuery);
+    fetchSorted(sortMode, 1, false);
   }
 
   const hasMore = listings.length < totalCount;
@@ -295,6 +296,17 @@ export default function Home() {
             <div className="space-y-4">
               <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Brand Name</span>
               <div className="space-y-2">
+                {/* None option */}
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="brand"
+                    checked={selectedBrand === null}
+                    onChange={() => handleBrandSelect(selectedBrand)}
+                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/20"
+                  />
+                  <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">None</span>
+                </label>
                 {['RAPTOR', 'MEREC', 'HYPER', 'GIANT', 'Java', 'Trek'].map((brand) => (
                   <label key={brand} className="flex items-center gap-3 cursor-pointer group">
                     <input
@@ -311,16 +323,48 @@ export default function Home() {
             </div>
             <div className="space-y-4 pt-6 border-t border-outline-variant/10">
               <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Investment Range</span>
-              <div className="space-y-4">
-                <input 
-                  className="w-full accent-primary h-1.5 bg-surface-container-high rounded-full appearance-none cursor-pointer" 
-                  type="range"
-                  min={minPrice}
-                  max={50000000}
-                  step={500000}
-                  value={maxPrice}
-                  onChange={(e) => handlePriceRangeChange(e.target.value)}
-                />
+              <div className="space-y-3">
+                {/* Dual range slider */}
+                <div className="relative h-5 flex items-center">
+                  {/* Track */}
+                  <div className="absolute w-full h-1.5 bg-surface-container-high rounded-full" />
+                  {/* Active track */}
+                  <div
+                    className="absolute h-1.5 bg-primary rounded-full"
+                    style={{
+                      left: `${(minPrice / PRICE_MAX) * 100}%`,
+                      right: `${100 - (maxPrice / PRICE_MAX) * 100}%`,
+                    }}
+                  />
+                  {/* Min thumb */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={PRICE_MAX}
+                    step={500000}
+                    value={minPrice}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (v <= maxPrice) setMinPrice(v);
+                    }}
+                    style={{ zIndex: minPrice >= maxPrice - 500000 ? 5 : 3 }}
+                    className="absolute w-full h-1.5 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md"
+                  />
+                  {/* Max thumb */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={PRICE_MAX}
+                    step={500000}
+                    value={maxPrice}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (v >= minPrice) setMaxPrice(v);
+                    }}
+                    style={{ zIndex: 4 }}
+                    className="absolute w-full h-1.5 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md"
+                  />
+                </div>
                 <div className="flex justify-between text-xs font-bold font-headline">
                   <span>{minPrice.toLocaleString('vi-VN')}₫</span>
                   <span>{maxPrice.toLocaleString('vi-VN')}₫</span>
@@ -350,8 +394,10 @@ export default function Home() {
                   <button
                     key={size}
                     onClick={() => handleFrameSizeSelect(size)}
-                    className={`flex-1 py-2 px-3 rounded text-[11px] font-bold uppercase tracking-wide transition-all cursor-pointer
-                      ${selectedFrameSize === size ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-low'}`}
+                    className={`flex-1 py-3 px-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all cursor-pointer shadow-sm
+                      ${selectedFrameSize === size
+                        ? 'bg-primary text-on-primary shadow-primary/30 shadow-md scale-105'
+                        : 'bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container hover:scale-105'}`}
                   >
                     {size}
                   </button>

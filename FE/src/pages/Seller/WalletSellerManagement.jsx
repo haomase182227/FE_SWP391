@@ -93,7 +93,10 @@ export default function WalletSellerManagement() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Top-up thất bại.');
-      if (data.paymentUrl) window.location.href = data.paymentUrl;
+      if (data.paymentUrl) {
+        sessionStorage.setItem('topup_role', 'Seller');
+        window.location.href = data.paymentUrl;
+      }
     } catch (err) {
       setTopUpError(err.message || 'Có lỗi xảy ra.');
     } finally {
