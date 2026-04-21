@@ -27,6 +27,7 @@ import InspectionTracking from './pages/Seller/InspectionTracking';
 import MessageSellerManagement from './pages/Seller/MessageSellerManagement';
 import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
+import WalletTopupResult from './pages/Buyer/WalletTopupResult';
 import UserProfile from './pages/UserProfile';
 
 function AppContent() {
@@ -48,6 +49,7 @@ function AppContent() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/wallet/topup/result" element={<WalletTopupResult />} />
           <Route path="/order" element={<Order />} />
           <Route path="/chat" element={<Message />} />
           <Route path="/auth" element={<AuthPage />} />
