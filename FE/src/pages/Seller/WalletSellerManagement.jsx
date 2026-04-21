@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import SellerSidebar from '../../components/SellerSidebar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
+const vnd = (n) => (n ?? 0).toLocaleString('vi-VN') + '₫';
 
 const TRANSACTIONS = [
   {
@@ -15,7 +15,7 @@ const TRANSACTIONS = [
     iconColor: 'text-secondary',
     status: 'Completed',
     statusStyle: 'bg-tertiary-container/40 text-on-tertiary-container',
-    amount: '+$8,420.00',
+    amount: '+8.420.000₫',
     amountStyle: 'text-tertiary',
   },
   {
@@ -27,7 +27,7 @@ const TRANSACTIONS = [
     iconColor: 'text-error',
     status: 'Processing',
     statusStyle: 'bg-surface-container-highest text-on-surface-variant',
-    amount: '-$1,500.00',
+    amount: '-1.500.000₫',
     amountStyle: 'text-on-surface',
   },
   {
@@ -39,7 +39,7 @@ const TRANSACTIONS = [
     iconColor: 'text-secondary',
     status: 'Completed',
     statusStyle: 'bg-tertiary-container/40 text-on-tertiary-container',
-    amount: '+$1,850.00',
+    amount: '+1.850.000₫',
     amountStyle: 'text-tertiary',
   },
   {
@@ -51,7 +51,7 @@ const TRANSACTIONS = [
     iconColor: 'text-on-surface-variant',
     status: 'Completed',
     statusStyle: 'bg-tertiary-container/40 text-on-tertiary-container',
-    amount: '-$15.00',
+    amount: '-15.000₫',
     amountStyle: 'text-on-surface',
   },
 ];
@@ -61,9 +61,18 @@ const BAR_OPACITIES = ['bg-primary/10', 'bg-primary/10', 'bg-primary/20', 'bg-pr
 
 export default function WalletSellerManagement() {
   const [search, setSearch] = useState('');
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const token = currentUser?.token;
+
+  const [walletBalance, setWalletBalance] = useState(null);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/Auth/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setWalletBalance(data?.user?.wallet ?? 0))
+      .catch(() => {});
+  }, [token]);
 
   // Top-up state
   const [showTopUp, setShowTopUp] = useState(false);
@@ -167,7 +176,7 @@ export default function WalletSellerManagement() {
           {/* Bento Grid */}
           <div className="grid grid-cols-12 gap-6">
             {/* Available Balance */}
-            <div className="col-span-12 lg:col-span-8 bg-surface-container-low rounded-xl p-10 relative overflow-hidden group">
+            <div className="col-span-12 bg-surface-container-low rounded-xl p-10 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                 <span className="material-symbols-outlined" style={{ fontSize: '120px' }}>account_balance_wallet</span>
               </div>
@@ -178,69 +187,21 @@ export default function WalletSellerManagement() {
                     <span className="material-symbols-outlined text-xs text-tertiary">info</span>
                   </p>
                   <h2 className="text-7xl font-bold font-headline mt-2 tracking-tighter text-on-surface">
-                    $12,482.<span className="text-primary-container">50</span>
+                    {walletBalance === null ? '...' : vnd(walletBalance)}
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-4 items-center">
-                  <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-xl font-bold uppercase tracking-wider shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center gap-3">
-                    <span className="material-symbols-outlined">payments</span>
-                    Withdraw Funds
-                  </button>
                   <button
                     onClick={() => { setShowTopUp(true); setTopUpAmount(''); setTopUpError(''); }}
-                    className="border border-outline/20 hover:bg-surface-container-high transition-colors px-8 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center gap-3"
+                    className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-xl font-bold uppercase tracking-wider shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center gap-3"
                   >
                     <span className="material-symbols-outlined">add_card</span>
                     Top Up
                   </button>
-                  <button className="border border-outline/20 hover:bg-surface-container-high transition-colors px-8 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center gap-3">
-                    <span className="material-symbols-outlined">schedule</span>
-                    View Schedule
-                  </button>
                 </div>
                 <div className="pt-6 border-t border-outline-variant/10 grid grid-cols-3 gap-8">
-                  {[
-                    { label: 'Pending Clearance', value: '$2,140.00' },
-                    { label: 'Lifetime Earnings', value: '$84,921.12' },
-                    { label: 'Tax Year 2024', value: '$42,300.40' },
-                  ].map((stat) => (
-                    <div key={stat.label}>
-                      <p className="text-xs text-on-surface-variant uppercase tracking-tighter mb-1">{stat.label}</p>
-                      <p className="text-xl font-bold font-headline text-on-surface">{stat.value}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
-            </div>
-
-            {/* Payout Destination */}
-            <div className="col-span-12 lg:col-span-4 bg-surface-container-highest rounded-xl p-8 flex flex-col justify-between">
-              <div className="space-y-6">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-xl font-bold font-headline">Payout Destination</h3>
-                  <span className="px-3 py-1 bg-tertiary text-on-tertiary rounded-full text-[10px] font-bold uppercase tracking-widest">
-                    Active
-                  </span>
-                </div>
-                <div className="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/20 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-secondary/5 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-secondary">account_balance</span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">Chase Business</p>
-                      <p className="text-xs text-on-surface-variant">Ending in •••• 9210</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-on-surface-variant pt-2 border-t border-outline-variant/5">
-                    <span>Verification Date</span>
-                    <span className="font-medium text-on-surface">Oct 12, 2023</span>
-                  </div>
-                </div>
-              </div>
-              <button className="w-full mt-6 py-3 text-sm font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors border border-primary/20">
-                Manage Bank Details
-              </button>
             </div>
 
             {/* Recent Transactions */}
