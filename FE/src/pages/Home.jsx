@@ -27,7 +27,7 @@ export default function Home() {
   const [priceFilterActive, setPriceFilterActive] = useState(false);
 
   // Sort
-  const [sortMode, setSortMode] = useState('lowest'); // 'lowest' | 'highest'
+  const [sortMode, setSortMode] = useState('lowest'); // 'lowest' | 'highest' | 'newest' | 'oldest'
 
   // Brand filter
   const [selectedBrand, setSelectedBrand] = useState(null);
@@ -55,7 +55,13 @@ export default function Home() {
   const fetchSorted = useCallback(async (mode, p = 1, append = false) => {
     setLoading(true);
     try {
-      const endpoint = mode === 'lowest' ? 'sort/price-lowest' : 'sort/price-highest';
+      const endpointMap = {
+        lowest: 'sort/price-lowest',
+        highest: 'sort/price-highest',
+        newest: 'sort/newest',
+        oldest: 'sort/oldest',
+      };
+      const endpoint = endpointMap[mode] ?? 'sort/price-lowest';
       const params = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
       const res = await fetch(`${API_BASE}/listings/${endpoint}?${params}`, { headers: { accept: '*/*' } });
       if (!res.ok) throw new Error();
@@ -372,10 +378,12 @@ export default function Home() {
               <select
                 value={sortMode}
                 onChange={(e) => handleSortChange(e.target.value)}
-                className="border border-outline-variant/20 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wide bg-surface-container-lowest text-on-surface cursor-pointer focus:outline-none focus:border-primary/40"
+                className="border border-outline-variant/20 rounded px-3 py-1.5 text-xs font-bold tracking-wide bg-surface-container-lowest text-on-surface cursor-pointer focus:outline-none focus:border-primary/40"
               >
                 <option value="lowest">Lowest Price</option>
                 <option value="highest">Highest Price</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
               </select>
             </div>
           </div>
