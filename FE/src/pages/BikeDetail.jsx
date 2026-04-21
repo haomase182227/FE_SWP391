@@ -276,7 +276,8 @@ export default function BikeDetail() {
             <p className="text-on-surface leading-relaxed">{listing.description || 'No description available.'}</p>
           </section>
 
-          {/* Inspection Report Section - Placeholder */}
+          {/* Inspection Report Section */}
+          {listing.inspectionResult && (
           <section className="bg-surface-container-low rounded-xl p-10 editorial-shadow">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -284,17 +285,32 @@ export default function BikeDetail() {
                 <h2 className="text-3xl font-headline font-bold tracking-tight">Inspection Report</h2>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-headline font-bold text-tertiary">N/A</div>
-                <div className="text-[10px] font-bold text-on-surface-variant uppercase">Pending Inspection</div>
+                {listing.inspectionResult ? (
+                  listing.inspectionResult.isPassed ? (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary text-on-tertiary text-xs font-bold uppercase tracking-widest">
+                      <span className="material-symbols-outlined text-[14px]" style={{fontVariationSettings:"'FILL' 1"}}>verified</span>
+                      Passed
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error text-on-error text-xs font-bold uppercase tracking-widest">
+                      Failed
+                    </span>
+                  )
+                ) : (
+                  <>
+                    <div className="text-3xl font-headline font-bold text-tertiary">N/A</div>
+                    <div className="text-[10px] font-bold text-on-surface-variant uppercase">Pending Inspection</div>
+                  </>
+                )}
               </div>
             </div>
-            
+
             <div className="bg-surface-container-lowest rounded-lg p-6 mb-8 border border-secondary/5">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden flex-none">
-                  <img 
-                    className="w-full h-full object-cover" 
-                    alt="Inspector placeholder" 
+                  <img
+                    className="w-full h-full object-cover"
+                    alt="Inspector placeholder"
                     src="https://via.placeholder.com/48"
                   />
                 </div>
@@ -302,31 +318,31 @@ export default function BikeDetail() {
                   <div className="font-bold text-on-surface">Inspector</div>
                   <div className="text-xs text-on-surface-variant mb-4">Certified Mechanic</div>
                   <p className="text-on-surface leading-relaxed italic">
-                      "Inspection report will be available soon."
+                    "{listing.inspectionResult?.notes || 'Inspection report will be available soon.'}"
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white/50 p-4 rounded text-center">
-                <span className="material-symbols-outlined text-tertiary mb-2" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Pending</div>
-              </div>
-              <div className="bg-white/50 p-4 rounded text-center">
-                <span className="material-symbols-outlined text-tertiary mb-2" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Pending</div>
-              </div>
-              <div className="bg-white/50 p-4 rounded text-center">
-                <span className="material-symbols-outlined text-tertiary mb-2" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Pending</div>
-              </div>
-              <div className="bg-white/50 p-4 rounded text-center">
-                <span className="material-symbols-outlined text-tertiary mb-2" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Pending</div>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Frame Checked', value: listing.inspectionResult?.frameChecked },
+                { label: 'Brake Checked', value: listing.inspectionResult?.brakeChecked },
+                { label: 'Drivetrain Checked', value: listing.inspectionResult?.drivetrainChecked },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-white/50 p-4 rounded text-center">
+                  <span
+                    className={`material-symbols-outlined mb-2 ${value ? 'text-tertiary' : 'text-on-surface-variant/40'}`}
+                    style={{fontVariationSettings: "'FILL' 1"}}
+                  >
+                    {value ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{label}</div>
+                </div>
+              ))}
             </div>
           </section>
+          )}
         </div>
 
         {/* Right Column: Transactions & Seller */}
