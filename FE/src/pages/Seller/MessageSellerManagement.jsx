@@ -6,7 +6,7 @@ import * as signalR from '@microsoft/signalr';
 const API_BASE = '/api/v1';
 const HUB_URL  = 'https://swp391-bike-marketplace-backend-1.onrender.com/chatHub';
 
-export default function Message() {
+export default function MessageSellerManagement() {
   const { currentUser } = useAuth();
   const token    = currentUser?.token;
   const navigate = useNavigate();
@@ -56,6 +56,7 @@ export default function Message() {
 
     // ── Receive new message ──────────────────────────────────────────────
     connection.on('ReceiveMessage', (message) => {
+      console.log('[SignalR] ReceiveMessage:', message);
       const incomingConvId = message.conversationId ?? message.ConversationId;
       const incomingSenderId = String(message.senderId ?? message.SenderId);
       const currentUserId = String(currentUserIdRef.current);
@@ -64,7 +65,10 @@ export default function Message() {
       if (incomingConvId === activeConvIdRef.current) {
         setMessages(prevMessages => {
           // 1. Check if message already exists (avoid duplicate)
-          if (prevMessages.some(m => m.id === message.id)) return prevMessages;
+          if (prevMessages.some(m => m.id === message.id)) {
+            console.log('[SignalR] Message already exists, skipping:', message.id);
+            return prevMessages;
+          }
 
           // 2. If this is MY message (echo from server), replace optimistic bubble
           if (incomingSenderId === currentUserId) {
@@ -72,6 +76,7 @@ export default function Message() {
               m => m.isOptimistic && m.content === message.content
             );
             if (optimisticIndex !== -1) {
+              console.log('[SignalR] Replacing optimistic message with real one');
               const updated = [...prevMessages];
               updated[optimisticIndex] = {
                 ...message,
@@ -112,11 +117,13 @@ export default function Message() {
 
     connection
       .start()
+      .then(() => console.log('[SignalR] Connected successfully'))
       .catch(err => console.warn('[SignalR] start failed:', err));
 
     connectionRef.current = connection;
 
     return () => {
+      console.log('[SignalR] Disconnecting...');
       connection.stop();
       connectionRef.current = null;
     };
@@ -133,14 +140,15 @@ export default function Message() {
       const res = await fetch(`${API_BASE}/messaging/conversations`, {
         headers: authHeaders(),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       console.log('[fetchConversations] raw data:', data);
       const list = Array.isArray(data) ? data : (data.conversations ?? data.items ?? []);
       // Nếu API trả về rỗng nhưng đang silent refresh → giữ nguyên list cũ
       if (silent && list.length === 0) return;
       setConversations(list);
-    } catch {
+    } catch (err) {
+      console.error('[fetchConversations] error:', err.message);
       if (!silent) setConversations([]);
     } finally {
       if (!silent) setConvLoading(false);
@@ -208,11 +216,15 @@ export default function Message() {
     setConvDetail(null);
 
     // Access check — non-blocking
-    fetch(`${API_BASE}/messaging/conversations/${convId}/access`, {
-      headers: authHeaders(),
-    }).catch(() => {});
+    try {
+      await fetch(`${API_BASE}/messaging/conversations/${convId}/access`, {
+        headers: authHeaders(),
+      });
+    } catch (err) {
+      console.warn('[openConversation] access check failed:', err.message);
+    }
 
-    // Conversation detail (header: seller name, listing card)
+    // Conversation detail (header: buyer name, listing card)
     let detailData = null;
     try {
       const det = await fetch(`${API_BASE}/messaging/conversations/${convId}`, {
@@ -220,9 +232,12 @@ export default function Message() {
       });
       if (det.ok) {
         detailData = await det.json();
+        console.log('[openConversation] detail:', detailData);
         setConvDetail(detailData);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[openConversation] detail fetch failed:', err.message);
+    }
 
     // Load message history via REST
     await fetchMessages(convId, 1, false);
@@ -232,23 +247,32 @@ export default function Message() {
     if (conn?.state === signalR.HubConnectionState.Connected) {
       try {
         await conn.invoke('JoinConversation', convId);
+        console.log('[SignalR] Joined conversation:', convId);
       } catch (e) {
         console.warn('[SignalR] JoinConversation failed:', e);
       }
     }
 
     // Mark as read — REST + SignalR in parallel
-    fetch(`${API_BASE}/messaging/conversations/${convId}/read`, {
-      method: 'PUT',
-      headers: authHeaders(),
-    }).then(() => {
+    try {
+      await fetch(`${API_BASE}/messaging/conversations/${convId}/read`, {
+        method: 'PUT',
+        headers: authHeaders(),
+      });
       setConversations(prev =>
         prev.map(c => c.id === convId ? { ...c, unreadCount: 0 } : c)
       );
-    }).catch(() => {});
+    } catch (err) {
+      console.warn('[openConversation] mark as read failed:', err.message);
+    }
 
     if (conn?.state === signalR.HubConnectionState.Connected) {
-      conn.invoke('MarkAsRead', convId).catch(() => {});
+      try {
+        await conn.invoke('MarkAsRead', convId);
+        console.log('[SignalR] Marked as read:', convId);
+      } catch (err) {
+        console.warn('[SignalR] MarkAsRead failed:', err.message);
+      }
     }
 
     // Refresh sidebar — sau đó đảm bảo conversation hiện tại luôn có trong list
@@ -258,7 +282,7 @@ export default function Message() {
         // Conversation chưa có trong list (vừa tạo mới) → tự thêm từ detailData
         return [{
           id: convId,
-          otherUserName: detailData?.sellerName ?? detailData?.otherUserName ?? detailData?.buyerName ?? 'Người dùng',
+          otherUserName: detailData?.buyerName ?? detailData?.otherUserName ?? 'Người mua',
           listingTitle: detailData?.listingTitle ?? '',
           listingImage: detailData?.listingImage ?? detailData?.listingImageUrl ?? '',
           lastMessage: null,
@@ -319,6 +343,7 @@ export default function Message() {
     if (conn?.state === signalR.HubConnectionState.Connected) {
       try {
         await conn.invoke('SendMessage', activeConvId, content, 'Text');
+        console.log('[SignalR] Message sent via hub');
         sentViaHub = true;
         // SignalR will trigger ReceiveMessage which will replace optimistic bubble
       } catch (e) {
@@ -339,6 +364,7 @@ export default function Message() {
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const realMessage = await res.json();
+        console.log('[REST] Message sent via API:', realMessage);
         
         // Replace optimistic bubble with real message
         setMessages(prevMessages => {
@@ -378,10 +404,7 @@ export default function Message() {
   // ── Not logged in ────────────────────────────────────────────────────────
   if (!token) {
     return (
-      <div
-        className="flex items-center justify-center bg-white"
-        style={{ height: 'calc(100vh - 80px)', marginTop: '80px' }}
-      >
+      <div className="flex items-center justify-center bg-white min-h-screen">
         <div className="text-center space-y-4">
           <span className="material-symbols-outlined text-5xl text-gray-300">chat</span>
           <p className="text-gray-500">Vui lòng đăng nhập để xem tin nhắn.</p>
@@ -398,16 +421,13 @@ export default function Message() {
 
   // ── Main layout ──────────────────────────────────────────────────────────
   return (
-    <div
-      className="flex bg-white overflow-hidden"
-      style={{ height: 'calc(100vh - 80px)', marginTop: '80px' }}
-    >
+    <div className="flex bg-white overflow-hidden h-screen">
       {/* ── Sidebar ── */}
       <aside className="w-80 shrink-0 border-r border-gray-200 flex flex-col bg-gray-50">
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="font-bold text-base text-gray-900">Tin nhắn</h2>
+          <h2 className="font-bold text-base text-gray-900">Tin nhắn từ Người mua</h2>
           <button
-            onClick={fetchConversations}
+            onClick={() => fetchConversations(false)}
             title="Làm mới"
             className="text-gray-400 hover:text-orange-600 transition-colors"
           >
@@ -430,12 +450,14 @@ export default function Message() {
             <div className="flex flex-col items-center justify-center h-full py-16 text-center px-6">
               <span className="material-symbols-outlined text-5xl text-gray-200 mb-3">chat_bubble</span>
               <p className="text-sm font-medium text-gray-500">Chưa có cuộc trò chuyện nào</p>
-              <p className="text-xs text-gray-400 mt-1">Hãy chat với người bán từ trang sản phẩm</p>
+              <p className="text-xs text-gray-400 mt-1">Người mua sẽ liên hệ với bạn qua tin nhắn</p>
             </div>
           ) : (
             conversations.map(conv => {
               const isActive  = activeConvId === conv.id;
               const hasUnread = (conv.unreadCount ?? 0) > 0;
+              // Seller view: hiển thị tên Buyer
+              const displayName = conv.buyerName ?? conv.otherUserName ?? 'Người mua';
               return (
                 <button
                   key={conv.id}
@@ -452,7 +474,7 @@ export default function Message() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1 mb-0.5">
                       <p className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                        {conv.otherUserName ?? conv.sellerName ?? conv.buyerName ?? 'Người dùng'}
+                        {displayName}
                       </p>
                       {hasUnread && (
                         <span className="shrink-0 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
@@ -477,28 +499,29 @@ export default function Message() {
           <div className="flex-1 flex flex-col items-center justify-center text-center px-8 bg-gray-50">
             <span className="material-symbols-outlined text-7xl text-gray-200 mb-4">forum</span>
             <p className="text-gray-500 font-medium">Chọn một cuộc trò chuyện để bắt đầu</p>
-            <p className="text-gray-400 text-sm mt-1">Hoặc chat với người bán từ trang sản phẩm</p>
+            <p className="text-gray-400 text-sm mt-1">Người mua sẽ liên hệ với bạn về các sản phẩm đang bán</p>
           </div>
         ) : (
           <>
             {/* Header */}
             <div className="px-6 py-3.5 border-b border-gray-200 bg-white flex items-center gap-3 shrink-0 shadow-sm">
-              <div className="w-9 h-9 rounded-full bg-orange-100 shrink-0 flex items-center justify-center">
-                <span className="material-symbols-outlined text-lg text-orange-600">person</span>
+              <div className="w-9 h-9 rounded-full bg-blue-100 shrink-0 flex items-center justify-center">
+                <span className="material-symbols-outlined text-lg text-blue-600">person</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 truncate">
-                  {convDetail?.otherUserName ?? convDetail?.sellerName ?? convDetail?.buyerName ?? 'Người dùng'}
+                  {convDetail?.buyerName ?? convDetail?.otherUserName ?? 'Người mua'}
                 </p>
-                <p className="text-xs text-gray-400">Người bán</p>
+                <p className="text-xs text-gray-400">Người mua</p>
               </div>
+              {/* Listing Card — hiển thị thông tin xe đang chat */}
               {(convDetail?.listingTitle || convDetail?.listingImage || convDetail?.listingImageUrl) && (
-                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 max-w-[220px] shrink-0">
+                <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5 max-w-[240px] shrink-0">
                   {(convDetail.listingImage ?? convDetail.listingImageUrl) && (
                     <img
                       src={convDetail.listingImage ?? convDetail.listingImageUrl}
                       alt=""
-                      className="w-8 h-8 rounded object-cover shrink-0"
+                      className="w-9 h-9 rounded object-cover shrink-0"
                     />
                   )}
                   <div className="min-w-0">

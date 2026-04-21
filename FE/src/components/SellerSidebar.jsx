@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../pages/Context/AuthContext';
 
@@ -6,13 +6,39 @@ const NAV_ITEMS = [
   { icon: 'dashboard', label: 'Account', to: '/seller/account' },
   { icon: 'directions_bike', label: 'Listings', to: '/seller/listings' },
   { icon: 'shopping_cart', label: 'Orders', to: '/seller/orders' },
+  { icon: 'chat', label: 'Messages', to: '/seller/messages', hasBadge: true },
   { icon: 'account_balance_wallet', label: 'Wallet', to: '/seller/wallet' },
   { icon: 'verified', label: 'Inspections', to: '/seller/inspections' },
 ];
 
 export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc, avatarAlt = 'Seller Avatar', merchantName = 'Verified Merchant', merchantSub = 'Seller Dashboard', bottomButton, onBottomButtonClick }) {
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const token = currentUser?.token;
+    if (!token) return;
+
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/v1/messaging/unread-count', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count ?? data.unreadCount ?? 0);
+        }
+      } catch (err) {
+        console.warn('[SellerSidebar] Failed to fetch unread count:', err);
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [currentUser?.token]);
 
   function handleLogout() {
     logout();
@@ -41,7 +67,14 @@ export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc,
               }`;
             }}
           >
-            <span className="material-symbols-outlined text-xl">{item.icon}</span>
+            <div className="relative">
+              <span className="material-symbols-outlined text-xl">{item.icon}</span>
+              {item.hasBadge && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </div>
             <span>{item.label}</span>
           </NavLink>
         ))}

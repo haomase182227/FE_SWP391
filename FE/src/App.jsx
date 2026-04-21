@@ -24,6 +24,7 @@ import ListingManagement from './pages/Seller/ListingManagement';
 import OderManagement from './pages/Seller/OderManagement';
 import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
 import InspectionTracking from './pages/Seller/InspectionTracking';
+import MessageSellerManagement from './pages/Seller/MessageSellerManagement';
 import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
 import UserProfile from './pages/UserProfile';
@@ -34,7 +35,7 @@ function AppContent() {
   const isAdminPage = location.pathname.startsWith('/admin');
   const isSellerPage = location.pathname.startsWith('/seller');
   const isInspectorPage = location.pathname.startsWith('/inspector');
-  const isChatPage = location.pathname === '/chat';
+  const isChatPage = location.pathname === '/chat' || location.pathname === '/seller/messages';
   const hidePublicChrome = isAuthPage || isAdminPage || isSellerPage || isInspectorPage;
 
   return (
@@ -62,6 +63,7 @@ function AppContent() {
           <Route path="/seller/listings" element={<ListingManagement />} />
           <Route path="/seller/new-listing" element={<NewListing />} />
           <Route path="/seller/orders" element={<OderManagement />} />
+          <Route path="/seller/messages" element={<MessageSellerManagement />} />
           <Route path="/seller/wallet" element={<WalletSellerManagement />} />
           <Route path="/seller/inspections" element={<InspectionTracking />} />
           {/* Future Routes for Buyer, Seller, Inspector, Admin */}
