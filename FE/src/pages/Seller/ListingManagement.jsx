@@ -6,13 +6,21 @@ import { useAuth } from '../Context/AuthContext';
 const API_BASE = '/api/v1';
 
 const STATUS_STYLES = {
-  Active:  'bg-tertiary text-on-tertiary',
-  Sold:    'bg-surface-container-highest text-on-surface-variant',
-  Draft:   'border border-outline-variant/40 text-on-surface-variant',
-  Pending: 'bg-orange-500/10 text-orange-600',
+  Active:            'bg-tertiary text-on-tertiary',
+  Sold:              'bg-surface-container-highest text-on-surface-variant',
+  Pending:           'bg-orange-500/10 text-orange-600',
+  PendingInspection: 'bg-blue-500/10 text-blue-600',
 };
 
-const TABS = ['All', 'Active', 'Sold', 'Draft', 'Pending'];
+const TABS = ['All', 'Active', 'Sold', 'Pending', 'PendingInspection'];
+
+// Map API status → display status
+function normalizeStatus(raw) {
+  if (!raw) return null;
+  if (raw.toLowerCase() === 'approved') return 'Active';
+  if (raw.toLowerCase() === 'draft') return null; // hide drafts
+  return raw;
+}
 
 export default function ListingManagement() {
   const navigate = useNavigate();
@@ -126,8 +134,12 @@ export default function ListingManagement() {
     }
   }
 
+  const countByStatus = (s) => listings.filter(l => normalizeStatus(l.status) === s).length;
+
   // ── Client-side filter (search + tab) ────────────────────────
   const filtered = listings.filter((l) => {
+    const status = normalizeStatus(l.status);
+    if (!status) return false; // hide drafts
     const title    = (l.title ?? '').toLowerCase();
     const brand    = (l.brand ?? l.brandName ?? '').toLowerCase();
     const id       = String(l.id ?? '').toLowerCase();
@@ -136,17 +148,15 @@ export default function ListingManagement() {
       || id.includes(search.toLowerCase());
     if (activeTab === 0) return matchSearch;
     const tabStatus = TABS[activeTab];
-    return matchSearch && (l.status ?? '').toLowerCase() === tabStatus.toLowerCase();
+    return matchSearch && status === tabStatus;
   });
 
-  const countByStatus = (s) => listings.filter(l => (l.status ?? '').toLowerCase() === s.toLowerCase()).length;
-
   const stats = {
-    total:   listings.length,
-    active:  countByStatus('Active'),
-    sold:    countByStatus('Sold'),
-    draft:   countByStatus('Draft'),
-    pending: countByStatus('Pending'),
+    total:             listings.filter(l => normalizeStatus(l.status) !== null).length,
+    active:            countByStatus('Active'),
+    sold:              countByStatus('Sold'),
+    pending:           countByStatus('Pending'),
+    pendingInspection: countByStatus('PendingInspection'),
   };
 
   return (
@@ -197,11 +207,11 @@ export default function ListingManagement() {
             {/* Stats */}
             <div className="flex gap-6">
               {[
-                { label: 'Total',   value: stats.total,   color: 'text-on-surface' },
-                { label: 'Active',  value: stats.active,  color: 'text-tertiary' },
-                { label: 'Sold',    value: stats.sold,    color: 'text-secondary' },
-                { label: 'Draft',   value: stats.draft,   color: 'text-on-surface-variant' },
-                { label: 'Pending', value: stats.pending, color: 'text-orange-500' },
+                { label: 'Total',              value: stats.total,             color: 'text-on-surface' },
+                { label: 'Active',             value: stats.active,            color: 'text-tertiary' },
+                { label: 'Sold',               value: stats.sold,              color: 'text-secondary' },
+                { label: 'Pending',            value: stats.pending,           color: 'text-orange-500' },
+                { label: 'Pending Inspection', value: stats.pendingInspection, color: 'text-blue-500' },
               ].map((s, i) => (
                 <React.Fragment key={s.label}>
                   {i > 0 && <div className="w-px h-10 bg-outline-variant/20 self-center" />}
@@ -219,22 +229,25 @@ export default function ListingManagement() {
         {/* Filter Tabs */}
         <div className="flex items-center justify-between p-2 bg-surface-container-low rounded-xl mb-8">
           <div className="flex gap-1">
-            {TABS.map((tab, i) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(i)}
-                className={`px-6 py-2 text-xs uppercase tracking-tight font-semibold rounded-lg transition-colors ${
-                  activeTab === i
-                    ? 'bg-surface-container-lowest text-primary font-bold shadow-sm'
-                    : 'text-on-surface-variant hover:bg-surface-container-high'
-                }`}
-              >
-                {tab}
-                {tab !== 'All' && (
-                  <span className="ml-1.5 opacity-60">({countByStatus(tab)})</span>
-                )}
-              </button>
-            ))}
+            {TABS.map((tab, i) => {
+              const label = tab === 'PendingInspection' ? 'Pending Insp.' : tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(i)}
+                  className={`px-6 py-2 text-xs uppercase tracking-tight font-semibold rounded-lg transition-colors ${
+                    activeTab === i
+                      ? 'bg-surface-container-lowest text-primary font-bold shadow-sm'
+                      : 'text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {label}
+                  {tab !== 'All' && (
+                    <span className="ml-1.5 opacity-60">({countByStatus(tab)})</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
           <div className="flex items-center gap-2 pr-2 text-[10px] font-bold uppercase text-on-surface-variant tracking-widest">
             <span className="material-symbols-outlined text-sm">sort</span>
@@ -266,7 +279,7 @@ export default function ListingManagement() {
             const brand     = listing.brand ?? listing.brandName ?? '—';
             const category  = listing.category ?? listing.categoryName ?? '—';
             const condition = listing.condition ?? '—';
-            const status    = listing.status ?? 'Draft';
+            const status    = normalizeStatus(listing.status) ?? 'Pending';
             const price     = listing.price ?? 0;
             const year      = listing.year ?? '';
             const views     = listing.views ?? listing.viewCount ?? 0;
@@ -343,29 +356,18 @@ export default function ListingManagement() {
 
                   {/* Actions */}
                   <div className="col-span-2 flex justify-end gap-2">
-                    {status === 'Draft' ? (
-                      <button
-                        onClick={() => navigate('/seller/new-listing')}
-                        className="text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/30 px-3 py-2 rounded-lg hover:bg-primary/5 transition-colors"
-                      >
-                        Continue
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => openEdit(listing)}
-                          className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/30 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(listing)}
-                          className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors px-2 py-2 rounded-lg hover:bg-error-container/10"
-                        >
-                          <span className="material-symbols-outlined text-sm">delete</span>
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={() => openEdit(listing)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/30 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(listing)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors px-2 py-2 rounded-lg hover:bg-error-container/10"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
                   </div>
                 </div>
               </div>

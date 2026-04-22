@@ -239,7 +239,7 @@ export default function NewListing() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">Price (USD)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">Price (VND)</label>
                     <input
                       name="price"
                       value={form.price}
@@ -452,7 +452,7 @@ export default function NewListing() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">
-                      <span className="font-headline font-bold text-xl text-secondary">$149.00</span>
+                      <span className="font-headline font-bold text-xl text-secondary">200.000đ</span>
                       <button
                         type="button"
                         role="switch"
