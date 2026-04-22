@@ -36,18 +36,17 @@ export default function Order() {
     setShowErrorModal(true);
   };
 
-  // PHẦN 1: STATE CHO TÍNH NĂNG ĐÁNH GIÁ
+  // PHẦN 1: STATE CHO TÍNH NĂNG ĐÁNH GIÁ (REFACTORED)
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [isAlreadyRatedModal, setIsAlreadyRatedModal] = useState(false);
   const [isHistoryWarningModal, setIsHistoryWarningModal] = useState(false);
   const [isReReviewModal, setIsReReviewModal] = useState(false);
   const [reviewOrderId, setReviewOrderId] = useState(null);
-  const [currentReviewItemId, setCurrentReviewItemId] = useState(null);
+  const [reviewListingId, setReviewListingId] = useState(null);
+  const [reviewListingTitle, setReviewListingTitle] = useState('');
+  const [reviewItemId, setReviewItemId] = useState(null);
   const [oldReviewData, setOldReviewData] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
-  const [ratedOrders, setRatedOrders] = useState({});
-  const [reRatedOrders, setReRatedOrders] = useState({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   
@@ -212,51 +211,9 @@ export default function Order() {
     }
   };
 
-  // PHẦN 3: HÀM XỬ LÝ ĐÁNH GIÁ - LUỒNG 1: KHI BẤM NÚT "RATE"
-  const handleRateClick = async (order) => {
-    const orderId = order.orderId ?? order.id;
-    setReviewOrderId(orderId);
-    
-    try {
-      // Gọi API kiểm tra xem đã đánh giá chưa
-      const res = await fetch(`${API_BASE}/buyer/orders/${orderId}/reviews`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        
-        // Trường hợp B: Đã đánh giá - Hiển thị AlreadyRatedModal
-        if (data && Array.isArray(data) && data.length > 0) {
-          setIsAlreadyRatedModal(true);
-        } else {
-          // Trường hợp A: Chưa đánh giá - Mở ReviewModal
-          setRating(5);
-          setComment('');
-          setIsReviewModalOpen(true);
-        }
-      } else if (res.status === 404) {
-        // Trường hợp A: Chưa đánh giá (404) - Mở ReviewModal
-        setRating(5);
-        setComment('');
-        setIsReviewModalOpen(true);
-      } else {
-        showError('Không thể kiểm tra trạng thái đánh giá');
-      }
-    } catch (error) {
-      console.error('Lỗi kiểm tra đánh giá:', error);
-      showError('Có lỗi xảy ra khi kiểm tra đánh giá');
-    }
-  };
-
-  // Xử lý khi đóng AlreadyRatedModal
-  const handleCloseAlreadyRatedModal = () => {
-    setIsAlreadyRatedModal(false);
-    // Cập nhật lại dữ liệu để đảm bảo UI đồng bộ
-    fetchReviewHistory();
-  };
-
-  // Xử lý submit đánh giá lần 1
+  // PHẦN 3: HÀM XỬ LÝ ĐÁNH GIÁ - REFACTORED CHO TỪNG ITEM
+  
+  // Xử lý submit đánh giá lần 1 (POST)
   const handleSubmitReview = async () => {
     if (!rating || !comment.trim()) {
       setIsReviewModalOpen(false);
@@ -318,73 +275,22 @@ export default function Order() {
     }
   };
 
-  // LUỒNG 2: KHI BẤM NÚT "RATE AGAIN"
-  const handleRateAgainClick = async (order) => {
-    const orderId = order.orderId ?? order.id;
-    setReviewOrderId(orderId);
-    
-    try {
-      // Gọi API lấy lịch sử đánh giá
-      const res = await fetch(`${API_BASE}/buyer/orders/reviews`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        showError('Không thể lấy lịch sử đánh giá');
-        return;
-      }
-
-      const data = await res.json();
-      
-      // Tìm reviewItemId tương ứng với orderId
-      let foundReviewItem = null;
-      if (data && Array.isArray(data)) {
-        foundReviewItem = data.find(item => item.orderId === orderId);
-      }
-
-      if (foundReviewItem) {
-        setCurrentReviewItemId(foundReviewItem.reviewItemId || foundReviewItem.id);
-        setOldReviewData({
-          rating: foundReviewItem.rating || 5,
-          comment: foundReviewItem.comment || ''
-        });
-      } else {
-        setCurrentReviewItemId(null);
-        setOldReviewData(null);
-      }
-
-      // Mở HistoryWarningModal
-      setIsHistoryWarningModal(true);
-    } catch (error) {
-      console.error('Lỗi lấy lịch sử đánh giá:', error);
-      showError('Có lỗi xảy ra khi lấy lịch sử đánh giá');
-    }
-  };
-
-  // Xử lý khi bấm "Tôi chắc chắn" trong HistoryWarningModal
-  const handleConfirmReRate = () => {
-    setIsHistoryWarningModal(false);
-    setRating(5);
-    setComment('');
-    setIsReReviewModal(true);
-  };
-
-  // Xử lý submit đánh giá lại (lần 2)
+  // Xử lý submit đánh giá lại (lần 2) - PATCH
   const handleSubmitReReview = async () => {
     if (!rating || !comment.trim()) {
-      setIsReReviewModal(false); // Đóng modal đánh giá lại
+      setIsReReviewModal(false);
       showError("Vui lòng chọn số sao và nhập nội dung đánh giá!");
       return;
     }
 
-    if (!currentReviewItemId) {
-      setIsReReviewModal(false); // Đóng modal đánh giá lại
+    if (!reviewItemId) {
+      setIsReReviewModal(false);
       showError("Không tìm thấy ID đánh giá");
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE}/buyer/orders/reviews/${currentReviewItemId}`, {
+      const response = await fetch(`${API_BASE}/buyer/orders/reviews/${reviewItemId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -399,28 +305,37 @@ export default function Order() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error("Lỗi gửi đánh giá lại:", errorData);
-        setIsReReviewModal(false); // Đóng modal đánh giá lại
+        setIsReReviewModal(false);
         showError(errorData.message || JSON.stringify(errorData.errors) || "Không thể gửi đánh giá lại");
         return;
       }
 
-      // Thành công: Đóng modal và cập nhật UI
+      // Thành công
       setIsReReviewModal(false);
       setRating(5);
       setComment('');
+      setReviewListingId(null);
+      setReviewListingTitle('');
+      setReviewItemId(null);
       
-      // Hiển thị thông báo thành công
       setSuccessMessage('Đánh giá thành công, cảm ơn bạn.');
       setShowSuccessModal(true);
       
-      // Cập nhật lại dữ liệu từ API
       await fetchReviewHistory();
       fetchOrders();
     } catch (error) {
       console.error("Lỗi mạng:", error);
-      setIsReReviewModal(false); // Đóng modal đánh giá lại
+      setIsReReviewModal(false);
       showError('Có lỗi xảy ra khi gửi đánh giá lại');
     }
+  };
+
+  // Xử lý khi bấm "Tôi chắc chắn" trong HistoryWarningModal
+  const handleConfirmReRate = () => {
+    setIsHistoryWarningModal(false);
+    setRating(5);
+    setComment('');
+    setIsReReviewModal(true);
   };
 
   const filteredOrders = activeStatus === 'all' 
@@ -733,15 +648,15 @@ export default function Order() {
                                       // CHƯA ĐÁNH GIÁ - Hiển thị nút RATE
                                       <button
                                         onClick={() => {
+                                          console.log('🔵 RATE Button Clicked!', { orderId, itemListingId });
                                           setReviewOrderId(orderId);
                                           setReviewListingId(itemListingId);
                                           setReviewListingTitle(item.listingTitle);
-                                          setIsEditMode(false);
                                           setRating(5);
                                           setComment('');
                                           setIsReviewModalOpen(true);
                                         }}
-                                        className="bg-orange-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                                        className="bg-orange-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1 cursor-pointer"
                                       >
                                         <span className="material-symbols-outlined text-[14px]">star</span>
                                         Rate
@@ -758,19 +673,19 @@ export default function Order() {
                                         </button>
                                         <button
                                           onClick={() => {
+                                            console.log('🟡 RATE AGAIN Button Clicked!', { orderId, itemListingId });
                                             const existingReview = currentItemReviews[0];
                                             setReviewOrderId(orderId);
                                             setReviewListingId(itemListingId);
                                             setReviewListingTitle(item.listingTitle);
                                             setReviewItemId(existingReview.reviewItemId || existingReview.id);
-                                            setIsEditMode(true);
                                             setOldReviewData({
                                               rating: existingReview.rating || 5,
                                               comment: existingReview.comment || ''
                                             });
                                             setIsHistoryWarningModal(true);
                                           }}
-                                          className="bg-yellow-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                                          className="bg-yellow-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1 cursor-pointer"
                                         >
                                           <span className="material-symbols-outlined text-[14px]">refresh</span>
                                           Rate Again
@@ -1000,27 +915,6 @@ export default function Order() {
                 Hoàn tất đánh giá
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ALREADY RATED MODAL - Thông báo đã đánh giá */}
-      {isAlreadyRatedModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 text-center">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-4xl text-blue-600">info</span>
-              </div>
-            </div>
-            <h3 className="font-headline text-xl font-bold text-on-surface">Bạn đã đánh giá sản phẩm này rồi</h3>
-            <p className="text-sm text-on-surface-variant">Nếu bạn muốn thay đổi đánh giá, vui lòng sử dụng nút "Rate Again".</p>
-            <button
-              onClick={handleCloseAlreadyRatedModal}
-              className="w-full px-4 py-3 bg-primary text-on-primary font-bold uppercase text-sm rounded-lg hover:opacity-90"
-            >
-              Tôi biết rồi
-            </button>
           </div>
         </div>
       )}
