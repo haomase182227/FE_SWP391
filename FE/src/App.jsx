@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import BikeDetail from './pages/BikeDetail';
 import Wishlist from './pages/Buyer/Wishlist';
 import Cart from './pages/Buyer/Cart';
+import Checkout from './pages/Buyer/Checkout';
 import Wallet from './pages/Buyer/Wallet';
 import Order from './pages/Buyer/Order';
 import Message from './pages/Buyer/Message';
@@ -49,6 +50,7 @@ function AppContent() {
           <Route path="/bike/:id" element={<BikeDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/wallet/topup/result" element={<WalletTopupResult />} />
           <Route path="/order" element={<Order />} />

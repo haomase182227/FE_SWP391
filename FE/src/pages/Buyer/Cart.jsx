@@ -201,6 +201,7 @@ export default function Cart() {
                 </div>
                 <button
                   disabled={items.length === 0}
+                  onClick={() => navigate('/checkout')}
                   className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-5 rounded-lg font-bold text-sm uppercase tracking-widest hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40"
                 >
                   Proceed to Checkout
