@@ -264,35 +264,22 @@ export default function Order() {
       return;
     }
 
+    if (!reviewListingId) {
+      setIsReviewModalOpen(false);
+      showError("Không tìm thấy thông tin sản phẩm");
+      return;
+    }
+
     try {
-      // Tìm order từ danh sách orders đã load
-      const order = orders.find(o => (o.orderId ?? o.id) === reviewOrderId);
-      
-      if (!order) {
-        setIsReviewModalOpen(false);
-        showError("Không tìm thấy thông tin đơn hàng");
-        return;
-      }
-
-      // Lấy listingId từ items array (backend mới trả về)
-      const listingId = order.items?.[0]?.listingId;
-
-      if (!listingId) {
-        setIsReviewModalOpen(false);
-        showError("Không tìm thấy thông tin sản phẩm trong đơn hàng");
-        console.error('[Review] Order không có items hoặc listingId:', order);
-        return;
-      }
-
       const requestBody = {
         Items: [{
-          ListingId: Number(listingId),
+          ListingId: Number(reviewListingId),
           Rating: Number(rating),
           Comment: comment.trim()
         }]
       };
       
-      console.log('[Review] Sending review for orderId:', reviewOrderId);
+      console.log('[Review] Sending review for orderId:', reviewOrderId, 'listingId:', reviewListingId);
       console.log('[Review] Request body:', JSON.stringify(requestBody, null, 2));
 
       const response = await fetch(`${API_BASE}/buyer/orders/${reviewOrderId}/reviews`, {
@@ -316,6 +303,8 @@ export default function Order() {
       setIsReviewModalOpen(false);
       setRating(5);
       setComment('');
+      setReviewListingId(null);
+      setReviewListingTitle('');
       
       setSuccessMessage('Đánh giá thành công, cảm ơn bạn!');
       setShowSuccessModal(true);
@@ -646,128 +635,30 @@ export default function Order() {
                 </div>
               )
             ) : filteredOrders.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {filteredOrders.map((order) => {
                   const orderId = order.orderId ?? order.id;
                   const status = order.status?.toLowerCase() ?? '';
                   const canTakeAction = status === 'pending' || status === 'paid';
-                  
-                  // PHẦN 2: KIỂM TRA TRẠNG THÁI ĐÃ ĐÁNH GIÁ DỰA TRÊN API
                   const isCompleted = status === 'completed';
                   
-                  // Đếm số lần đã đánh giá từ reviewHistory (dữ liệu thực từ API)
-                  const currentOrderReviews = reviewHistory.filter(r => r.orderId === orderId);
-                  const reviewCount = currentOrderReviews.length;
+                  // Lấy danh sách items từ order (API mới trả về mảng items)
+                  const orderItems = order.items || [];
 
                   return (
-                    <div key={orderId} className="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4">
-                      <div className="flex items-start gap-4 mb-4">
-                        {/* Image */}
-                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
-                          {order.imageUrl ? (
-                            <img src={order.imageUrl} alt={order.listingTitle} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="material-symbols-outlined text-2xl text-on-surface-variant/20">directions_bike</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{order.brandName ?? 'BRAND'}</p>
-                              <p className="font-bold text-sm text-on-surface line-clamp-2 mt-1">{order.listingTitle ?? 'Product'}</p>
-                              <p className="text-xs text-on-surface-variant mt-1">Order #{order.orderCode ?? orderId}</p>
-                            </div>
-                            <p className="font-headline font-bold text-lg text-primary shrink-0">
-                              {(order.price ?? 0).toLocaleString('vi-VN')}₫
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-2">
-                            <span className="material-symbols-outlined text-sm">calendar_today</span>
-                            <span>{order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : '—'}</span>
-                            {order.dueDate && (
-                              <>
-                                <span className="mx-1">•</span>
-                                <span className="material-symbols-outlined text-sm">schedule</span>
-                                <span>Due: {new Date(order.dueDate).toLocaleDateString('vi-VN')}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center pt-3 border-t border-outline-variant/10">
-                        {/* Nhóm nút bên trái: COMPLETE, CANCEL, và RATE */}
-                        <div className="flex items-center gap-3">
-                          {canTakeAction && (
-                            <>
-                              <button
-                                onClick={() => handleCompleteOrder(orderId)}
-                                className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                                Complete
-                              </button>
-                              <button
-                                onClick={() => handleCancelOrder(orderId)}
-                                className="bg-error text-on-error text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">cancel</span>
-                                Cancel
-                              </button>
-                            </>
-                          )}
-                          
-                          {/* PHẦN 2: NÚT ĐÁNH GIÁ CHO ĐƠN HÀNG COMPLETED - LOGIC DỰA TRÊN API */}
-                          {isCompleted && (
-                            <>
-                              {reviewCount === 0 ? (
-                                // TRƯỜNG HỢP 1: Chưa đánh giá lần nào - Hiển thị nút "RATE"
-                                <button
-                                  onClick={() => handleRateClick(order)}
-                                  className="bg-orange-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
-                                >
-                                  <span className="material-symbols-outlined text-[14px]">star</span>
-                                  Rate
-                                </button>
-                              ) : reviewCount === 1 ? (
-                                // TRƯỜNG HỢP 2: Đã đánh giá 1 lần - Hiển thị "RATED" + "RATE AGAIN"
-                                <>
-                                  <button
-                                    disabled
-                                    className="bg-emerald-600 text-white text-[10px] font-bold uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1 cursor-not-allowed"
-                                  >
-                                    <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
-                                    Rated
-                                  </button>
-                                  <button
-                                    onClick={() => handleRateAgainClick(order)}
-                                    className="bg-yellow-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
-                                  >
-                                    <span className="material-symbols-outlined text-[14px]">refresh</span>
-                                    Rate Again
-                                  </button>
-                                </>
-                              ) : (
-                                // TRƯỜNG HỢP 3: Đã đánh giá >= 2 lần - CHỈ hiển thị "RATED" (khóa vĩnh viễn)
-                                <button
-                                  disabled
-                                  className="bg-emerald-600 text-white text-[10px] font-bold uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1 cursor-not-allowed"
-                                >
-                                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
-                                  Rated
-                                </button>
-                              )}
-                            </>
-                          )}
+                    <div key={orderId} className="bg-white border border-outline-variant/20 rounded-xl p-6 shadow-sm">
+                      {/* HEADER ĐƠN HÀNG */}
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-outline-variant/10">
+                        <div>
+                          <p className="text-xs text-on-surface-variant">Order #{order.orderCode ?? orderId}</p>
+                          <p className="text-xs text-on-surface-variant mt-1">
+                            <span className="material-symbols-outlined text-[14px] align-middle">calendar_today</span>
+                            {order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : '—'}
+                          </p>
                         </div>
                         
-                        {/* Nhóm bên phải: Nhãn trạng thái và icon Con mắt */}
-                        <div className="ml-auto flex items-center gap-4">
+                        {/* Trạng thái đơn hàng */}
+                        <div className="flex items-center gap-2">
                           {status === 'pending' && (
                             <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1">
                               <span className="material-symbols-outlined text-[14px]">schedule</span>
@@ -792,12 +683,146 @@ export default function Order() {
                               Cancelled
                             </span>
                           )}
+                        </div>
+                      </div>
+
+                      {/* VÒNG LẶP ITEMS - HIỂN THỊ TỪNG SẢN PHẨM TRONG ĐƠN HÀNG */}
+                      <div className="space-y-4">
+                        {orderItems.length > 0 ? orderItems.map((item, itemIndex) => {
+                          const itemListingId = item.listingId;
                           
-                          <button onClick={() => setSelectedOrder(order)} className="p-2 text-on-surface hover:text-primary rounded-lg transition-colors">
+                          // LOGIC KIỂM TRA TRẠNG THÁI ĐÁNH GIÁ CHO TỪNG ITEM
+                          const currentItemReviews = reviewHistory.filter(
+                            r => r.orderId === orderId && r.listingId === itemListingId
+                          );
+                          const reviewCount = currentItemReviews.length;
+
+                          return (
+                            <div key={`${orderId}-${itemListingId}-${itemIndex}`} className="flex items-start gap-4 p-4 bg-surface-container-lowest rounded-lg">
+                              {/* Hình ảnh sản phẩm */}
+                              <div className="w-24 h-24 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
+                                {item.imageUrl ? (
+                                  <img src={item.imageUrl} alt={item.listingTitle} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-3xl text-on-surface-variant/20">directions_bike</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Thông tin sản phẩm */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
+                                      {item.brandName ?? 'BRAND'}
+                                    </p>
+                                    <p className="font-bold text-base text-on-surface line-clamp-2 mt-1">
+                                      {item.listingTitle ?? 'Product'}
+                                    </p>
+                                  </div>
+                                  <p className="font-headline font-bold text-xl text-primary shrink-0">
+                                    {(item.price ?? 0).toLocaleString('vi-VN')}₫
+                                  </p>
+                                </div>
+
+                                {/* NÚT ĐÁNH GIÁ CHO TỪNG ITEM - CHỈ HIỂN THỊ KHI COMPLETED */}
+                                {isCompleted && (
+                                  <div className="flex items-center gap-2 mt-3">
+                                    {reviewCount === 0 ? (
+                                      // CHƯA ĐÁNH GIÁ - Hiển thị nút RATE
+                                      <button
+                                        onClick={() => {
+                                          setReviewOrderId(orderId);
+                                          setReviewListingId(itemListingId);
+                                          setReviewListingTitle(item.listingTitle);
+                                          setIsEditMode(false);
+                                          setRating(5);
+                                          setComment('');
+                                          setIsReviewModalOpen(true);
+                                        }}
+                                        className="bg-orange-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                                      >
+                                        <span className="material-symbols-outlined text-[14px]">star</span>
+                                        Rate
+                                      </button>
+                                    ) : reviewCount === 1 ? (
+                                      // ĐÃ ĐÁNH GIÁ 1 LẦN - Hiển thị RATED + RATE AGAIN
+                                      <>
+                                        <button
+                                          disabled
+                                          className="bg-emerald-600 text-white text-[10px] font-bold uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1 cursor-not-allowed"
+                                        >
+                                          <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
+                                          Rated
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            const existingReview = currentItemReviews[0];
+                                            setReviewOrderId(orderId);
+                                            setReviewListingId(itemListingId);
+                                            setReviewListingTitle(item.listingTitle);
+                                            setReviewItemId(existingReview.reviewItemId || existingReview.id);
+                                            setIsEditMode(true);
+                                            setOldReviewData({
+                                              rating: existingReview.rating || 5,
+                                              comment: existingReview.comment || ''
+                                            });
+                                            setIsHistoryWarningModal(true);
+                                          }}
+                                          className="bg-yellow-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                                        >
+                                          <span className="material-symbols-outlined text-[14px]">refresh</span>
+                                          Rate Again
+                                        </button>
+                                      </>
+                                    ) : (
+                                      // ĐÃ ĐÁNH GIÁ >= 2 LẦN - CHỈ hiển thị RATED (khóa vĩnh viễn)
+                                      <button
+                                        disabled
+                                        className="bg-emerald-600 text-white text-[10px] font-bold uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1 cursor-not-allowed"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
+                                        Rated
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }) : (
+                          <div className="text-center py-4 text-on-surface-variant text-sm">
+                            Không có sản phẩm trong đơn hàng này
+                          </div>
+                        )}
+                      </div>
+
+                      {/* FOOTER ĐƠN HÀNG - NÚT COMPLETE/CANCEL */}
+                      {canTakeAction && (
+                        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-outline-variant/10">
+                          <button
+                            onClick={() => handleCompleteOrder(orderId)}
+                            className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase px-4 py-2 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                            Complete Order
+                          </button>
+                          <button
+                            onClick={() => handleCancelOrder(orderId)}
+                            className="bg-error text-on-error text-[10px] font-bold uppercase px-4 py-2 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">cancel</span>
+                            Cancel Order
+                          </button>
+                          <button 
+                            onClick={() => setSelectedOrder(order)} 
+                            className="ml-auto p-2 text-on-surface hover:text-primary rounded-lg transition-colors"
+                          >
                             <span className="material-symbols-outlined">visibility</span>
                           </button>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -912,9 +937,12 @@ export default function Order() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-6">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đánh giá đơn hàng</p>
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đánh giá sản phẩm</p>
                 <h2 className="font-headline text-2xl font-bold mt-1">Chia sẻ trải nghiệm</h2>
+                {reviewListingTitle && (
+                  <p className="text-sm text-on-surface-variant mt-2 italic">"{reviewListingTitle}"</p>
+                )}
               </div>
               <button onClick={() => setIsReviewModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                 <span className="material-symbols-outlined">close</span>
@@ -1070,9 +1098,12 @@ export default function Order() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-6">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đánh giá lại đơn hàng</p>
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đánh giá lại sản phẩm</p>
                 <h2 className="font-headline text-2xl font-bold mt-1">Cập nhật đánh giá</h2>
+                {reviewListingTitle && (
+                  <p className="text-sm text-on-surface-variant mt-2 italic">"{reviewListingTitle}"</p>
+                )}
               </div>
               <button onClick={() => setIsReReviewModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
                 <span className="material-symbols-outlined">close</span>
