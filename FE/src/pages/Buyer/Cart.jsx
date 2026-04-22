@@ -233,18 +233,6 @@ export default function Cart() {
           </div>
         </div>
       </main>
-
-      <footer className="bg-surface-container-high py-12 px-8 mt-12">
-        <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 opacity-60">
-          <div className="text-xl font-bold tracking-tighter font-headline uppercase">KINETIC</div>
-          <div className="flex gap-8 text-xs font-bold uppercase tracking-widest">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Guarantee</a>
-          </div>
-          <div className="text-xs">© 2024 KINETIC PERFORMANCE. ALL RIGHTS RESERVED.</div>
-        </div>
-      </footer>
     </div>
   );
 }
