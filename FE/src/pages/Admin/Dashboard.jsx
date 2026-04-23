@@ -1,7 +1,63 @@
+import { useEffect, useState } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminTopBar from '../../components/AdminTopBar';
+import { useAuth } from '../Context/AuthContext';
+
+const API_BASE = '/api/v1';
 
 const Dashboard = () => {
+  const { currentUser } = useAuth();
+  const token = currentUser?.token;
+
+  const [stats, setStats] = useState({
+    totalEscrowVolume: null,
+    totalUsers: null,
+    totalReviews: null,
+    totalApprovedListings: null,
+    totalTransactions: null,
+    pendingListings: null,
+  });
+
+  useEffect(() => {
+    if (!token) return;
+    const h = { Authorization: `Bearer ${token}` };
+
+    // Total escrow volume + total transactions
+    fetch(`${API_BASE}/admin/transactions?page=1&pageSize=1`, { headers: h })
+      .then(r => r.json())
+      .then(d => setStats(s => ({ ...s, totalEscrowVolume: d.totalEscrowVolume ?? 0, totalTransactions: d.totalTransactions ?? 0 })))
+      .catch(() => {});
+
+    // Total users
+    fetch(`${API_BASE}/Auth/users?pageNumber=1&pageSize=1`, { headers: h })
+      .then(r => r.json())
+      .then(d => setStats(s => ({ ...s, totalUsers: d.totalRecords ?? 0 })))
+      .catch(() => {});
+
+    // Total reviews
+    fetch(`${API_BASE}/admin/orders/reviews`, { headers: h })
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d) ? d : (d.reviews ?? []);
+        setStats(s => ({ ...s, totalReviews: list.length }));
+      })
+      .catch(() => {});
+
+    // Total approved listings
+    fetch(`${API_BASE}/admin/listings?page=1&pageSize=1&status=Approved`, { headers: h })
+      .then(r => r.json())
+      .then(d => setStats(s => ({ ...s, totalApprovedListings: d.totalItems ?? d.totalCount ?? d.total ?? (d.items ?? d.listings ?? []).length })))
+      .catch(() => {});
+
+    // Pending listings
+    fetch(`${API_BASE}/admin/listings/pending?page=1&pageSize=1`, { headers: h })
+      .then(r => r.json())
+      .then(d => setStats(s => ({ ...s, pendingListings: d.totalItems ?? d.totalCount ?? d.total ?? (d.items ?? d.listings ?? []).length })))
+      .catch(() => {});
+  }, [token]);
+
+  const fmt = (v) => v === null ? '—' : v.toLocaleString();
+
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
@@ -10,343 +66,170 @@ const Dashboard = () => {
       {/* Main Content Canvas */}
       <main className="md:ml-64 pt-24 px-8 pb-12 min-h-screen">
         {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <span className="label-md uppercase font-bold text-on-surface-variant tracking-widest mb-2 block">
-              System Pulse
-            </span>
-            <h2 className="text-6xl md:text-7xl font-headline font-black text-on-surface tracking-tighter leading-tight">
-              Admin<br />Overview.
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <div className="bg-surface-container-low p-6 rounded-xl flex items-center gap-4">
-              <div className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                  Server Status
-                </p>
-                <p className="font-headline font-bold text-lg">99.98% Uptime</p>
-              </div>
-            </div>
-            <div className="bg-secondary p-6 rounded-xl text-on-secondary flex items-center gap-4">
-              <span className="material-symbols-outlined">speed</span>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">
-                  API Latency
-                </p>
-                <p className="font-headline font-bold text-lg">42ms</p>
-              </div>
-            </div>
-          </div>
+        <header className="mb-12">
+          <h2 className="text-6xl md:text-7xl font-headline font-black text-on-surface tracking-tighter leading-tight">
+            Admin<br />Overview.
+          </h2>
         </header>
 
         {/* Metrics Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {/* Total Revenue */}
-          <div className="bg-surface-container-lowest p-8 rounded-xl relative overflow-hidden shadow-[0_20px_40px_rgba(78,33,32,0.06)] group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl">payments</span>
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-primary hover:-translate-y-1 transition-transform duration-300">
+            <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <span className="material-symbols-outlined text-8xl text-primary">receipt_long</span>
             </div>
-            <p className="label-sm uppercase font-bold text-on-surface-variant tracking-widest mb-4">
+            <p className="text-[10px] uppercase font-black text-primary tracking-widest mb-4 h-10 flex items-start">
               Total Revenue
             </p>
-            <h3 className="text-4xl font-headline font-bold text-primary mb-2 tracking-tighter">
-              $428,950
+            <h3 className="text-5xl font-headline font-black text-primary mb-3 tracking-tighter">
+              {stats.totalEscrowVolume === null ? '—' : `${stats.totalEscrowVolume.toLocaleString('vi-VN')}₫`}
             </h3>
-            <div className="flex items-center gap-2 text-tertiary">
-              <span className="material-symbols-outlined text-sm">trending_up</span>
-              <span className="text-xs font-bold">+12.4% vs LY</span>
+            <div className="flex items-center gap-2 text-primary/70 mt-auto">
+              <span className="material-symbols-outlined text-sm">payments</span>
+              <span className="text-xs font-bold">Tổng tiền giao dịch</span>
             </div>
           </div>
           {/* Active Users */}
-          <div className="bg-surface-container-lowest p-8 rounded-xl relative overflow-hidden shadow-[0_20px_40px_rgba(78,33,32,0.06)] group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl">group</span>
+          <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-secondary hover:-translate-y-1 transition-transform duration-300">
+            <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <span className="material-symbols-outlined text-8xl text-secondary">group</span>
             </div>
-            <p className="label-sm uppercase font-bold text-on-surface-variant tracking-widest mb-4">
+            <p className="text-[10px] uppercase font-black text-secondary tracking-widest mb-4 h-10 flex items-start">
               Active Users
             </p>
-            <h3 className="text-4xl font-headline font-bold text-on-surface mb-2 tracking-tighter">
-              14,202
+            <h3 className="text-5xl font-headline font-black text-on-surface mb-3 tracking-tighter">
+              {fmt(stats.totalUsers)}
             </h3>
-            <div className="flex items-center gap-2 text-tertiary">
-              <span className="material-symbols-outlined text-sm">trending_up</span>
-              <span className="text-xs font-bold">+5.2% Today</span>
+            <div className="flex items-center gap-2 text-secondary/70 mt-auto">
+              <span className="material-symbols-outlined text-sm">person</span>
+              <span className="text-xs font-bold">Tổng người dùng</span>
             </div>
           </div>
-          {/* Pending Moderation */}
-          <div className="bg-surface-container-lowest p-8 rounded-xl relative overflow-hidden shadow-[0_20px_40px_rgba(78,33,32,0.06)] group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl">inventory_2</span>
+          {/* Total Number Of Reviews */}
+          <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-orange-500 hover:-translate-y-1 transition-transform duration-300">
+            <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <span className="material-symbols-outlined text-8xl text-orange-500">rate_review</span>
             </div>
-            <p className="label-sm uppercase font-bold text-on-surface-variant tracking-widest mb-4">
-              Pending Approval
+            <p className="text-[10px] uppercase font-black text-orange-600 tracking-widest mb-4 h-10 flex items-start">
+              Total Number Of Reviews
             </p>
-            <h3 className="text-4xl font-headline font-bold text-on-surface mb-2 tracking-tighter">
-              87
+            <h3 className="text-5xl font-headline font-black text-on-surface mb-3 tracking-tighter">
+              {fmt(stats.totalReviews)}
             </h3>
-            <div className="flex items-center gap-2 text-error">
-              <span className="material-symbols-outlined text-sm">priority_high</span>
-              <span className="text-xs font-bold">12 Critical</span>
+            <div className="flex items-center gap-2 text-orange-500/70 mt-auto">
+              <span className="material-symbols-outlined text-sm">star</span>
+              <span className="text-xs font-bold">Tổng đánh giá</span>
             </div>
           </div>
-          {/* Active Disputes */}
-          <div className="bg-surface-container-lowest p-8 rounded-xl relative overflow-hidden shadow-[0_20px_40px_rgba(78,33,32,0.06)] group border-2 border-primary/5">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-6xl">warning</span>
+          {/* Total Approved Listings */}
+          <div className="bg-gradient-to-br from-tertiary/10 to-tertiary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-tertiary hover:-translate-y-1 transition-transform duration-300">
+            <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <span className="material-symbols-outlined text-8xl text-tertiary">directions_bike</span>
             </div>
-            <p className="label-sm uppercase font-bold text-on-surface-variant tracking-widest mb-4">
-              Active Disputes
+            <p className="text-[10px] uppercase font-black text-tertiary tracking-widest mb-4 h-10 flex items-start">
+              Total Approved Listings
             </p>
-            <h3 className="text-4xl font-headline font-bold text-on-surface mb-2 tracking-tighter">
-              04
+            <h3 className="text-5xl font-headline font-black text-on-surface mb-3 tracking-tighter">
+              {fmt(stats.totalApprovedListings)}
             </h3>
-            <div className="flex items-center gap-2 text-on-surface-variant">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              <span className="text-xs font-bold">Avg. Resolution: 4h</span>
+            <div className="flex items-center gap-2 text-tertiary/70 mt-auto">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              <span className="text-xs font-bold">Xe đã được duyệt</span>
             </div>
           </div>
         </div>
 
-        {/* System Health & Activity Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Recent Activity Feed */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between px-2">
-              <h4 className="font-headline font-bold text-2xl tracking-tighter uppercase">
-                Recent Stream
-              </h4>
-              <button className="text-primary font-bold text-xs uppercase tracking-widest hover:underline">
-                View All Logs
-              </button>
-            </div>
-            <div className="space-y-4">
-              {/* Activity Item 1 */}
-              <div className="bg-surface-container-low p-6 rounded-xl flex gap-6 items-center hover:bg-surface-container-high transition-colors">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined">shopping_bag</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-bold text-on-surface">
-                      New Transaction: Pinarello Dogma F12
-                    </p>
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      2m ago
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    User <span className="text-on-surface font-medium">@velovelo</span>{' '}
-                    purchased from{' '}
-                    <span className="text-on-surface font-medium">@thecyclinghub</span>.
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-headline font-bold text-primary">$8,450</p>
-                </div>
-              </div>
-              {/* Activity Item 2 */}
-              <div className="bg-surface-container-low p-6 rounded-xl flex gap-6 items-center hover:bg-surface-container-high transition-colors">
-                <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                  <span className="material-symbols-outlined">person_add</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-bold text-on-surface">
-                      Pro-Inspector Verified
-                    </p>
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      14m ago
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    Marco Rossi has been approved as an authorized Veloce Inspector.
-                  </p>
-                </div>
-                <div>
-                  <span className="px-3 py-1 bg-tertiary text-on-tertiary text-[10px] font-bold rounded-full uppercase">
-                    Verified
-                  </span>
-                </div>
-              </div>
-              {/* Activity Item 3 */}
-              <div className="bg-surface-container-low p-6 rounded-xl flex gap-6 items-center hover:bg-surface-container-high transition-colors">
-                <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center text-error">
-                  <span className="material-symbols-outlined">flag</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-bold text-on-surface">
-                      Listing Flagged for Review
-                    </p>
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      38m ago
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    Incomplete serial number detected on Specialized Tarmac SL7.
-                  </p>
-                </div>
-                <button className="px-4 py-2 bg-on-surface text-surface text-[10px] font-bold rounded uppercase tracking-widest hover:opacity-90">
-                  Review
-                </button>
-              </div>
-              {/* Activity Item 4 */}
-              <div className="bg-surface-container-low p-6 rounded-xl flex gap-6 items-center hover:bg-surface-container-high transition-colors">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined">payments</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-bold text-on-surface">
-                      Payout Batch Completed
-                    </p>
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase">
-                      1h ago
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    124 pending seller payouts successfully processed.
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-headline font-bold text-primary">$124k</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* SVG Grouped Bar Chart */}
+        {(() => {
+          const chartData = [
+            { label: 'Users',        value: stats.totalUsers ?? 0,            color: '#6366f1' },
+            { label: 'Transactions', value: stats.totalTransactions ?? 0,     color: '#a83120' },
+            { label: 'Reviews',      value: stats.totalReviews ?? 0,          color: '#f97316' },
+            { label: 'Approved',     value: stats.totalApprovedListings ?? 0, color: '#22c55e' },
+            { label: 'Pending',      value: stats.pendingListings ?? 0,       color: '#eab308' },
+          ];
 
-          {/* Side Card: Listing Performance */}
-          <div className="space-y-6">
-            <div className="px-2">
-              <h4 className="font-headline font-bold text-2xl tracking-tighter uppercase">
-                Inventory Stats
-              </h4>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
-              <div className="space-y-6">
+          const W = 900, H = 340, padL = 60, padR = 20, padT = 30, padB = 60;
+          const chartW = W - padL - padR;
+          const chartH = H - padT - padB;
+          const maxVal = Math.max(...chartData.map(d => d.value), 1);
+          const barW = Math.min(60, (chartW / chartData.length) * 0.55);
+          const gap = chartW / chartData.length;
+          const yTicks = 5;
+
+          return (
+            <div className="bg-white rounded-2xl shadow-[0_8px_32px_rgba(78,33,32,0.10)] border border-outline-variant/10 p-8">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                      Aero Road
-                    </span>
-                    <span className="text-xs font-bold">42%</span>
-                  </div>
-                  <div className="w-full h-1 bg-surface-container-high overflow-hidden rounded-full">
-                    <div className="bg-primary h-full w-[42%]"></div>
-                  </div>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant mb-1">Tổng quan hệ thống</p>
+                  <h3 className="text-2xl font-headline font-black text-on-surface tracking-tighter">Platform Statistics</h3>
                 </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                      Mountain / MTB
-                    </span>
-                    <span className="text-xs font-bold">28%</span>
-                  </div>
-                  <div className="w-full h-1 bg-surface-container-high overflow-hidden rounded-full">
-                    <div className="bg-secondary h-full w-[28%]"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                      Gravel / CX
-                    </span>
-                    <span className="text-xs font-bold">18%</span>
-                  </div>
-                  <div className="w-full h-1 bg-surface-container-high overflow-hidden rounded-full">
-                    <div className="bg-tertiary h-full w-[18%]"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                      E-Bikes
-                    </span>
-                    <span className="text-xs font-bold">12%</span>
-                  </div>
-                  <div className="w-full h-1 bg-surface-container-high overflow-hidden rounded-full">
-                    <div className="bg-orange-400 h-full w-[12%]"></div>
-                  </div>
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-full">
+                  Cập nhật mới nhất
+                </span>
               </div>
-              <div className="mt-10 pt-8 border-t border-outline-variant/10">
-                <div className="flex items-center gap-4 mb-6">
-                  <img
-                    alt="Hot Bike"
-                    className="w-20 h-14 object-cover rounded-lg"
-                    data-alt="Modern professional carbon fiber racing bicycle standing against a clean white wall with studio lighting"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnyyjMbTtYrGw5iATsq7UNWRBCBtG_dcu1lG9TP_A3alT3-AdGYxzbgT6f3ego092s9a-fnLAjLGLtLQ4KdPn03uKlWKC8nKHbjDbG9l_W-NGIAs0W14ay51jeCW6MxkUWQ7UR8Nu86nb9OeSZmNUyemwX3hrUw7dNROvmRUCZLAulRcsO6LgbZvbhgdh53CDA830qx_RNf71B0UhPRsImQ-08OUAv4bQcn87mjv6_V3o0APFQ2vVi7H83WhU6BrYouEfveCsMJUuB"
-                  />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                      Top Performer
-                    </p>
-                    <p className="text-sm font-bold leading-tight">
-                      Cervélo S5 Ultegra Di2
-                    </p>
-                    <p className="text-xs text-on-surface-variant">12 bids this week</p>
+
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 340 }}>
+                {/* Y grid lines + labels */}
+                {Array.from({ length: yTicks + 1 }, (_, i) => {
+                  const val = Math.round((maxVal / yTicks) * i);
+                  const y = padT + chartH - (i / yTicks) * chartH;
+                  return (
+                    <g key={i}>
+                      <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+                      <text x={padL - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#9ca3af" fontWeight="600">
+                        {val.toLocaleString()}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Bars */}
+                {chartData.map((d, i) => {
+                  const barH = maxVal > 0 ? (d.value / maxVal) * chartH : 0;
+                  const cx = padL + gap * i + gap / 2;
+                  const x = cx - barW / 2;
+                  const y = padT + chartH - barH;
+                  return (
+                    <g key={d.label}>
+                      {/* Bar */}
+                      <rect
+                        x={x} y={y}
+                        width={barW} height={Math.max(barH, 2)}
+                        rx="6" ry="6"
+                        fill={d.color}
+                        opacity="0.9"
+                      />
+                      {/* Value label on top */}
+                      <text x={cx} y={y - 6} textAnchor="middle" fontSize="12" fill={d.color} fontWeight="800">
+                        {d.value.toLocaleString()}
+                      </text>
+                      {/* X label */}
+                      <text x={cx} y={padT + chartH + 20} textAnchor="middle" fontSize="11" fill="#6b7280" fontWeight="700">
+                        {d.label}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* X axis line */}
+                <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="#d1d5db" strokeWidth="1.5" />
+              </svg>
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-5 mt-4 pt-5 border-t border-outline-variant/10">
+                {chartData.map(d => (
+                  <div key={d.label} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: d.color }} />
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">{d.label}</span>
                   </div>
-                </div>
-                <button className="w-full py-3 border border-outline-variant/20 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-secondary-container transition-colors">
-                  Generate Inventory Report
-                </button>
-              </div>
-            </div>
-            {/* Quick Actions */}
-            <div className="bg-surface-container-low p-6 rounded-xl">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4">
-                Command Center
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <button className="flex flex-col items-center justify-center p-4 bg-surface-container-lowest rounded-lg hover:translate-y-[-2px] transition-transform duration-200">
-                  <span className="material-symbols-outlined text-primary mb-2">
-                    add_task
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-center">
-                    New Notice
-                  </span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-4 bg-surface-container-lowest rounded-lg hover:translate-y-[-2px] transition-transform duration-200">
-                  <span className="material-symbols-outlined text-secondary mb-2">
-                    mail
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-center">
-                    Blast Email
-                  </span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-4 bg-surface-container-lowest rounded-lg hover:translate-y-[-2px] transition-transform duration-200">
-                  <span className="material-symbols-outlined text-tertiary mb-2">
-                    lock_reset
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-center">
-                    Security Hub
-                  </span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-4 bg-surface-container-lowest rounded-lg hover:translate-y-[-2px] transition-transform duration-200">
-                  <span className="material-symbols-outlined text-on-surface-variant mb-2">
-                    settings_backup_restore
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-center">
-                    Snapshots
-                  </span>
-                </button>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </main>
-
-      {/* FAB for Global Action */}
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-[0_20px_40px_rgba(78,33,32,0.2)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
-        <span
-          className="material-symbols-outlined"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          search
-        </span>
-      </button>
     </div>
   );
 };
