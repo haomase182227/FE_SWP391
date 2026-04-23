@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
+import SellerSidebar from '../../components/SellerSidebar';
 import * as signalR from '@microsoft/signalr';
 
 const API_BASE = '/api/v1';
@@ -404,34 +405,44 @@ export default function MessageSellerManagement() {
   // ── Not logged in ────────────────────────────────────────────────────────
   if (!token) {
     return (
-      <div className="flex items-center justify-center bg-white min-h-screen">
+      <main className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center space-y-4">
-          <span className="material-symbols-outlined text-5xl text-gray-300">chat</span>
-          <p className="text-gray-500">Vui lòng đăng nhập để xem tin nhắn.</p>
+          <span className="material-symbols-outlined text-5xl text-on-surface-variant">chat</span>
+          <p className="text-on-surface-variant">Vui lòng đăng nhập để xem tin nhắn.</p>
           <button
             onClick={() => navigate('/auth')}
-            className="px-6 py-2 bg-orange-600 text-white rounded-lg font-bold text-sm hover:bg-orange-700"
+            className="px-6 py-2 bg-primary text-on-primary rounded-lg font-bold hover:opacity-90"
           >
             Đăng nhập
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   // ── Main layout ──────────────────────────────────────────────────────────
   return (
-    <div className="flex bg-white overflow-hidden h-screen">
+    <div className="flex min-h-screen bg-surface">
+      <SellerSidebar
+        brandName="Veloce Kinetic"
+        merchantName={currentUser?.username || 'Seller'}
+        merchantSub="Seller Dashboard"
+      />
+
+      <main className="flex-1 ml-64 flex bg-white overflow-hidden" style={{ height: 'calc(100vh - 0px)' }}>
       {/* ── Sidebar ── */}
-      <aside className="w-80 shrink-0 border-r border-gray-200 flex flex-col bg-gray-50">
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="font-bold text-base text-gray-900">Tin nhắn từ Người mua</h2>
+      <aside className="w-80 shrink-0 border-r border-outline-variant/20 flex flex-col bg-surface-container-lowest">
+        <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-sm uppercase tracking-widest text-on-surface-variant">MESSAGES</h2>
+            <p className="font-headline text-xl font-bold text-on-surface">Tin nhắn từ Người mua</p>
+          </div>
           <button
             onClick={() => fetchConversations(false)}
             title="Làm mới"
-            className="text-gray-400 hover:text-orange-600 transition-colors"
+            className="text-on-surface-variant hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-lg">refresh</span>
+            <span className="material-symbols-outlined text-xl">refresh</span>
           </button>
         </div>
 
@@ -439,18 +450,18 @@ export default function MessageSellerManagement() {
           {convLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0" />
+                <div className="w-12 h-12 rounded-full bg-surface-container shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-200 rounded w-2/3" />
-                  <div className="h-2.5 bg-gray-200 rounded w-1/2" />
+                  <div className="h-3 bg-surface-container rounded w-2/3" />
+                  <div className="h-2.5 bg-surface-container rounded w-1/2" />
                 </div>
               </div>
             ))
           ) : conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full py-16 text-center px-6">
-              <span className="material-symbols-outlined text-5xl text-gray-200 mb-3">chat_bubble</span>
-              <p className="text-sm font-medium text-gray-500">Chưa có cuộc trò chuyện nào</p>
-              <p className="text-xs text-gray-400 mt-1">Người mua sẽ liên hệ với bạn qua tin nhắn</p>
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3">chat_bubble</span>
+              <p className="text-sm font-medium text-on-surface-variant">Chưa có cuộc trò chuyện nào</p>
+              <p className="text-xs text-on-surface-variant/70 mt-1">Người mua sẽ liên hệ với bạn qua tin nhắn</p>
             </div>
           ) : (
             conversations.map(conv => {
@@ -462,27 +473,27 @@ export default function MessageSellerManagement() {
                 <button
                   key={conv.id}
                   onClick={() => openConversation(conv.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left border-b border-gray-100
-                    ${isActive ? 'bg-orange-50 border-r-2 border-r-orange-600' : 'hover:bg-gray-100'}`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left border-b border-outline-variant/10
+                    ${isActive ? 'bg-primary/10 border-r-4 border-r-primary' : 'hover:bg-surface-container'}`}
                 >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 shrink-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-container shrink-0 flex items-center justify-center">
                     {(conv.listingImage ?? conv.listingImageUrl)
                       ? <img src={conv.listingImage ?? conv.listingImageUrl} alt="" className="w-full h-full object-cover" />
-                      : <span className="material-symbols-outlined text-xl text-gray-400">directions_bike</span>
+                      : <span className="material-symbols-outlined text-xl text-on-surface-variant">directions_bike</span>
                     }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <p className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                      <p className={`text-sm truncate ${hasUnread ? 'font-bold text-on-surface' : 'font-medium text-on-surface-variant'}`}>
                         {displayName}
                       </p>
                       {hasUnread && (
-                        <span className="shrink-0 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        <span className="shrink-0 min-w-[18px] h-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                           {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                         </span>
                       )}
                     </div>
-                    <p className={`text-xs truncate ${hasUnread ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+                    <p className={`text-xs truncate ${hasUnread ? 'text-on-surface font-medium' : 'text-on-surface-variant/70'}`}>
                       {conv.listingTitle ?? (typeof conv.lastMessage === 'string' ? conv.lastMessage : conv.lastMessage?.content) ?? ''}
                     </p>
                   </div>
@@ -496,40 +507,40 @@ export default function MessageSellerManagement() {
       {/* ── Chat area ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {!activeConvId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 bg-gray-50">
-            <span className="material-symbols-outlined text-7xl text-gray-200 mb-4">forum</span>
-            <p className="text-gray-500 font-medium">Chọn một cuộc trò chuyện để bắt đầu</p>
-            <p className="text-gray-400 text-sm mt-1">Người mua sẽ liên hệ với bạn về các sản phẩm đang bán</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-8 bg-surface-container-lowest">
+            <span className="material-symbols-outlined text-7xl text-on-surface-variant/20 mb-4">forum</span>
+            <p className="text-on-surface font-medium">Chọn một cuộc trò chuyện để bắt đầu</p>
+            <p className="text-on-surface-variant text-sm mt-1">Người mua sẽ liên hệ với bạn về các sản phẩm đang bán</p>
           </div>
         ) : (
           <>
             {/* Header */}
-            <div className="px-6 py-3.5 border-b border-gray-200 bg-white flex items-center gap-3 shrink-0 shadow-sm">
-              <div className="w-9 h-9 rounded-full bg-blue-100 shrink-0 flex items-center justify-center">
-                <span className="material-symbols-outlined text-lg text-blue-600">person</span>
+            <div className="px-6 py-4 border-b border-outline-variant/20 bg-white flex items-center gap-3 shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-primary/10 shrink-0 flex items-center justify-center">
+                <span className="material-symbols-outlined text-xl text-primary">person</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-gray-900 truncate">
+                <p className="font-bold text-base text-on-surface truncate">
                   {convDetail?.buyerName ?? convDetail?.otherUserName ?? 'Người mua'}
                 </p>
-                <p className="text-xs text-gray-400">Người mua</p>
+                <p className="text-xs text-on-surface-variant">Người mua</p>
               </div>
               {/* Listing Card — hiển thị thông tin xe đang chat */}
               {(convDetail?.listingTitle || convDetail?.listingImage || convDetail?.listingImageUrl) && (
-                <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5 max-w-[240px] shrink-0">
+                <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 max-w-[280px] shrink-0">
                   {(convDetail.listingImage ?? convDetail.listingImageUrl) && (
                     <img
                       src={convDetail.listingImage ?? convDetail.listingImageUrl}
                       alt=""
-                      className="w-9 h-9 rounded object-cover shrink-0"
+                      className="w-10 h-10 rounded object-cover shrink-0"
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 truncate leading-tight">
+                    <p className="text-xs font-bold text-on-surface truncate leading-tight">
                       {convDetail.listingTitle}
                     </p>
                     {convDetail.listingPrice != null && (
-                      <p className="text-xs text-orange-600 font-bold leading-tight">
+                      <p className="text-xs text-primary font-bold leading-tight mt-0.5">
                         {Number(convDetail.listingPrice).toLocaleString('vi-VN')}₫
                       </p>
                     )}
@@ -539,13 +550,13 @@ export default function MessageSellerManagement() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 bg-gray-50">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 bg-surface-container-lowest">
               {msgHasMore && (
                 <div className="flex justify-center pb-2">
                   <button
                     onClick={handleLoadMore}
                     disabled={msgLoading}
-                    className="text-xs text-orange-600 font-semibold hover:underline disabled:opacity-50 bg-white px-4 py-1.5 rounded-full border border-gray-200 shadow-sm"
+                    className="text-xs text-primary font-semibold hover:underline disabled:opacity-50 bg-white px-4 py-1.5 rounded-full border border-outline-variant/20 shadow-sm"
                   >
                     {msgLoading ? 'Đang tải...' : '↑ Tải tin nhắn cũ hơn'}
                   </button>
@@ -553,7 +564,7 @@ export default function MessageSellerManagement() {
               )}
               {msgLoading && messages.length === 0 && (
                 <div className="flex justify-center py-12">
-                  <span className="material-symbols-outlined animate-spin text-orange-500 text-3xl">
+                  <span className="material-symbols-outlined animate-spin text-primary text-3xl">
                     progress_activity
                   </span>
                 </div>
@@ -566,12 +577,12 @@ export default function MessageSellerManagement() {
                     <div
                       className={`max-w-[65%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm
                         ${isMine
-                          ? 'bg-orange-600 text-white rounded-br-none'
-                          : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
-                        } ${msg.isOptimistic ? 'opacity-60' : ''} ${msg.isFailed ? 'opacity-40 border-red-300' : ''}`}
+                          ? 'bg-primary text-on-primary rounded-br-none'
+                          : 'bg-white text-on-surface rounded-bl-none border border-outline-variant/20'
+                        } ${msg.isOptimistic ? 'opacity-60' : ''} ${msg.isFailed ? 'opacity-40 border-error' : ''}`}
                     >
                       <p>{msg.content}</p>
-                      <p className={`text-[10px] mt-1 text-right ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
+                      <p className={`text-[10px] mt-1 text-right ${isMine ? 'text-on-primary/70' : 'text-on-surface-variant'}`}>
                         {(msg.sentAt ?? msg.createdAt)
                           ? (() => {
                               const raw = msg.sentAt ?? msg.createdAt;
@@ -597,19 +608,19 @@ export default function MessageSellerManagement() {
             {/* Input */}
             <form
               onSubmit={handleSend}
-              className="px-4 py-3 border-t border-gray-200 bg-white flex items-center gap-3 shrink-0"
+              className="px-4 py-3 border-t border-outline-variant/20 bg-white flex items-center gap-3 shrink-0"
             >
               <input
                 type="text"
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 placeholder="Nhập tin nhắn..."
-                className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-full text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                className="flex-1 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/20 rounded-full text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
               />
               <button
                 type="submit"
                 disabled={!inputText.trim() || sending}
-                className="w-10 h-10 rounded-full bg-orange-600 text-white flex items-center justify-center hover:bg-orange-700 active:scale-95 transition-all disabled:opacity-40 shrink-0"
+                className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 shrink-0"
               >
                 <span className="material-symbols-outlined text-lg">send</span>
               </button>
@@ -617,6 +628,7 @@ export default function MessageSellerManagement() {
           </>
         )}
       </div>
+    </main>
     </div>
   );
 }
