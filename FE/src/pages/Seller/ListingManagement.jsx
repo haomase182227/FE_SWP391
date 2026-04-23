@@ -457,7 +457,7 @@ export default function ListingManagement() {
                       {d.isVerifiedBicycle && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">
                           <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
-                          Đã kiểm định
+                          Inspected
                         </span>
                       )}
                     </div>
