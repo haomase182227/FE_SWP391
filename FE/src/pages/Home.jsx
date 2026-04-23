@@ -23,9 +23,9 @@ export default function Home() {
   
   // Price Range Filter
   const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(50000000);
+  const [maxPrice, setMaxPrice] = useState(100000000);
   const [priceFilterActive, setPriceFilterActive] = useState(false);
-  const PRICE_MAX = 50000000;
+  const PRICE_MAX = 100000000;
 
   // Sort
   const [sortMode, setSortMode] = useState('lowest'); // 'lowest' | 'highest' | 'newest' | 'oldest'
@@ -35,6 +35,9 @@ export default function Home() {
 
   // Frame size filter
   const [selectedFrameSize, setSelectedFrameSize] = useState(null);
+
+  // Category filter
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   // ── Fetch main grid ──────────────────────────────────────────────────────────
   const fetchListings = useCallback(async (p = 1, append = false, title = '') => {
@@ -104,11 +107,26 @@ export default function Home() {
     finally { setLoading(false); }
   }, []);
 
+  // ── Fetch by category ───────────────────────────────────────────────────────
+  const fetchByCategory = useCallback(async (category, p = 1, append = false) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, pageSize: PAGE_SIZE });
+      const res = await fetch(`${API_BASE}/listings/filter/category/${encodeURIComponent(category)}?${params}`, { headers: { accept: '*/*' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const items = data.items ?? [];
+      setTotalCount(data.totalCount ?? 0);
+      setListings(prev => append ? [...prev, ...items] : items);
+    } catch { /* silently fail */ }
+    finally { setLoading(false); }
+  }, []);
+
   // ── Fetch by price range ─────────────────────────────────────────────────────
   const fetchByPriceRange = useCallback(async (p = 1, append = false) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ minPrice: minPrice ?? 0, maxPrice: maxPrice ?? 50000000, page: p, pageSize: PAGE_SIZE });
+      const params = new URLSearchParams({ minPrice: minPrice ?? 0, maxPrice: maxPrice ?? 100000000, page: p, pageSize: PAGE_SIZE });
       const res = await fetch(`${API_BASE}/listings/filter/price-range?${params}`, {
         headers: { accept: '*/*' }
       });
@@ -177,6 +195,8 @@ export default function Home() {
       fetchByBrand(selectedBrand, next, true);
     } else if (selectedFrameSize) {
       fetchByFrameSize(selectedFrameSize, next, true);
+    } else if (selectedCategory) {
+      fetchByCategory(selectedCategory, next, true);
     } else {
       fetchSorted(sortMode, next, true);
     }
@@ -186,6 +206,7 @@ export default function Home() {
     const next = selectedBrand === brand ? null : brand;
     setSelectedBrand(next);
     setSelectedFrameSize(null);
+    setSelectedCategory('');
     setPriceFilterActive(false);
     setPage(1);
     if (next) {
@@ -199,10 +220,24 @@ export default function Home() {
     const next = selectedFrameSize === size ? null : size;
     setSelectedFrameSize(next);
     setSelectedBrand(null);
+    setSelectedCategory('');
     setPriceFilterActive(false);
     setPage(1);
     if (next) {
       fetchByFrameSize(next, 1, false);
+    } else {
+      fetchSorted(sortMode, 1, false);
+    }
+  }
+
+  function handleCategoryChange(category) {
+    setSelectedCategory(category);
+    setSelectedBrand(null);
+    setSelectedFrameSize(null);
+    setPriceFilterActive(false);
+    setPage(1);
+    if (category) {
+      fetchByCategory(category, 1, false);
     } else {
       fetchSorted(sortMode, 1, false);
     }
@@ -228,7 +263,7 @@ export default function Home() {
   function clearPriceFilter() {
     setPriceFilterActive(false);
     setMinPrice(0);
-    setMaxPrice(50000000);
+    setMaxPrice(100000000);
     setPage(1);
     fetchSorted(sortMode, 1, false);
   }
@@ -404,6 +439,21 @@ export default function Home() {
                 ))}
               </div>
             </div>
+            <div className="space-y-4 pt-6 border-t border-outline-variant/10">
+              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Category</span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full border border-outline-variant/20 rounded px-3 py-1.5 text-xs font-bold tracking-wide bg-surface-container-lowest text-on-surface cursor-pointer focus:outline-none focus:border-primary/40"
+              >
+                <option value="">All Categories</option>
+                <option value="Gravel & Adventure">Gravel &amp; Adventure</option>
+                <option value="Mountain Tech">Mountain Tech</option>
+                <option value="Road Performance">Road Performance</option>
+                <option value="string">String</option>
+                <option value="Time Trial">Time Trial</option>
+              </select>
+            </div>
           </div>
         </aside>
 
@@ -431,6 +481,7 @@ export default function Home() {
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
               </select>
+
             </div>
           </div>
 
