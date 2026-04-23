@@ -340,7 +340,7 @@ export default function Home() {
                     onChange={() => handleBrandSelect(selectedBrand)}
                     className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/20"
                   />
-                  <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">None</span>
+                  <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">All</span>
                 </label>
                 {['RAPTOR', 'MEREC', 'HYPER', 'GIANT', 'Java', 'Trek'].map((brand) => (
                   <label key={brand} className="flex items-center gap-3 cursor-pointer group">
