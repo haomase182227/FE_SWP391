@@ -27,7 +27,6 @@ import NewListing from './pages/Seller/NewListing';
 import ListingManagement from './pages/Seller/ListingManagement';
 import OderManagement from './pages/Seller/OderManagement';
 import WalletSellerManagement from './pages/Seller/WalletSellerManagement';
-import WalletTopupResultSeller from './pages/Seller/WalletTopupResult';
 import MessageSellerManagement from './pages/Seller/MessageSellerManagement';
 import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
@@ -92,7 +91,6 @@ function AppContent() {
           <Route path="/seller/reviews" element={<SellerReviews />} />
           <Route path="/seller/messages" element={<MessageSellerManagement />} />
           <Route path="/seller/wallet" element={<WalletSellerManagement />} />
-          <Route path="/seller/wallet/result" element={<WalletTopupResultSeller />} />
           {/* Future Routes for Buyer, Seller, Inspector, Admin */}
           <Route path="/compare" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
           <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
