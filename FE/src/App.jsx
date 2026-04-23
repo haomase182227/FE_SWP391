@@ -20,6 +20,7 @@ import TransactionManagement from './pages/Admin/TransactionManagement';
 import WalletManagement from './pages/Admin/WalletManagement';
 import InspectionManagement from './pages/Admin/InspectionManagement';
 import ReportManagement from './pages/Admin/ReportManagement';
+import AdminReportManagement from './pages/Admin/AdminReportManagement';
 import AdminReviews from './pages/Admin/AdminReviews';
 import NotFound from './pages/NotFound';
 import AccountSellerManagement from './pages/Seller/AccountSellerManagement';
@@ -31,6 +32,7 @@ import WalletTopupResultSeller from './pages/Seller/WalletTopupResult';
 import MessageSellerManagement from './pages/Seller/MessageSellerManagement';
 import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
+import InspectorReports from './pages/Inspector/InspectorReports';
 import WalletTopupResult from './pages/Buyer/WalletTopupResult';
 import UserProfile from './pages/UserProfile';
 import GoogleCallback from './pages/Auth/GoogleCallback';
@@ -82,8 +84,10 @@ function AppContent() {
           <Route path="/admin/wallets" element={<WalletManagement />} />
           <Route path="/admin/reviews" element={<AdminReviews />} />
           <Route path="/admin/inspections" element={<InspectionManagement />} />
-          <Route path="/admin/reports" element={<ReportManagement />} />
+          <Route path="/admin/reports" element={<AdminReportManagement />} />
           <Route path="/inspector" element={<InspectorManagement />} />
+          <Route path="/inspector/management" element={<InspectorManagement />} />
+          <Route path="/inspector/reports" element={<InspectorReports />} />
           <Route path="/seller" element={<Navigate to="/seller/account" replace />} />
           <Route path="/seller/account" element={<AccountSellerManagement />} />
           <Route path="/seller/listings" element={<ListingManagement />} />

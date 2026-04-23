@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
+import InspectorSidebar from '../../components/InspectorSidebar';
 
 const API_BASE = '/api/v1';
 
@@ -119,22 +120,14 @@ export default function InspectorManagement() {
   }
 
   return (
-    <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
+    <div className="bg-surface font-body text-on-surface antialiased min-h-screen flex">
+      <InspectorSidebar />
+
+      <div className="ml-64 flex-1">
       {/* Simple header */}
-      <header className="fixed top-0 w-full z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm">
+      <header className="fixed top-0 left-64 right-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm">
         <div className="flex items-center justify-between px-8 h-16">
-          <h1 className="font-headline text-xl font-black tracking-tighter text-primary uppercase">Inspector Dashboard</h1>
-          <div className="flex items-center gap-4">
-            <p className="text-xs text-on-surface-variant">
-              <span className="font-bold text-on-surface">{currentUser?.name || currentUser?.email}</span> · Inspector
-            </p>
-            <button
-              onClick={() => { logout(); navigate('/auth'); }}
-              className="px-4 py-2 bg-error text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
-            >
-              Đăng xuất
-            </button>
-          </div>
+          <h1 className="font-headline text-xl font-black tracking-tighter text-primary uppercase">Inspection Management</h1>
         </div>
       </header>
 
@@ -326,6 +319,7 @@ export default function InspectorManagement() {
           </div>
         </section>
       </main>
+      </div>
 
       {/* ── START INSPECTION MODAL ── */}
       {startModal && (
