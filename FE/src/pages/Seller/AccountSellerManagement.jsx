@@ -174,7 +174,7 @@ export default function AccountSellerManagement() {
                   { icon: 'directions_bike', label: 'My Listings', to: '/seller/listings' },
                   { icon: 'shopping_cart', label: 'Orders', to: '/seller/orders' },
                   { icon: 'account_balance_wallet', label: 'Wallet', to: '/seller/wallet' },
-                  { icon: 'verified', label: 'Inspections', to: '/seller/inspections' },
+                  { icon: 'chat', label: 'Messages', to: '/seller/messages' },
                 ].map((item) => (
                   <button key={item.label} onClick={() => navigate(item.to)}
                     className="bg-surface-container-lowest rounded-xl p-6 flex flex-col items-center gap-3 hover:bg-primary-container/5 transition-colors group">
