@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { icon: 'account_balance_wallet', label: 'Wallet', to: '/seller/wallet' },
 ];
 
-export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc, avatarAlt = 'Seller Avatar', merchantName = 'Verified Merchant', merchantSub = 'Seller Dashboard', bottomButton, onBottomButtonClick }) {
+export default function SellerSidebar({ brandName = 'Veloce Kinetic', bottomButton, onBottomButtonClick }) {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -81,15 +81,15 @@ export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc,
       </nav>
 
       <div className="px-6 mt-auto">
-        {avatarSrc && (
-          <div className="p-4 rounded-xl bg-surface-container-high flex items-center gap-3 mb-6">
-            <img className="w-10 h-10 rounded-full object-cover" src={avatarSrc} alt={avatarAlt} />
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold truncate">{merchantName}</p>
-              <p className="text-[10px] text-on-surface-variant">{merchantSub}</p>
-            </div>
+        <div className="p-4 rounded-xl bg-surface-container-high flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-primary text-xl">person</span>
           </div>
-        )}
+          <div className="overflow-hidden">
+            <p className="text-xs font-bold truncate">{currentUser?.name || currentUser?.email || 'Seller'}</p>
+            <p className="text-[10px] text-on-surface-variant">Seller</p>
+          </div>
+        </div>
         {bottomButton && (
           <button
             onClick={onBottomButtonClick}
