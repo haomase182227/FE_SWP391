@@ -29,11 +29,12 @@ export default function Message() {
   const [sending, setSending]     = useState(false);
 
   // ── Refs ─────────────────────────────────────────────────────────────────
-  const messagesEndRef   = useRef(null);
-  const connectionRef    = useRef(null);   // SignalR HubConnection
-  const activeConvIdRef  = useRef(null);   // mirror of activeConvId for SignalR handler
-  const openedFromUrlRef = useRef(null);   // prevent double-open from URL param
-  const currentUserIdRef = useRef(null);   // mirror of currentUser.id for SignalR handler
+  const messagesEndRef        = useRef(null);
+  const connectionRef         = useRef(null);
+  const activeConvIdRef       = useRef(null);
+  const openedFromUrlRef      = useRef(null);
+  const currentUserIdRef      = useRef(null);
+  const fetchConversationsRef = useRef(null); // always points to latest fetchConversations
 
   // ── Auth header helper ───────────────────────────────────────────────────
   const authHeaders = useCallback(
@@ -109,7 +110,7 @@ export default function Message() {
       );
 
       // Refresh sidebar list for any other metadata changes
-      fetchConversations(true);
+      fetchConversationsRef.current?.(true);
     });
 
     connection
@@ -139,7 +140,6 @@ export default function Message() {
       const data = await res.json();
       console.log('[fetchConversations] raw data:', data);
       const list = Array.isArray(data) ? data : (data.conversations ?? data.items ?? []);
-      // Nếu API trả về rỗng nhưng đang silent refresh → giữ nguyên list cũ
       if (silent && list.length === 0) return;
       setConversations(list);
     } catch {
@@ -148,6 +148,9 @@ export default function Message() {
       if (!silent) setConvLoading(false);
     }
   }, [token, authHeaders]);
+
+  // Keep ref always up-to-date
+  useEffect(() => { fetchConversationsRef.current = fetchConversations; }, [fetchConversations]);
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
