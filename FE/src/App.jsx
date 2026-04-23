@@ -33,6 +33,7 @@ import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
 import WalletTopupResult from './pages/Buyer/WalletTopupResult';
 import UserProfile from './pages/UserProfile';
+import GoogleCallback from './pages/Auth/GoogleCallback';
 import SellerReviews from './pages/Seller/SellerReviews';
 
 function AppContent() {
@@ -59,6 +60,7 @@ function AppContent() {
           <Route path="/order" element={<Order />} />
           <Route path="/chat" element={<Message />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/listings" element={<ListingModeration />} />
