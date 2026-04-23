@@ -57,8 +57,8 @@ export default function ListingManagement() {
   }
 
   // ── Edit modal ────────────────────────────────────────────────
-  const [editTarget,  setEditTarget]  = useState(null); // listing object
-  const [editForm,    setEditForm]    = useState({ title: '', description: '', price: '', frameSize: '', requestInspection: false });
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [editForm,    setEditForm]    = useState({ title: '', description: '', price: '', frameSize: '', requestReInspection: false });
   const [editLoading, setEditLoading] = useState(false);
   const [editError,   setEditError]   = useState('');
 
@@ -96,11 +96,11 @@ export default function ListingManagement() {
   function openEdit(listing) {
     setEditTarget(listing);
     setEditForm({
-      title:             listing.title ?? '',
-      description:       listing.description ?? '',
-      price:             listing.price ?? '',
-      frameSize:         listing.frameSize ?? '',
-      requestInspection: listing.requestInspection ?? false,
+      title:               listing.title ?? '',
+      description:         listing.description ?? '',
+      price:               listing.price ?? '',
+      frameSize:           listing.frameSize ?? '',
+      requestReInspection: false,
     });
     setEditError('');
   }
@@ -111,23 +111,20 @@ export default function ListingManagement() {
     setEditLoading(true);
     setEditError('');
     try {
-      const res = await fetch(`${API_BASE}/seller/Listings/${editTarget.id}`, {
+      const res = await fetch(`${API_BASE}/seller/listings/${editTarget.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          title:             editForm.title,
-          description:       editForm.description,
-          price:             Number(editForm.price),
-          frameSize:         editForm.frameSize,
-          requestInspection: editForm.requestInspection,
+          title:               editForm.title,
+          description:         editForm.description,
+          price:               Number(editForm.price),
+          frameSize:           editForm.frameSize,
+          requestReInspection: editForm.requestReInspection,
         }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || `HTTP ${res.status}`);
+        throw new Error(d.message || d.detail || `HTTP ${res.status}`);
       }
       setEditTarget(null);
       fetchListings();
@@ -434,7 +431,8 @@ export default function ListingManagement() {
             )}
             {!detailLoading && (() => {
               const d = detailData ?? detailTarget;
-              const img = d.primaryImageUrl ?? d.imageUrl ?? d.image ?? null;
+              const img = d.images?.find(i => i.isCover)?.imageUrl ?? d.images?.[0]?.imageUrl ?? d.imageUrl ?? null;
+              const inspection = d.inspections?.[0] ?? d.inspection ?? null;
               return (
                 <div>
                   {img && <img src={img} alt={d.title} className="w-full h-56 object-cover rounded-t-2xl" />}
@@ -465,10 +463,12 @@ export default function ListingManagement() {
                     {/* Info grid */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       {[
+                        ['Brand', d.brandName],
+                        ['Model', d.modelName],
                         ['Category', d.categoryName],
                         ['Frame Size', d.frameSize],
-                        ['Year', d.year],
                         ['Created', d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '—'],
+                        ['Updated', d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('vi-VN') : '—'],
                       ].map(([k, v]) => (
                         <div key={k}>
                           <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
@@ -478,22 +478,22 @@ export default function ListingManagement() {
                     </div>
 
                     {/* Inspection info */}
-                    {d.inspection && (
+                    {inspection && (
                       <div className="bg-tertiary/5 border border-tertiary/20 rounded-xl p-4">
                         <p className="font-label text-[10px] uppercase tracking-widest text-tertiary mb-2 font-bold">Inspection Details</p>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
                             <p className="text-[10px] text-on-surface-variant">Result</p>
-                            <p className="font-bold">{d.inspection.isPassed ? '✅ Passed' : '❌ Failed'}</p>
+                            <p className="font-bold">{inspection.isPassed ? '✅ Passed' : '❌ Failed'}</p>
                           </div>
                           <div>
                             <p className="text-[10px] text-on-surface-variant">Inspected At</p>
-                            <p className="font-medium">{d.inspection.inspectedAt ? new Date(d.inspection.inspectedAt).toLocaleDateString('vi-VN') : '—'}</p>
+                            <p className="font-medium">{inspection.inspectedAt ? new Date(inspection.inspectedAt).toLocaleDateString('vi-VN') : '—'}</p>
                           </div>
-                          {d.inspection.notes && (
+                          {inspection.notes && (
                             <div className="col-span-2">
                               <p className="text-[10px] text-on-surface-variant">Notes</p>
-                              <p className="font-medium">{d.inspection.notes}</p>
+                              <p className="font-medium">{inspection.notes}</p>
                             </div>
                           )}
                         </div>
@@ -504,7 +504,7 @@ export default function ListingManagement() {
                     {d.description && (
                       <div>
                         <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Description</p>
-                        <p className="text-sm text-on-surface-variant leading-relaxed">{d.description}</p>
+                        <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-line">{d.description}</p>
                       </div>
                     )}
 
@@ -522,81 +522,144 @@ export default function ListingManagement() {
 
       {/* ── Edit Modal ── */}
       {editTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40">
-            <h3 className="font-headline text-xl font-bold text-on-surface mb-1">Edit Listing</h3>
-            <p className="text-xs text-on-surface-variant mb-6 uppercase tracking-widest font-bold">#{editTarget.id} · {editTarget.title}</p>
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Title</label>
-                <input
-                  required
-                  value={editForm.title}
-                  onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={editForm.description}
-                  onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl w-full max-w-lg shadow-2xl border border-white/40 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="px-8 pt-8 pb-4 border-b border-outline-variant/10">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Price</label>
+                  <h3 className="font-headline text-xl font-bold text-on-surface">Edit Listing</h3>
+                  <p className="text-xs text-on-surface-variant mt-1">#{editTarget.id} · {editTarget.title}</p>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${STATUS_STYLES[normalizeStatus(editTarget.status)] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                  {normalizeStatus(editTarget.status) ?? editTarget.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 space-y-5">
+              {/* Info banner theo status */}
+              {normalizeStatus(editTarget.status) === 'Active' ? (
+                <div className="bg-orange-500/8 border border-orange-500/25 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-orange-600 text-lg">warning</span>
+                    <p className="text-xs font-bold uppercase tracking-widest text-orange-700">Listing đang Approved</p>
+                  </div>
+                  <ul className="text-xs text-orange-700 space-y-1 pl-6 list-disc">
+                    <li>Phí đăng lại = <strong>1% × giá mới</strong> sẽ bị trừ từ ví</li>
+                    <li>Status chuyển về <strong>Pending</strong>, chờ Admin duyệt lại</li>
+                    <li>Badge kiểm định bị <strong>reset về false</strong></li>
+                  </ul>
+                  {editForm.price && (
+                    <div className="mt-2 bg-orange-500/10 rounded-lg px-3 py-2 text-xs font-bold text-orange-800">
+                      Phí ước tính: {Math.round(Number(editForm.price) * 0.01).toLocaleString('vi-VN')}₫
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-tertiary/8 border border-tertiary/20 rounded-xl p-4 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-tertiary text-lg">info</span>
+                  <p className="text-xs text-tertiary">
+                    Listing đang <strong>{normalizeStatus(editTarget.status) ?? editTarget.status}</strong> — sửa tự do, không mất phí, status không đổi.
+                  </p>
+                </div>
+              )}
+
+              <form onSubmit={handleEdit} className="space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Title <span className="text-error">*</span></label>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editForm.price}
-                    onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary"
+                    required
+                    value={editForm.title}
+                    onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all"
                   />
                 </div>
+
+                {/* Description */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Frame Size</label>
-                  <input
-                    value={editForm.frameSize}
-                    onChange={e => setEditForm(f => ({ ...f, frameSize: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-sm text-on-surface focus:outline-none focus:border-primary"
-                    placeholder="e.g. 54 cm"
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Description</label>
+                  <textarea
+                    rows={4}
+                    value={editForm.description}
+                    onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none resize-none transition-all"
                   />
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={editForm.requestInspection}
-                  onClick={() => setEditForm(f => ({ ...f, requestInspection: !f.requestInspection }))}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${editForm.requestInspection ? 'bg-secondary' : 'bg-outline-variant'}`}
-                >
-                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${editForm.requestInspection ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-                <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Request Inspection</span>
-              </div>
-              {editError && <p className="text-error text-xs">{editError}</p>}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditTarget(null)}
-                  className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
-                >
-                  {editLoading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+
+                {/* Price + Frame Size */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Price (₫) <span className="text-error">*</span></label>
+                    <input
+                      type="number" min="0" step="1" required
+                      value={editForm.price}
+                      onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all"
+                    />
+                    {normalizeStatus(editTarget.status) === 'Active' && editForm.price && (
+                      <p className="text-[10px] text-orange-600 mt-1 font-medium">
+                        Phí: {Math.round(Number(editForm.price) * 0.01).toLocaleString('vi-VN')}₫
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Frame Size</label>
+                    <input
+                      value={editForm.frameSize}
+                      onChange={e => setEditForm(f => ({ ...f, frameSize: e.target.value }))}
+                      placeholder="e.g. S, M, L, XL"
+                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Request Re-Inspection — chỉ hiện khi Approved */}
+                {normalizeStatus(editTarget.status) === 'Active' && (
+                  <div className={`rounded-xl border-2 p-4 transition-all ${editForm.requestReInspection ? 'border-secondary/40 bg-secondary/5' : 'border-outline-variant/20 bg-surface-container-low'}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-on-surface">Request Re-Inspection</p>
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          Tốn thêm <strong>200,000₫</strong> từ ví · Inspector kiểm định lại sau khi Admin duyệt · Lấy lại badge ✅
+                        </p>
+                        {editForm.requestReInspection && (
+                          <p className="text-xs text-secondary font-bold mt-1.5">
+                            Tổng phí: {(Math.round(Number(editForm.price || 0) * 0.01) + 200000).toLocaleString('vi-VN')}₫
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(f => ({ ...f, requestReInspection: !f.requestReInspection }))}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${editForm.requestReInspection ? 'bg-secondary' : 'bg-outline-variant'}`}
+                      >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${editForm.requestReInspection ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {editError && (
+                  <div className="flex items-center gap-2 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+                    <span className="material-symbols-outlined text-error text-sm">error</span>
+                    <p className="text-error text-xs font-medium">{editError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setEditTarget(null)}
+                    className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={editLoading}
+                    className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60">
+                    {editLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
