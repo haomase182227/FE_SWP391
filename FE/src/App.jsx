@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { useAuth } from './pages/Context/AuthContext';
 import TopNavBar from './components/TopNavBar';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
@@ -36,6 +37,18 @@ import UserProfile from './pages/UserProfile';
 import GoogleCallback from './pages/Auth/GoogleCallback';
 import SellerReviews from './pages/Seller/SellerReviews';
 
+// Redirect về đúng trang nếu role không phải Buyer
+function BuyerOnly({ children }) {
+  const { currentUser } = useAuth();
+  if (!currentUser) return children;
+  switch (currentUser.role) {
+    case 'Admin':     return <Navigate to="/admin/dashboard" replace />;
+    case 'Inspector': return <Navigate to="/inspector" replace />;
+    case 'Seller':    return <Navigate to="/seller/account" replace />;
+    default:          return children;
+  }
+}
+
 function AppContent() {
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth';
@@ -50,7 +63,7 @@ function AppContent() {
       {!hidePublicChrome && <TopNavBar />}
       <div className={isChatPage ? 'contents' : 'flex-grow'}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<BuyerOnly><Home /></BuyerOnly>} />
           <Route path="/bike/:id" element={<BikeDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/cart" element={<Cart />} />
