@@ -18,6 +18,7 @@ import ListingModeration from './pages/Admin/ListingModeration';
 import TransactionManagement from './pages/Admin/TransactionManagement';
 import InspectionManagement from './pages/Admin/InspectionManagement';
 import ReportManagement from './pages/Admin/ReportManagement';
+import AdminReviews from './pages/Admin/AdminReviews';
 import NotFound from './pages/NotFound';
 import AccountSellerManagement from './pages/Seller/AccountSellerManagement';
 import NewListing from './pages/Seller/NewListing';
@@ -61,6 +62,7 @@ function AppContent() {
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/listings" element={<ListingModeration />} />
           <Route path="/admin/transactions" element={<TransactionManagement />} />
+          <Route path="/admin/reviews" element={<AdminReviews />} />
           <Route path="/admin/inspections" element={<InspectionManagement />} />
           <Route path="/admin/reports" element={<ReportManagement />} />
           <Route path="/inspector" element={<InspectorManagement />} />
