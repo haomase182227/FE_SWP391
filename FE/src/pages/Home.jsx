@@ -243,14 +243,14 @@ export default function Home() {
           <img
             alt="Hero Bike"
             className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFaYOxBD8H8BWUDNZUu13_LsVCvKnzk78pZFkwSoRALs1v_ZUpNmf87tzBjhYEi51FXC5heEiu3e6H6zIWT2XGL3XW8gNp4YiQq-pK995r-hSbwLSJoCzztBoLuwF9cDVzCpDq80vT1k5vUIf7AyJrNhKOAPCVjv_panzs_Vg2MkB64HPAqlxRKPNUABnSfRyZ09jtYfnT9x9nLREoLYouKRNaxBLI4zpXUbeRDOJX10qHzTsoyLYYDNKz4vttPHDYu3KXTA_OgqJC"
+            src="https://images.unsplash.com/photo-1452573992436-6d508f200b30?q=80&w=1746&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
         </div>
         <div className="relative z-10 max-w-screen-2xl mx-auto px-8 w-full">
           <div className="max-w-2xl space-y-8">
             <header className="space-y-2">
-              <span className="font-label text-sm uppercase tracking-[0.3em] text-primary font-bold">2024 Collection Now Live</span>
+              <span className="font-label text-sm uppercase tracking-[0.3em] text-primary font-bold">Old Collection Now Live</span>
               <h1 className="font-headline text-7xl font-extrabold tracking-tighter leading-none text-on-surface">
                 PRECISION<br /><span className="italic text-primary">VELOCITY.</span>
               </h1>

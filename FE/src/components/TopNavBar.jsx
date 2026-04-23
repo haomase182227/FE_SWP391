@@ -109,7 +109,7 @@ export default function TopNavBar() {
         {/* Logo + Nav links */}
         <div className="flex items-center gap-12 flex-shrink-0">
           <Link to="/" className="text-2xl font-bold italic tracking-tighter text-orange-700">
-            The Kinetic Editorial
+            The Kinetic
           </Link>
           <div className="hidden lg:flex items-center gap-8">
             <Link to="/" className="text-orange-700 font-bold border-b-2 border-orange-700 transition-colors duration-300">
