@@ -17,6 +17,7 @@ const Dashboard = () => {
     pendingListings: null,
     rejectedListings: null,
     totalRefunded: null,
+    activeEscrows: null,
     avgRating: null,
     reportCount: null,
     reportPending: null,
@@ -32,7 +33,7 @@ const Dashboard = () => {
     // Transactions
     fetch(`${API_BASE}/admin/transactions?page=1&pageSize=1`, { headers: h })
       .then(r => r.json())
-      .then(d => setStats(s => ({ ...s, totalEscrowVolume: d.totalEscrowVolume ?? 0, totalTransactions: d.totalTransactions ?? 0, totalRefunded: d.totalRefunded ?? 0 })))
+      .then(d => setStats(s => ({ ...s, totalEscrowVolume: d.totalEscrowVolume ?? 0, totalTransactions: d.totalTransactions ?? 0, totalRefunded: d.totalRefunded ?? 0, activeEscrows: d.activeEscrows ?? 0 })))
       .catch(() => {});
 
     // Users
@@ -280,12 +281,15 @@ const Dashboard = () => {
           {(() => {
             const txTotal   = stats.totalTransactions ?? 0;
             const refunded  = stats.totalRefunded ?? 0;
-            const completed = Math.max(txTotal - refunded, 0);
+            const active    = stats.activeEscrows ?? 0;
+            const escrowVolume = stats.totalEscrowVolume ?? 0;
+            const completed = Math.max(txTotal - active, 0);
             const maxV = Math.max(txTotal, 1);
             const rows = [
-              { label: 'Total',     value: txTotal,   c1: '#fca5a5', c2: '#f87171', glow: 'rgba(248,113,113,0.7)' },
-              { label: 'Completed', value: completed, c1: '#6ee7b7', c2: '#34d399', glow: 'rgba(52,211,153,0.7)'  },
-              { label: 'Refunded',  value: refunded,  c1: '#fde68a', c2: '#fbbf24', glow: 'rgba(251,191,36,0.7)'  },
+              { label: 'Total',                value: txTotal,      display: txTotal.toLocaleString('vi-VN'),                    c1: '#fca5a5', c2: '#f87171', glow: 'rgba(248,113,113,0.7)', pct: 100 },
+              { label: 'Completed',            value: completed,    display: completed.toLocaleString('vi-VN'),                  c1: '#6ee7b7', c2: '#34d399', glow: 'rgba(52,211,153,0.7)',  pct: Math.max((completed / maxV) * 100, completed > 0 ? 4 : 0) },
+              { label: 'Total Escrow Volume',  value: escrowVolume, display: escrowVolume.toLocaleString('vi-VN') + '₫',         c1: '#a5b4fc', c2: '#818cf8', glow: 'rgba(129,140,248,0.7)', pct: escrowVolume > 0 ? 85 : 0 },
+              { label: 'Total Refunded',       value: refunded,     display: refunded.toLocaleString('vi-VN') + '₫',             c1: '#fde68a', c2: '#fbbf24', glow: 'rgba(251,191,36,0.7)',  pct: refunded > 0 ? 80 : 0 },
             ];
             return (
               <div className="relative rounded-3xl overflow-hidden p-7 flex flex-col gap-5 cursor-default"
@@ -311,11 +315,11 @@ const Dashboard = () => {
                           <div className="w-2 h-2 rounded-full" style={{ background: b.c2, boxShadow: `0 0 6px ${b.glow}` }} />
                           <span className="text-[10px] font-black uppercase tracking-[0.15em] text-red-200">{b.label}</span>
                         </div>
-                        <span className="text-sm font-black text-white">{b.value.toLocaleString()}</span>
+                        <span className="text-sm font-black text-white">{b.display}</span>
                       </div>
                       <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                         <div className="h-full rounded-full transition-all duration-1000"
-                          style={{ width: `${Math.max((b.value / maxV) * 100, b.value > 0 ? 4 : 0)}%`, background: `linear-gradient(90deg,${b.c1},${b.c2})`, boxShadow: `0 0 10px ${b.glow}` }} />
+                          style={{ width: `${b.pct}%`, background: `linear-gradient(90deg,${b.c1},${b.c2})`, boxShadow: `0 0 10px ${b.glow}` }} />
                       </div>
                     </div>
                   ))}
