@@ -27,6 +27,14 @@ export default function Order() {
   const [reviewHistory, setReviewHistory] = useState([]);
   const [isReviewLoading, setIsReviewLoading] = useState(false);
 
+  // STATE CHO TÍNH NĂNG TỐ CÁO (REPORT)
+  const [reportHistory, setReportHistory] = useState([]);
+  const [reportTypes, setReportTypes] = useState([]);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportForm, setReportForm] = useState({ reportTypeId: '', title: '', content: '' });
+  const [selectedReportOrder, setSelectedReportOrder] = useState(null);
+  const [isReportLoading, setIsReportLoading] = useState(false);
+
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -87,6 +95,33 @@ export default function Order() {
     }
   }, [token]);
 
+  // HÀM LẤY DỮ LIỆU TỐ CÁO (REPORT TYPES + REPORT HISTORY)
+  const fetchReportData = useCallback(async () => {
+    if (!token) return;
+    try {
+      const [typesRes, historyRes] = await Promise.all([
+        fetch(`${API_BASE}/reports/types`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/reports/my`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      if (typesRes.ok) {
+        const typesData = await typesRes.json();
+        const typesList = Array.isArray(typesData) ? typesData : (typesData.reportTypes || typesData.data || []);
+        setReportTypes(typesList);
+      }
+
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        const historyList = Array.isArray(historyData) ? historyData : (historyData.reports || historyData.data || []);
+        setReportHistory(historyList);
+      } else if (historyRes.status === 404) {
+        setReportHistory([]);
+      }
+    } catch (err) {
+      console.error('[ReportData] Fetch error:', err);
+    }
+  }, [token]);
+
   // HÀM LẤY LỊCH SỬ ĐÁNH GIÁ
   const fetchReviewHistory = useCallback(async () => {
     if (!token) return;
@@ -126,14 +161,19 @@ export default function Order() {
     fetchOrders();
     // Gọi luôn fetchReviewHistory khi load trang để có dữ liệu đếm
     fetchReviewHistory();
-  }, [token, fetchOrders, fetchReviewHistory]);
+    // Gọi fetchReportData để có dữ liệu đối chiếu nút REPORT
+    fetchReportData();
+  }, [token, fetchOrders, fetchReviewHistory, fetchReportData]);
 
   // Gọi API lấy lịch sử đánh giá khi chuyển sang tab REVIEWS
   useEffect(() => {
     if (activeStatus === 'reviews' && token) {
       fetchReviewHistory();
     }
-  }, [activeStatus, token, fetchReviewHistory]);
+    if (activeStatus === 'reports' && token) {
+      fetchReportData();
+    }
+  }, [activeStatus, token, fetchReviewHistory, fetchReportData]);
 
   const handleCompleteOrder = (orderId) => {
     setConfirmDialog({ type: 'complete', orderId });
@@ -338,6 +378,66 @@ export default function Order() {
     setIsReReviewModal(true);
   };
 
+  // HÀM SUBMIT TỐ CÁO (POST /api/v1/reports)
+  const handleSubmitReport = async () => {
+    if (!reportForm.reportTypeId) {
+      showError('Vui lòng chọn loại tố cáo!');
+      return;
+    }
+    if (!reportForm.title.trim()) {
+      showError('Vui lòng nhập tiêu đề tố cáo!');
+      return;
+    }
+    if (!reportForm.content.trim()) {
+      showError('Vui lòng nhập nội dung tố cáo!');
+      return;
+    }
+
+    setIsReportLoading(true);
+    try {
+      const payload = {
+        reportedUserId: selectedReportOrder.sellerId,
+        reportTypeId: Number(reportForm.reportTypeId),
+        title: reportForm.title.trim(),
+        content: reportForm.content.trim(),
+        orderId: selectedReportOrder.orderId,
+      };
+
+      console.log('[Report] Submitting report:', payload);
+
+      const res = await fetch(`${API_BASE}/reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('[Report] Submit error:', errorData);
+        setIsReportModalOpen(false);
+        showError(errorData.message || 'Không thể gửi tố cáo. Vui lòng thử lại!');
+        return;
+      }
+
+      // Thành công
+      setIsReportModalOpen(false);
+      setReportForm({ reportTypeId: '', title: '', content: '' });
+      setSelectedReportOrder(null);
+      setSuccessMessage('Báo cáo thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.');
+      setShowSuccessModal(true);
+      await fetchReportData();
+    } catch (err) {
+      console.error('[Report] Network error:', err);
+      setIsReportModalOpen(false);
+      showError('Có lỗi xảy ra khi gửi tố cáo. Vui lòng thử lại!');
+    } finally {
+      setIsReportLoading(false);
+    }
+  };
+
   const filteredOrders = activeStatus === 'all' 
     ? orders 
     : orders.filter(order => order.status?.toLowerCase() === activeStatus.toLowerCase());
@@ -456,9 +556,87 @@ export default function Order() {
                   Reviews
                 </span>
               </button>
+              <button
+                onClick={() => setActiveStatus('reports')}
+                className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                  activeStatus === 'reports' ? 'text-red-600 border-b-red-600' : 'text-on-surface-variant border-b-transparent'
+                }`}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">flag</span>
+                  Reports
+                </span>
+              </button>
             </div>
 
-            {activeStatus === 'reviews' ? (
+            {activeStatus === 'reports' ? (
+              // HIỂN THỊ LỊCH SỬ TỐ CÁO
+              reportHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {reportHistory.map((report) => {
+                    const reportId = report.reportId || report.id;
+                    const createdDate = report.createdAt ? new Date(report.createdAt).toLocaleDateString('vi-VN') : '—';
+                    const statusMap = {
+                      pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+                      underreview: { label: 'Under Review', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+                      resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+                      dismissed: { label: 'Dismissed', color: 'bg-red-100 text-red-700 border-red-200' },
+                    };
+                    const statusKey = (report.status || 'pending').toLowerCase().replace(/\s/g, '');
+                    const statusInfo = statusMap[statusKey] || { label: report.status || 'Pending', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+
+                    return (
+                      <div key={reportId} className="bg-white border border-outline-variant/20 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg text-on-surface mb-1">{report.title || 'Báo cáo'}</h3>
+                            <p className="text-sm text-on-surface-variant">
+                              Loại tố cáo: <span className="font-medium">{report.reportTypeName || report.reportType || 'N/A'}</span>
+                            </p>
+                            <p className="text-sm text-on-surface-variant mt-1">
+                              Người bị tố cáo: <span className="font-medium">{report.reportedUserName || report.reportedUser || 'N/A'}</span>
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full border ${statusInfo.color}`}>
+                              {statusInfo.label}
+                            </span>
+                            <p className="text-xs text-on-surface-variant flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                              {createdDate}
+                            </p>
+                          </div>
+                        </div>
+
+                        {report.content && (
+                          <div className="bg-surface-container-lowest rounded-lg p-4 border-l-4 border-red-400 mt-3">
+                            <p className="text-sm text-on-surface leading-relaxed">{report.content}</p>
+                          </div>
+                        )}
+
+                        {report.orderId && (
+                          <div className="mt-3 pt-3 border-t border-outline-variant/10">
+                            <p className="text-xs text-on-surface-variant">
+                              Đơn hàng: <span className="font-mono font-medium">#{report.orderId}</span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-20">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-5xl text-red-500">flag</span>
+                    </div>
+                  </div>
+                  <p className="text-on-surface-variant text-lg font-medium">Bạn chưa có báo cáo nào.</p>
+                  <p className="text-on-surface-variant text-sm mt-2">Các tố cáo người bán sẽ xuất hiện ở đây.</p>
+                </div>
+              )
+            ) : activeStatus === 'reviews' ? (
               // HIỂN THỊ LỊCH SỬ ĐÁNH GIÁ
               isReviewLoading ? (
                 <div className="flex justify-center py-12">
@@ -629,7 +807,7 @@ export default function Order() {
 
                                 {/* NÚT ĐÁNH GIÁ CHO TỪNG ITEM - CHỈ HIỂN THỊ KHI COMPLETED */}
                                 {isCompleted && (
-                                  <div className="flex items-center gap-2 mt-3">
+                                  <div className="flex items-center flex-wrap gap-2 mt-3">
                                     {reviewCount === 0 ? (
                                       // CHƯA ĐÁNH GIÁ - Hiển thị nút RATE
                                       <button
@@ -687,6 +865,40 @@ export default function Order() {
                                         Rated
                                       </button>
                                     )}
+
+                                    {/* NÚT REPORT - CHỈ HIỂN THỊ KHI ĐÃ ĐÁNH GIÁ (reviewCount > 0) */}
+                                    {reviewCount > 0 && (() => {
+                                      const alreadyReported = reportHistory.some(
+                                        r => (r.orderId === orderId || r.orderId === String(orderId))
+                                      );
+                                      return alreadyReported ? (
+                                        <button
+                                          disabled
+                                          className="bg-red-100 text-red-400 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 cursor-not-allowed border border-red-200"
+                                        >
+                                          <span className="material-symbols-outlined text-[14px]">flag</span>
+                                          Reported
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setSelectedReportOrder({
+                                              orderId: orderId,
+                                              orderCode: order.orderCode,
+                                              sellerId: order.sellerId,
+                                              sellerName: order.sellerName || 'Người bán',
+                                              listingTitle: item.listingTitle,
+                                            });
+                                            setReportForm({ reportTypeId: '', title: '', content: '' });
+                                            setIsReportModalOpen(true);
+                                          }}
+                                          className="bg-red-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1 cursor-pointer"
+                                        >
+                                          <span className="material-symbols-outlined text-[14px]">flag</span>
+                                          Report
+                                        </button>
+                                      );
+                                    })()}
                                   </div>
                                 )}
                               </div>
@@ -1039,6 +1251,129 @@ export default function Order() {
                 className="flex-1 px-4 py-3 bg-tertiary text-on-tertiary font-bold uppercase text-sm rounded-lg hover:opacity-90"
               >
                 Hoàn tất đánh giá
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT MODAL - Tố cáo người bán */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Tố cáo</p>
+                <h2 className="font-headline text-2xl font-bold mt-1 text-red-600">Tố cáo người bán</h2>
+              </div>
+              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Thông tin seller & đơn hàng */}
+            {selectedReportOrder && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-red-500 text-[18px]">store</span>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-red-400 font-bold">Người bán</p>
+                    <p className="font-bold text-sm text-on-surface">{selectedReportOrder.sellerName}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-red-500 text-[18px]">receipt</span>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-red-400 font-bold">Đơn hàng</p>
+                    <p className="font-mono text-sm text-on-surface font-medium">
+                      #{selectedReportOrder.orderCode || selectedReportOrder.orderId}
+                    </p>
+                  </div>
+                </div>
+                {selectedReportOrder.listingTitle && (
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-red-500 text-[18px]">directions_bike</span>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-red-400 font-bold">Sản phẩm</p>
+                      <p className="text-sm text-on-surface line-clamp-1">{selectedReportOrder.listingTitle}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Chọn loại tố cáo */}
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-on-surface">Loại tố cáo <span className="text-red-500">*</span></p>
+              <select
+                value={reportForm.reportTypeId}
+                onChange={(e) => setReportForm(prev => ({ ...prev, reportTypeId: e.target.value }))}
+                className="w-full px-4 py-3 border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-sm bg-white"
+              >
+                <option value="">-- Chọn loại tố cáo --</option>
+                {reportTypes.map((type) => {
+                  const typeId = type.reportTypeId || type.id;
+                  return (
+                    <option key={typeId} value={typeId}>
+                      {type.typeName || type.name || `Loại ${typeId}`}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Tiêu đề */}
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-on-surface">Tiêu đề <span className="text-red-500">*</span></p>
+              <input
+                type="text"
+                value={reportForm.title}
+                onChange={(e) => setReportForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Nhập tiêu đề tố cáo..."
+                className="w-full px-4 py-3 border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-sm"
+              />
+            </div>
+
+            {/* Nội dung */}
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-on-surface">Nội dung <span className="text-red-500">*</span></p>
+              <textarea
+                value={reportForm.content}
+                onChange={(e) => setReportForm(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Mô tả chi tiết vấn đề bạn gặp phải với người bán này..."
+                className="w-full px-4 py-3 border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 resize-none text-sm"
+                rows={4}
+              />
+            </div>
+
+            {/* Nút hành động */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsReportModalOpen(false);
+                  setReportForm({ reportTypeId: '', title: '', content: '' });
+                  setSelectedReportOrder(null);
+                }}
+                className="flex-1 px-4 py-3 bg-error text-on-error font-bold uppercase text-sm rounded-lg hover:opacity-90"
+              >
+                Quay lại
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                disabled={isReportLoading}
+                className="flex-1 px-4 py-3 bg-emerald-600 text-white font-bold uppercase text-sm rounded-lg hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+              >
+                {isReportLoading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                    Đang gửi...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">flag</span>
+                    Báo cáo
+                  </>
+                )}
               </button>
             </div>
           </div>
