@@ -11,6 +11,8 @@ export default function Wallet() {
 
   const [walletBalance, setWalletBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [depositHistory, setDepositHistory] = useState([]);
+  const [depositLoading, setDepositLoading] = useState(false);
   const [showTopUp, setShowTopUp] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
   const [topUpLoading, setTopUpLoading] = useState(false);
@@ -44,6 +46,13 @@ export default function Wallet() {
       return;
     }
     fetchWalletBalance();
+
+    setDepositLoading(true);
+    fetch(`${API_BASE}/wallet/top-up/history`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setDepositHistory(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setDepositLoading(false));
   }, [token, fetchWalletBalance, navigate]);
 
   async function handleTopUp() {
@@ -163,6 +172,54 @@ export default function Wallet() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Deposit History */}
+      <section className="max-w-screen-lg mx-auto px-8 pb-16">
+        <h2 className="font-headline text-2xl font-bold tracking-tight mb-6">Deposit History</h2>
+        {depositLoading ? (
+          <div className="flex items-center gap-3 text-on-surface-variant py-8">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
+            Đang tải...
+          </div>
+        ) : depositHistory.length === 0 ? (
+          <p className="text-sm text-on-surface-variant py-8">Không có lịch sử nạp tiền.</p>
+        ) : (
+          <div className="space-y-3">
+            {depositHistory.map((tx) => {
+              const isSuccess = tx.status === 'Success';
+              return (
+                <div key={tx.id} className="flex items-center justify-between p-5 bg-surface-container-lowest rounded-2xl border border-outline-variant/10">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSuccess ? 'bg-tertiary-container/30' : 'bg-surface-container-high'}`}>
+                      <span className={`material-symbols-outlined text-xl ${isSuccess ? 'text-tertiary' : 'text-on-surface-variant'}`}>
+                        {isSuccess ? 'add_card' : 'schedule'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-on-surface">Nạp tiền qua VNPay</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {tx.transactionRef}{tx.bankCode ? ` • ${tx.bankCode}` : ''} • {new Date(tx.createdAt).toLocaleString('vi-VN')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-2 py-1 text-[10px] font-bold rounded uppercase tracking-tighter ${
+                      isSuccess
+                        ? 'bg-tertiary-container/40 text-on-tertiary-container'
+                        : 'bg-surface-container-highest text-on-surface-variant'
+                    }`}>
+                      {tx.status}
+                    </span>
+                    <p className={`font-bold font-headline ${isSuccess ? 'text-secondary' : 'text-on-surface-variant'}`}>
+                      +{tx.amount.toLocaleString('vi-VN')}₫
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Top Up Modal */}

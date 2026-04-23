@@ -5,57 +5,6 @@ import { useAuth } from '../Context/AuthContext';
 const API_BASE = '/api/v1';
 const vnd = (n) => (n ?? 0).toLocaleString('vi-VN') + '₫';
 
-const TRANSACTIONS = [
-  {
-    id: 'VK-90214',
-    label: 'Sale: Pinarello Dogma F12',
-    meta: 'Today, 2:15 PM',
-    icon: 'shopping_bag',
-    iconBg: 'bg-secondary-container/30',
-    iconColor: 'text-secondary',
-    status: 'Completed',
-    statusStyle: 'bg-tertiary-container/40 text-on-tertiary-container',
-    amount: '+8.420.000₫',
-    amountStyle: 'text-tertiary',
-  },
-  {
-    id: 'VK-88120',
-    label: 'Withdrawal to Chase Bank',
-    meta: 'Yesterday, 10:45 AM',
-    icon: 'outbox',
-    iconBg: 'bg-error-container/10',
-    iconColor: 'text-error',
-    status: 'Processing',
-    statusStyle: 'bg-surface-container-highest text-on-surface-variant',
-    amount: '-1.500.000₫',
-    amountStyle: 'text-on-surface',
-  },
-  {
-    id: 'VK-87912',
-    label: 'Sale: Zipp 404 Firecrest Wheelset',
-    meta: 'Feb 24, 2024',
-    icon: 'shopping_bag',
-    iconBg: 'bg-secondary-container/30',
-    iconColor: 'text-secondary',
-    status: 'Completed',
-    statusStyle: 'bg-tertiary-container/40 text-on-tertiary-container',
-    amount: '+1.850.000₫',
-    amountStyle: 'text-tertiary',
-  },
-  {
-    id: 'VK-87001',
-    label: 'Marketplace Listing Fee',
-    meta: 'Feb 22, 2024',
-    icon: 'receipt_long',
-    iconBg: 'bg-surface-container-high',
-    iconColor: 'text-on-surface-variant',
-    status: 'Completed',
-    statusStyle: 'bg-tertiary-container/40 text-on-tertiary-container',
-    amount: '-15.000₫',
-    amountStyle: 'text-on-surface',
-  },
-];
-
 const BAR_HEIGHTS = ['40%', '60%', '50%', '80%', '100%'];
 const BAR_OPACITIES = ['bg-primary/10', 'bg-primary/10', 'bg-primary/20', 'bg-primary/40', 'bg-primary'];
 
@@ -65,6 +14,8 @@ export default function WalletSellerManagement() {
   const token = currentUser?.token;
 
   const [walletBalance, setWalletBalance] = useState(null);
+  const [depositHistory, setDepositHistory] = useState([]);
+  const [depositLoading, setDepositLoading] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -72,6 +23,16 @@ export default function WalletSellerManagement() {
       .then(r => r.json())
       .then(data => setWalletBalance(data?.user?.wallet ?? 0))
       .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    setDepositLoading(true);
+    fetch(`${API_BASE}/wallet/top-up/history`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setDepositHistory(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setDepositLoading(false));
   }, [token]);
 
   // Top-up state
@@ -104,10 +65,11 @@ export default function WalletSellerManagement() {
     }
   }
 
-  const filtered = TRANSACTIONS.filter(
+  const filtered = depositHistory.filter(
     (t) =>
-      t.label.toLowerCase().includes(search.toLowerCase()) ||
-      t.id.toLowerCase().includes(search.toLowerCase())
+      t.transactionRef?.toLowerCase().includes(search.toLowerCase()) ||
+      t.bankCode?.toLowerCase().includes(search.toLowerCase()) ||
+      t.status?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -206,49 +168,65 @@ export default function WalletSellerManagement() {
               </div>
             </div>
 
-            {/* Recent Transactions */}
+            {/* Deposit History */}
             <div className="col-span-12 space-y-6 pt-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold font-headline">Recent Transactions</h3>
-                <div className="flex items-center gap-2">
-                  <button className="px-4 py-2 text-xs font-bold uppercase tracking-tighter bg-surface-container-high rounded-lg hover:bg-surface-container-highest transition-colors">
-                    Export CSV
-                  </button>
-                  <button className="px-4 py-2 text-xs font-bold uppercase tracking-tighter text-on-surface-variant">
-                    Filter
-                  </button>
-                </div>
+                <h3 className="text-2xl font-bold font-headline">Deposit History</h3>
               </div>
 
-              <div className="space-y-3">
-                {filtered.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="group flex items-center justify-between p-5 bg-surface-container-lowest hover:bg-primary-container/5 transition-all rounded-xl cursor-pointer"
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className={`w-12 h-12 rounded-full ${tx.iconBg} flex items-center justify-center`}>
-                        <span className={`material-symbols-outlined ${tx.iconColor}`}>{tx.icon}</span>
+              {depositLoading ? (
+                <div className="flex items-center justify-center py-12 text-on-surface-variant">
+                  <span className="material-symbols-outlined animate-spin mr-2">progress_activity</span>
+                  Đang tải...
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-12 text-on-surface-variant text-sm">Không có lịch sử nạp tiền.</div>
+              ) : (
+                <div className="space-y-3">
+                  {filtered.map((tx) => {
+                    const isSuccess = tx.status === 'Success';
+                    const isPending = tx.status === 'Pending';
+                    return (
+                      <div
+                        key={tx.id}
+                        className="group flex items-center justify-between p-5 bg-surface-container-lowest hover:bg-primary-container/5 transition-all rounded-xl"
+                      >
+                        <div className="flex items-center gap-5">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isSuccess ? 'bg-tertiary-container/30' : 'bg-surface-container-high'}`}>
+                            <span className={`material-symbols-outlined ${isSuccess ? 'text-tertiary' : 'text-on-surface-variant'}`}>
+                              {isSuccess ? 'add_card' : 'schedule'}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-on-surface">Nạp tiền qua VNPay</p>
+                            <p className="text-xs text-on-surface-variant">
+                              Ref: {tx.transactionRef}
+                              {tx.bankCode ? ` • ${tx.bankCode}` : ''}
+                              {' • '}{new Date(tx.createdAt).toLocaleString('vi-VN')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex items-center gap-6">
+                          <div className="hidden md:block">
+                            <span className={`px-2 py-1 text-[10px] font-bold rounded uppercase tracking-tighter ${
+                              isSuccess
+                                ? 'bg-tertiary-container/40 text-on-tertiary-container'
+                                : isPending
+                                ? 'bg-surface-container-highest text-on-surface-variant'
+                                : 'bg-error-container/20 text-error'
+                            }`}>
+                              {tx.status}
+                            </span>
+                          </div>
+                          <p className={`text-lg font-bold font-headline ${isSuccess ? 'text-tertiary' : 'text-on-surface-variant'}`}>
+                            +{vnd(tx.amount)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-on-surface">{tx.label}</p>
-                        <p className="text-xs text-on-surface-variant">Transaction #{tx.id} • {tx.meta}</p>
-                      </div>
-                    </div>
-                    <div className="text-right flex items-center gap-6">
-                      <div className="hidden md:block">
-                        <span className={`px-2 py-1 text-[10px] font-bold rounded uppercase tracking-tighter ${tx.statusStyle}`}>
-                          {tx.status}
-                        </span>
-                      </div>
-                      <p className={`text-lg font-bold font-headline ${tx.amountStyle}`}>{tx.amount}</p>
-                      <span className="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
-                        chevron_right
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Earnings Analysis */}
