@@ -1,14 +1,12 @@
 import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
 
 const ReportManagement = () => {
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
-      <AdminTopBar title="Global Analytics & Reports" />
 
       {/* Main Content Canvas */}
-      <main className="ml-64 pt-24 px-8 pb-12 min-h-screen">
+      <main className="ml-64 pt-8 px-8 pb-12 min-h-screen">
         {/* Header Section */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>

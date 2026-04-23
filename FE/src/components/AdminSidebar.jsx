@@ -67,13 +67,6 @@ export default function AdminSidebar() {
           Export Global Data
         </button>
         <div className="pt-4 border-t border-zinc-200/20 space-y-1">
-          <a
-            href="#"
-            className="flex items-center gap-3 px-3 py-2 text-zinc-600 hover:bg-zinc-100 transition-all rounded-lg"
-          >
-            <span className="material-symbols-outlined text-sm">contact_support</span>
-            <span className="font-body uppercase tracking-widest text-[10px]">Support</span>
-          </a>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 text-zinc-600 hover:text-error hover:bg-error-container/10 transition-all rounded-lg"

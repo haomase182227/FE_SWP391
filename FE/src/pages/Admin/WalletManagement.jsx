@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE_URL = 'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1';
@@ -142,10 +141,9 @@ export default function WalletManagement() {
   return (
     <div className="bg-[#fff4f3] font-body text-on-surface min-h-screen antialiased">
       <AdminSidebar />
-      <AdminTopBar title="Wallet Management" searchPlaceholder="Search transactions..." />
 
       {/* Main Content */}
-      <main className="ml-64 pt-24 px-8 pb-12">
+      <main className="ml-64 pt-8 px-8 pb-12">
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">Financial Overview</p>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
@@ -71,9 +70,8 @@ export default function TransactionManagement() {
   return (
     <div className="bg-[#fff4f3] font-body text-on-surface min-h-screen antialiased">
       <AdminSidebar />
-      <AdminTopBar title="Transactions" searchPlaceholder="Search Transaction ID, User, or Item..." />
 
-      <main className="ml-64 pt-24 px-8 pb-12">
+      <main className="ml-64 pt-8 px-8 pb-12">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
           {[

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
@@ -157,9 +156,8 @@ export default function UserManagement() {
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
-      <AdminTopBar title="User Directory" searchPlaceholder="Search users..." />
 
-      <main className="ml-64 pt-16 p-10 space-y-8 min-h-screen">
+      <main className="ml-64 pt-8 p-10 space-y-8 min-h-screen">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
