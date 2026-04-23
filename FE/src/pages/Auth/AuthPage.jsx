@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 
+const API_BASE = 'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1';
+
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loginEmail, setLoginEmail] = useState('');
@@ -16,8 +18,81 @@ const AuthPage = () => {
   const [regLoading, setRegLoading] = useState(false);
   const [regApiError, setRegApiError] = useState('');
 
+  // Forgot password state: 'login' | 'forgot-email' | 'forgot-otp'
+  const [forgotStep, setForgotStep] = useState('login');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotEmailError, setForgotEmailError] = useState('');
+  const [forgotEmailLoading, setForgotEmailLoading] = useState(false);
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotResetErrors, setForgotResetErrors] = useState({});
+  const [forgotResetLoading, setForgotResetLoading] = useState(false);
+  const [forgotResetSuccess, setForgotResetSuccess] = useState('');
+
   const navigate = useNavigate();
   const { login, register } = useAuth();
+
+  async function handleForgotEmailSubmit(e) {
+    e.preventDefault();
+    setForgotEmailError('');
+    if (!forgotEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail)) {
+      setForgotEmailError('Vui lòng nhập email hợp lệ.');
+      return;
+    }
+    setForgotEmailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/Auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      if (res.ok) {
+        setForgotStep('forgot-otp');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setForgotEmailError(data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      }
+    } catch {
+      setForgotEmailError('Không thể kết nối máy chủ, vui lòng thử lại.');
+    }
+    setForgotEmailLoading(false);
+  }
+
+  async function handleForgotResetSubmit(e) {
+    e.preventDefault();
+    const errors = {};
+    if (!forgotOtp.trim()) errors.otp = 'Vui lòng nhập mã OTP.';
+    if (!forgotNewPassword) errors.newPassword = 'Vui lòng nhập mật khẩu mới.';
+    else if (forgotNewPassword.length < 6) errors.newPassword = 'Mật khẩu tối thiểu 6 ký tự.';
+    if (!forgotConfirmPassword) errors.confirmPassword = 'Vui lòng nhập lại mật khẩu.';
+    else if (forgotConfirmPassword !== forgotNewPassword) errors.confirmPassword = 'Mật khẩu không khớp.';
+    if (Object.keys(errors).length > 0) { setForgotResetErrors(errors); return; }
+
+    setForgotResetErrors({});
+    setForgotResetLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/Auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail, otpCode: forgotOtp, newPassword: forgotNewPassword, confirmPassword: forgotConfirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setForgotResetSuccess(data.message || 'Đặt lại mật khẩu thành công.');
+        setTimeout(() => {
+          setForgotStep('login');
+          setForgotEmail(''); setForgotOtp(''); setForgotNewPassword(''); setForgotConfirmPassword('');
+          setForgotResetSuccess('');
+        }, 2000);
+      } else {
+        setForgotResetErrors({ api: data.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.' });
+      }
+    } catch {
+      setForgotResetErrors({ api: 'Không thể kết nối máy chủ, vui lòng thử lại.' });
+    }
+    setForgotResetLoading(false);
+  }
 
   function setRegField(field, value) {
     setReg(prev => ({ ...prev, [field]: value }));
@@ -84,6 +159,145 @@ const AuthPage = () => {
     }
 
     navigate(result.redirectPath);
+  }
+
+  // Step 1: Enter email to receive OTP
+  if (forgotStep === 'forgot-email') {
+    return (
+      <div className="bg-background text-on-background font-body min-h-screen flex items-center justify-center relative overflow-hidden antialiased">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1485965120184-e220f721d03e?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=2070')] bg-cover bg-center grayscale opacity-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-surface via-transparent to-primary/5"></div>
+        </div>
+        <main className="relative z-10 w-full max-w-md px-6">
+          <div className="bg-surface-container-lowest/80 backdrop-blur-2xl p-8 md:p-12 rounded-xl shadow-[0_40px_80px_rgba(78,33,32,0.08)] border border-white/40">
+            <button onClick={() => setForgotStep('login')} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors mb-8 text-sm font-semibold">
+              <span className="material-symbols-outlined text-base">arrow_back</span>
+              Quay lại đăng nhập
+            </button>
+            <div className="mb-8">
+              <h2 className="font-headline text-3xl font-bold tracking-tight text-on-background">Quên mật khẩu?</h2>
+              <p className="text-on-surface-variant mt-2 text-sm">Nhập email đã đăng ký, chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu.</p>
+            </div>
+            <form className="space-y-6" onSubmit={handleForgotEmailSubmit}>
+              <div className="space-y-1.5">
+                <label className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Email</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">mail</span>
+                  </div>
+                  <input
+                    className="block w-full pl-12 pr-4 py-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant/60 transition-all font-body"
+                    placeholder="ten@kinetic.vn"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={e => { setForgotEmail(e.target.value); setForgotEmailError(''); }}
+                  />
+                </div>
+                {forgotEmailError && <p className="text-error text-xs mt-1 font-medium">{forgotEmailError}</p>}
+              </div>
+              <button
+                disabled={forgotEmailLoading}
+                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold uppercase tracking-widest py-4 rounded-lg shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                type="submit"
+              >
+                {forgotEmailLoading ? 'Đang gửi...' : 'Gửi mã OTP'}
+              </button>
+            </form>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Step 2: Enter OTP + new password
+  if (forgotStep === 'forgot-otp') {
+    return (
+      <div className="bg-background text-on-background font-body min-h-screen flex items-center justify-center relative overflow-hidden antialiased">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1485965120184-e220f721d03e?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=2070')] bg-cover bg-center grayscale opacity-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-surface via-transparent to-primary/5"></div>
+        </div>
+        <main className="relative z-10 w-full max-w-md px-6">
+          <div className="bg-surface-container-lowest/80 backdrop-blur-2xl p-8 md:p-12 rounded-xl shadow-[0_40px_80px_rgba(78,33,32,0.08)] border border-white/40">
+            <button onClick={() => setForgotStep('forgot-email')} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors mb-8 text-sm font-semibold">
+              <span className="material-symbols-outlined text-base">arrow_back</span>
+              Quay lại
+            </button>
+            <div className="mb-8">
+              <h2 className="font-headline text-3xl font-bold tracking-tight text-on-background">Đặt lại mật khẩu</h2>
+              <p className="text-on-surface-variant mt-2 text-sm">Mã OTP đã được gửi đến <span className="font-semibold text-on-surface">{forgotEmail}</span>. Mã có hiệu lực trong 10 phút.</p>
+            </div>
+            {forgotResetSuccess ? (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <span className="material-symbols-outlined text-5xl text-primary" style={{ fontVariationSettings: '"FILL" 1' }}>check_circle</span>
+                <p className="text-on-surface font-semibold text-center">{forgotResetSuccess}</p>
+              </div>
+            ) : (
+              <form className="space-y-5" onSubmit={handleForgotResetSubmit}>
+                <div className="space-y-1.5">
+                  <label className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Mã OTP</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">pin</span>
+                    </div>
+                    <input
+                      className="block w-full pl-12 pr-4 py-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant/60 transition-all font-body tracking-[0.3em] text-center"
+                      placeholder="000000"
+                      type="text"
+                      maxLength={6}
+                      value={forgotOtp}
+                      onChange={e => { setForgotOtp(e.target.value.replace(/\D/g, '')); setForgotResetErrors(p => ({ ...p, otp: '' })); }}
+                    />
+                  </div>
+                  {forgotResetErrors.otp && <p className="text-error text-xs mt-1 font-medium">{forgotResetErrors.otp}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Mật khẩu mới</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">lock</span>
+                    </div>
+                    <input
+                      className="block w-full pl-12 pr-4 py-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant/60 transition-all font-body"
+                      placeholder="••••••••"
+                      type="password"
+                      value={forgotNewPassword}
+                      onChange={e => { setForgotNewPassword(e.target.value); setForgotResetErrors(p => ({ ...p, newPassword: '' })); }}
+                    />
+                  </div>
+                  {forgotResetErrors.newPassword && <p className="text-error text-xs mt-1 font-medium">{forgotResetErrors.newPassword}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Nhập lại mật khẩu</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">lock_reset</span>
+                    </div>
+                    <input
+                      className="block w-full pl-12 pr-4 py-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant/60 transition-all font-body"
+                      placeholder="••••••••"
+                      type="password"
+                      value={forgotConfirmPassword}
+                      onChange={e => { setForgotConfirmPassword(e.target.value); setForgotResetErrors(p => ({ ...p, confirmPassword: '' })); }}
+                    />
+                  </div>
+                  {forgotResetErrors.confirmPassword && <p className="text-error text-xs mt-1 font-medium">{forgotResetErrors.confirmPassword}</p>}
+                </div>
+                {forgotResetErrors.api && <p className="text-error text-sm font-medium text-center">{forgotResetErrors.api}</p>}
+                <button
+                  disabled={forgotResetLoading}
+                  className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold uppercase tracking-widest py-4 rounded-lg shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  type="submit"
+                >
+                  {forgotResetLoading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
+                </button>
+              </form>
+            )}
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (isLogin) {
@@ -201,7 +415,8 @@ const AuthPage = () => {
                     Mật khẩu
                   </label>
                   <a
-                    className="text-xs font-semibold text-secondary hover:underline transition-all"
+                    className="text-xs font-semibold text-secondary hover:underline transition-all cursor-pointer"
+                    onClick={e => { e.preventDefault(); setForgotStep('forgot-email'); }}
                     href="#"
                   >
                     Quên mật khẩu?
