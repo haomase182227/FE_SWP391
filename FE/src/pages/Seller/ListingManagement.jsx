@@ -32,6 +32,8 @@ export default function ListingManagement() {
   const [error, setError]         = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch]       = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   // ── Detail modal ─────────────────────────────────────────────
   const [detailTarget,  setDetailTarget]  = useState(null);
@@ -182,6 +184,12 @@ export default function ListingManagement() {
     pendingInspection: countByStatus('PendingInspection'),
   };
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Auto-advance: if currentPage exceeds totalPages, clamp to last page
+  const safePage = Math.min(currentPage, totalPages);
+  if (safePage !== currentPage) setCurrentPage(safePage);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
       <SellerSidebar
@@ -202,7 +210,7 @@ export default function ListingManagement() {
             placeholder="Search listings..."
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
           />
         </div>
         <div className="flex items-center gap-4 ml-6">
@@ -257,7 +265,7 @@ export default function ListingManagement() {
               return (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(i)}
+                  onClick={() => { setActiveTab(i); setCurrentPage(1); }}
                   className={`px-6 py-2 text-xs uppercase tracking-tight font-semibold rounded-lg transition-colors ${
                     activeTab === i
                       ? 'bg-surface-container-lowest text-primary font-bold shadow-sm'
@@ -298,7 +306,7 @@ export default function ListingManagement() {
               <p className="font-bold uppercase tracking-widest text-xs">No listings found</p>
             </div>
           )}
-          {!loading && !error && filtered.map((listing) => {
+          {!loading && !error && paginated.map((listing) => {
             const brand     = listing.brand ?? listing.brandName ?? '—';
             const category  = listing.category ?? listing.categoryName ?? '—';
             const condition = listing.condition ?? '—';
@@ -410,8 +418,37 @@ export default function ListingManagement() {
         {/* Footer */}
         <div className="mt-10 pt-8 border-t border-outline-variant/10 flex justify-between items-center">
           <p className="text-sm text-on-surface-variant italic">
-            Showing {filtered.length} of {listings.length} listings
+            Showing {Math.min((safePage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length} listings
           </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="p-2 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container disabled:opacity-30 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-9 h-9 rounded-lg text-xs font-bold transition-colors ${
+                  page === safePage
+                    ? 'bg-primary text-on-primary'
+                    : 'border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="p-2 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container disabled:opacity-30 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
           <button
             onClick={() => navigate('/seller/new-listing')}
             className="flex items-center gap-2 bg-primary text-on-primary px-8 py-4 rounded-lg text-xs font-bold uppercase tracking-widest shadow-[0_10px_30px_rgba(168,49,0,0.2)] hover:bg-primary-dim transition-all active:scale-95"
