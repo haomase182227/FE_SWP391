@@ -31,6 +31,7 @@ import Support from './pages/Support';
 import InspectorManagement from './pages/Inspector/InspectorManagement';
 import WalletTopupResult from './pages/Buyer/WalletTopupResult';
 import UserProfile from './pages/UserProfile';
+import SellerReviews from './pages/Seller/SellerReviews';
 
 function AppContent() {
   const location = useLocation();
@@ -68,6 +69,7 @@ function AppContent() {
           <Route path="/seller/listings" element={<ListingManagement />} />
           <Route path="/seller/new-listing" element={<NewListing />} />
           <Route path="/seller/orders" element={<OderManagement />} />
+          <Route path="/seller/reviews" element={<SellerReviews />} />
           <Route path="/seller/messages" element={<MessageSellerManagement />} />
           <Route path="/seller/wallet" element={<WalletSellerManagement />} />
           <Route path="/seller/wallet/result" element={<WalletTopupResultSeller />} />
