@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = 'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1';
@@ -188,7 +188,7 @@ const AuthPage = () => {
                   </div>
                   <input
                     className="block w-full pl-12 pr-4 py-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant/60 transition-all font-body"
-                    placeholder="ten@kinetic.vn"
+                    placeholder="ten@thekinetic.vn"
                     type="email"
                     value={forgotEmail}
                     onChange={e => { setForgotEmail(e.target.value); setForgotEmailError(''); }}
@@ -324,15 +324,15 @@ const AuthPage = () => {
               <span className="font-headline text-sm font-bold tracking-[0.3em] text-primary uppercase">
                 The Precision Velocity
               </span>
-              <h1 className="font-headline text-7xl font-black italic tracking-tighter text-on-background leading-none">
-                KINETIC<br />
+              <Link to="/" className="block font-headline text-7xl font-black italic tracking-tighter text-on-background leading-none hover:opacity-80 transition-opacity">
+                THE<br />
                 <span
                   className="text-primary italic"
                   style={{ textShadow: '0 0 20px rgba(168, 49, 0, 0.2)' }}
                 >
-                  EDITORIAL.
+                  KINETIC.
                 </span>
-              </h1>
+              </Link>
             </div>
             <div className="max-w-md space-y-6">
               <p className="text-xl text-on-surface-variant font-light leading-relaxed">
@@ -367,9 +367,9 @@ const AuthPage = () => {
           <div className="bg-surface-container-lowest/80 backdrop-blur-2xl p-8 md:p-12 rounded-xl shadow-[0_40px_80px_rgba(78,33,32,0.08)] border border-white/40">
             {/* Mobile Logo (Hidden on Desktop) */}
             <div className="md:hidden mb-8">
-              <h2 className="font-headline text-3xl font-black italic tracking-tighter text-primary">
+              <Link to="/" className="font-headline text-3xl font-black italic tracking-tighter text-primary hover:opacity-80 transition-opacity">
                 KINETIC
-              </h2>
+              </Link>
             </div>
             <div className="mb-10">
               <h2 className="font-headline text-3xl font-bold tracking-tight text-on-background">
@@ -586,9 +586,9 @@ const AuthPage = () => {
           ></div>
           <div className="relative z-20 flex flex-col justify-between p-16 w-full h-full">
             <div>
-              <h1 className="font-headline font-black italic tracking-tighter text-6xl text-primary-fixed leading-none">
+              <Link to="/" className="font-headline font-black italic tracking-tighter text-6xl text-primary-fixed leading-none hover:opacity-80 transition-opacity">
                 KINETIC
-              </h1>
+              </Link>
               <p className="font-label uppercase tracking-widest text-on-primary/60 mt-4 text-xs">
                 Precision Velocity Editorial
               </p>
@@ -612,9 +612,9 @@ const AuthPage = () => {
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-12 lg:p-24 bg-surface-bright relative">
           {/* Branding for Mobile only */}
           <div className="lg:hidden absolute top-8 left-8">
-            <h1 className="font-headline font-black italic tracking-tighter text-2xl text-primary">
+            <Link to="/" className="font-headline font-black italic tracking-tighter text-2xl text-primary hover:opacity-80 transition-opacity">
               KINETIC
-            </h1>
+            </Link>
           </div>
           <div className="w-full max-w-md space-y-8">
             <header className="space-y-3">
