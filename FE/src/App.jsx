@@ -63,11 +63,8 @@ function AppContent() {
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/listings" element={<ListingModeration />} />
           <Route path="/admin/transactions" element={<TransactionManagement />} />
-<<<<<<< HEAD
           <Route path="/admin/wallets" element={<WalletManagement />} />
-=======
           <Route path="/admin/reviews" element={<AdminReviews />} />
->>>>>>> 65bd213cb73bce46a2301aa427a69484f624a1b7
           <Route path="/admin/inspections" element={<InspectionManagement />} />
           <Route path="/admin/reports" element={<ReportManagement />} />
           <Route path="/inspector" element={<InspectorManagement />} />

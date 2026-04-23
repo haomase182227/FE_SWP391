@@ -6,11 +6,8 @@ const NAV_ITEMS = [
   { icon: 'group', label: 'User Management', to: '/admin/users' },
   { icon: 'rule', label: 'Listing Moderation', to: '/admin/listings' },
   { icon: 'payments', label: 'Transactions', to: '/admin/transactions' },
-<<<<<<< HEAD
   { icon: 'account_balance_wallet', label: 'Wallet Management', to: '/admin/wallets' },
-=======
   { icon: 'rate_review', label: 'Reviews', to: '/admin/reviews' },
->>>>>>> 65bd213cb73bce46a2301aa427a69484f624a1b7
   { icon: 'engineering', label: 'Inspectors', to: '/admin/inspections' },
   { icon: 'analytics', label: 'Reports', to: '/admin/reports' },
 ];
