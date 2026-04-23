@@ -35,6 +35,7 @@ import InspectorManagement from './pages/Inspector/InspectorManagement';
 import WalletTopupResult from './pages/Buyer/WalletTopupResult';
 import UserProfile from './pages/UserProfile';
 import GoogleCallback from './pages/Auth/GoogleCallback';
+import Search from './pages/Search';
 import SellerReviews from './pages/Seller/SellerReviews';
 
 // Redirect về đúng trang nếu role không phải Buyer
@@ -74,6 +75,7 @@ function AppContent() {
           <Route path="/chat" element={<Message />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/listings" element={<ListingModeration />} />
