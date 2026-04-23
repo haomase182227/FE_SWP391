@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { icon: 'dashboard', label: 'Account', to: '/seller/account' },
   { icon: 'directions_bike', label: 'Listings', to: '/seller/listings' },
   { icon: 'shopping_cart', label: 'Orders', to: '/seller/orders' },
+  { icon: 'rate_review', label: 'Reviews', to: '/seller/reviews' },
   { icon: 'chat', label: 'Messages', to: '/seller/messages', hasBadge: true },
   { icon: 'account_balance_wallet', label: 'Wallet', to: '/seller/wallet' },
   { icon: 'verified', label: 'Inspections', to: '/seller/inspections' },

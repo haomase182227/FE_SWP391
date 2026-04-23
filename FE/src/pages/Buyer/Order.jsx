@@ -368,20 +368,6 @@ export default function Order() {
             <div className="mb-8">
               <h2 className="font-bold text-sm uppercase tracking-widest text-on-surface-variant">ORDERS</h2>
               <h1 className="font-headline text-4xl font-bold tracking-tight text-on-surface">My Orders</h1>
-              {/* DEBUG BUTTON - XÓA SAU KHI FIX */}
-              <button 
-                onClick={() => {
-                  console.log('=== DEBUG: ALL ORDERS ===');
-                  console.log('Orders array:', orders);
-                  if (orders.length > 0) {
-                    console.log('First order keys:', Object.keys(orders[0]));
-                    console.log('First order data:', JSON.stringify(orders[0], null, 2));
-                  }
-                }}
-                className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold"
-              >
-                🐛 DEBUG: Show Order Structure
-              </button>
             </div>
 
             {loading ? (
