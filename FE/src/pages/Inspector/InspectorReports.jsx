@@ -34,18 +34,25 @@ export default function InspectorReports() {
   const { currentUser } = useAuth();
   const token = currentUser?.token;
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'handled'
+
   const [reports, setReports] = useState([]);
-  const [resolvedReports, setResolvedReports] = useState([]);
+  const [handledReports, setHandledReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Modal state
+  // Modal state (xử lý tố cáo)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [inspectorNote, setInspectorNote] = useState('');
   const [decision, setDecision] = useState('');
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Modal chi tiết (read-only)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [reportDetail, setReportDetail] = useState(null);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -58,45 +65,58 @@ export default function InspectorReports() {
     setLoading(true);
     setError('');
     try {
-      // Gọi song song: pending/underreview + history (đã xử lý)
-      const [activeRes, historyRes] = await Promise.all([
-        fetch(`${API_BASE}/inspector/reports`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        }),
-        fetch(`${API_BASE}/inspector/reports/history`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        }),
-      ]);
+      const response = await fetch(`${API_BASE}/inspector/reports`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
 
-      // Active reports (Pending / UnderReview)
-      if (activeRes.ok) {
-        const data = await activeRes.json();
+      if (response.ok) {
+        const data = await response.json();
         const list = Array.isArray(data) ? data : (data.reports || data.data || []);
         setReports(list);
       } else {
         setReports([]);
       }
-
-      // Resolved reports (đã xử lý xong)
-      if (historyRes.ok) {
-        const data = await historyRes.json();
-        const list = Array.isArray(data) ? data : (data.reports || data.data || []);
-        setResolvedReports(list);
-      } else {
-        // Endpoint history không tồn tại → bỏ qua, không báo lỗi
-        setResolvedReports([]);
-      }
     } catch (err) {
       console.error('[InspectorReports] Fetch error:', err);
       setError(`Không thể tải danh sách tố cáo: ${err.message}`);
       setReports([]);
-      setResolvedReports([]);
     } finally {
       setLoading(false);
     }
   }, [token]);
 
-  useEffect(() => { fetchReports(); }, [fetchReports]);
+  const fetchHandledReports = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE}/inspector/reports/handled`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.reports || data.data || []);
+        setHandledReports(list);
+      } else {
+        setHandledReports([]);
+      }
+    } catch (err) {
+      console.error('[InspectorReports] Fetch handled error:', err);
+      setError(`Không thể tải danh sách đã xử lý: ${err.message}`);
+      setHandledReports([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (activeTab === 'pending') {
+      fetchReports();
+    } else {
+      fetchHandledReports();
+    }
+  }, [activeTab, fetchReports, fetchHandledReports]);
 
   const openModal = (report) => {
     setSelectedReport(report);
@@ -149,10 +169,34 @@ export default function InspectorReports() {
     }
   };
 
+  const handleViewDetail = async (reportId) => {
+    try {
+      const response = await fetch(`${API_BASE}/inspector/reports/${reportId}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+
+      if (!response.ok) {
+        showToast('error', 'Không thể tải chi tiết tố cáo!');
+        return;
+      }
+
+      const data = await response.json();
+      setReportDetail(data);
+      setIsDetailModalOpen(true);
+    } catch (err) {
+      console.error('[ViewDetail] Error:', err);
+      showToast('error', 'Có lỗi xảy ra khi tải chi tiết!');
+    }
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setReportDetail(null);
+  };
+
   const pendingReports  = reports.filter(r => (r.status || '').toLowerCase() === 'pending');
   const underReview     = reports.filter(r => (r.status || '').toLowerCase() === 'underreview');
-  const allResolved     = resolvedReports; // từ endpoint history
-  const totalCount      = reports.length + resolvedReports.length;
+  const totalCount      = reports.length + handledReports.length;
 
   return (
     <div className="min-h-screen bg-surface font-body text-on-surface antialiased flex">
@@ -188,10 +232,40 @@ export default function InspectorReports() {
             </div>
             <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-sm">
               <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đã xử lý</p>
-              <p className="font-headline text-3xl font-bold text-emerald-600 mt-1">{allResolved.length}</p>
+              <p className="font-headline text-3xl font-bold text-emerald-600 mt-1">{handledReports.length}</p>
             </div>
           </div>
         )}
+
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6 border-b border-outline-variant/20">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wide transition-all relative ${
+              activeTab === 'pending'
+                ? 'text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Cần xử lý
+            {activeTab === 'pending' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('handled')}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wide transition-all relative ${
+              activeTab === 'handled'
+                ? 'text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Đã xử lý
+            {activeTab === 'handled' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+        </div>
 
         {/* Loading */}
         {loading && (
@@ -217,96 +291,122 @@ export default function InspectorReports() {
         {!loading && !error && (
           <div className="space-y-10">
 
-            {/* ── BẢNG 1: CHỜ XỬ LÝ ── */}
-            <section>
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface">
-                  Chờ xử lý
-                </h2>
-                <span className="bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-yellow-200">
-                  {pendingReports.length}
-                </span>
-              </div>
-
-              <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/50 border-b border-outline-variant/10">
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Tiêu đề</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Phân loại</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người tố cáo</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người bị tố cáo</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Ngày tạo</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Trạng thái</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold text-right">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/10">
-                      {pendingReports.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant text-sm">
-                            Không có tố cáo nào đang chờ xử lý.
-                          </td>
-                        </tr>
-                      ) : pendingReports.map((report) => (
-                        <ReportRow
-                          key={report.reportId || report.id}
-                          report={report}
-                          showAction
-                          onProcess={() => openModal(report)}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
+            {/* ── TAB 1: CẦN XỬ LÝ ── */}
+            {activeTab === 'pending' && (
+              <section>
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface">
+                    Chờ xử lý
+                  </h2>
+                  <span className="bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-yellow-200">
+                    {pendingReports.length}
+                  </span>
                 </div>
-              </div>
-            </section>
 
-            {/* ── BẢNG 2: ĐÃ XỬ LÝ ── */}
-            <section>
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface">
-                  Đã xử lý
-                </h2>
-                <span className="bg-surface-container-low text-on-surface-variant text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-outline-variant/20">
-                  {allResolved.length}
-                </span>
-              </div>
-
-              <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/50 border-b border-outline-variant/10">
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Tiêu đề</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Phân loại</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người tố cáo</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người bị tố cáo</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Ngày tạo</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Trạng thái</th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold text-right">Ghi chú</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/10">
-                      {allResolved.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant text-sm">
-                            Chưa có tố cáo nào được xử lý.
-                          </td>
+                <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-low/50 border-b border-outline-variant/10">
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Tiêu đề</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Phân loại</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người tố cáo</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người bị tố cáo</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Ngày tạo</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Trạng thái</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold text-right">Thao tác</th>
                         </tr>
-                      ) : allResolved.map((report) => (
-                        <ReportRow
-                          key={report.reportId || report.id}
-                          report={report}
-                          showAction={false}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/10">
+                        {pendingReports.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant text-sm">
+                              Không có tố cáo nào đang chờ xử lý.
+                            </td>
+                          </tr>
+                        ) : pendingReports.map((report) => (
+                          <ReportRow
+                            key={report.reportId || report.id}
+                            report={report}
+                            showAction
+                            onProcess={() => openModal(report)}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
+
+            {/* ── TAB 2: ĐÃ XỬ LÝ ── */}
+            {activeTab === 'handled' && (
+              <section>
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface">
+                    Đã xử lý
+                  </h2>
+                  <span className="bg-surface-container-low text-on-surface-variant text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-outline-variant/20">
+                    {handledReports.length}
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-low/50 border-b border-outline-variant/10">
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Mã đơn</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Tiêu đề</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Loại tố cáo</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Trạng thái</th>
+                          <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold text-right">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/10">
+                        {handledReports.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant text-sm">
+                              Chưa có tố cáo nào được xử lý.
+                            </td>
+                          </tr>
+                        ) : handledReports.map((report) => (
+                          <tr key={report.reportId || report.id} className="hover:bg-surface-container-lowest/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <p className="text-xs font-mono text-on-surface-variant">
+                                #{report.orderId || report.orderCode || '—'}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-bold text-on-surface line-clamp-1">
+                                {report.title || '—'}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-on-surface">
+                                {report.reportTypeName || report.reportType || '—'}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <StatusBadge status={report.status} />
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => handleViewDetail(report.reportId || report.id)}
+                                className="p-2 hover:bg-primary/10 rounded-lg transition-colors inline-flex items-center justify-center"
+                                title="Xem chi tiết"
+                              >
+                                <span className="material-symbols-outlined text-primary text-[20px]">visibility</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
 
           </div>
         )}
@@ -471,6 +571,166 @@ export default function InspectorReports() {
             >
               OK
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL CHI TIẾT (READ-ONLY) ── */}
+      {isDetailModalOpen && reportDetail && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-outline-variant/20 pb-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Chi tiết tố cáo</p>
+                <h2 className="font-headline text-2xl font-bold mt-1 text-on-surface">
+                  {reportDetail.title || 'Chi tiết Report'}
+                </h2>
+              </div>
+              <button onClick={closeDetailModal} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            </div>
+
+            {/* Thông tin chung */}
+            <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 space-y-4">
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Thông tin chung</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Mã đơn</p>
+                  <p className="text-sm font-mono text-on-surface">
+                    #{reportDetail.orderId || reportDetail.orderCode || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Phân loại</p>
+                  <p className="text-sm font-medium text-on-surface">
+                    {reportDetail.reportTypeName || reportDetail.reportType || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Trạng thái</p>
+                  <StatusBadge status={reportDetail.status} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Ngày tạo</p>
+                  <p className="text-sm text-on-surface">{formatDate(reportDetail.createdAt)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Người tham gia */}
+            <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 space-y-4">
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người tham gia</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Người gửi tố cáo</p>
+                  <p className="text-sm font-medium text-on-surface">
+                    {reportDetail.reporterName || reportDetail.reporterUserName || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Người bị tố cáo</p>
+                  <p className="text-sm font-medium text-on-surface">
+                    {reportDetail.reportedUserName || reportDetail.reportedUser || '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Nội dung gốc */}
+            {reportDetail.content && (
+              <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Nội dung tố cáo</p>
+                <div className="bg-white rounded-lg p-4 border border-outline-variant/20">
+                  <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+                    {reportDetail.content}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Lịch sử xử lý của Inspector */}
+            <div className="bg-blue-50 rounded-xl p-5 border border-blue-200 space-y-3">
+              <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold">Xử lý của Inspector (Bạn)</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] text-blue-600 uppercase tracking-wide font-bold mb-1">Quyết định</p>
+                  <StatusBadge status={reportDetail.inspectorDecision || reportDetail.decision} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-blue-600 uppercase tracking-wide font-bold mb-1">Thời gian duyệt</p>
+                  <p className="text-sm text-on-surface">{formatDate(reportDetail.reviewedAt)}</p>
+                </div>
+              </div>
+
+              {reportDetail.inspectorNote && (
+                <div>
+                  <p className="text-[10px] text-blue-600 uppercase tracking-wide font-bold mb-1">Ghi chú của bạn</p>
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+                      {reportDetail.inspectorNote}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quyết định của Admin */}
+            <div className="bg-purple-50 rounded-xl p-5 border border-purple-200 space-y-3">
+              <p className="text-[10px] uppercase tracking-widest text-purple-700 font-bold">Quyết định của Admin</p>
+              
+              {reportDetail.adminDecision ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Quyết định cuối</p>
+                      <StatusBadge status={reportDetail.adminDecision} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Thời gian đóng</p>
+                      <p className="text-sm text-on-surface">{formatDate(reportDetail.resolvedAt)}</p>
+                    </div>
+                  </div>
+
+                  {reportDetail.adminName && (
+                    <div>
+                      <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Admin xử lý</p>
+                      <p className="text-sm font-medium text-on-surface">{reportDetail.adminName}</p>
+                    </div>
+                  )}
+
+                  {reportDetail.adminNote && (
+                    <div>
+                      <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Ghi chú Admin</p>
+                      <div className="bg-white rounded-lg p-3 border border-purple-200">
+                        <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+                          {reportDetail.adminNote}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-purple-600 font-medium">Admin đang xem xét</p>
+                </div>
+              )}
+            </div>
+
+            {/* Nút đóng */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={closeDetailModal}
+                className="px-6 py-3 bg-error text-on-error font-bold uppercase text-sm rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

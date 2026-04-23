@@ -29,9 +29,57 @@ export default function InspectorManagement() {
 
   // ── Start inspection modal ───────────────────────────────────
   const [startModal, setStartModal] = useState(null); // { listingId, title }
-  const [startForm, setStartForm] = useState({ frameChecked: false, brakeChecked: false, drivetrainChecked: false, notes: '' });
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState('');
+  const [inspectorNote, setInspectorNote] = useState('');
+
+  // Checklist state — mặc định tích hết [0,1,2,3,4]
+  const [checkedItems, setCheckedItems] = useState({
+    frame: [0, 1, 2, 3, 4],
+    brakes: [0, 1, 2, 3, 4],
+    drivetrain: [0, 1, 2, 3, 4],
+  });
+
+  const inspectionCriteria = {
+    frame: [
+      'Khung và phuộc không bị nứt, gãy hoặc biến dạng.',
+      'Lớp sơn còn tốt, không bong tróc mảng lớn.',
+      'Không có dấu hiệu rỉ sét nghiêm trọng ở các khớp nối.',
+      'Phuộc nhún hoạt động êm ái, không bị xì dầu (nếu có).',
+      'Các mối hàn chắn chắn, không bị nứt hở.',
+    ],
+    brakes: [
+      'Má phanh còn dày, chưa bị mòn đến vạch cảnh báo.',
+      'Dây phanh/Cáp phanh căng, không bị tưa hoặc đứt rão.',
+      'Tay phanh đàn hồi tốt, bóp nhả nhẹ nhàng, không bị kẹt.',
+      'Đĩa phanh không bị vênh, hoặc không rò rỉ dầu (phanh thủy lực).',
+      'Lực phanh ăn, đảm bảo xe dừng hẳn khi bóp chặt.',
+    ],
+    drivetrain: [
+      'Xích xe không bị chùng nhão, đứt mắt hay rỉ sét nặng.',
+      'Líp và đùi đĩa (răng cưa) không bị mòn vẹt, mẻ răng.',
+      'Củ đề trước/sau (Derailleur) nhảy số mượt mà, không bị kẹt.',
+      'Dây đề đứt tưa, thao tác bấm/vặn xả trên ghi đông nhẹ nhàng.',
+      'Trục giữa (Bottom Bracket) quay êm, không bị rơ lắc hoặc kêu lạo xạo.',
+    ],
+  };
+
+  const handleCheck = (part, index) => {
+    setCheckedItems(prev => {
+      const current = prev[part];
+      const updated = current.includes(index)
+        ? current.filter(i => i !== index)
+        : [...current, index];
+      return { ...prev, [part]: updated };
+    });
+  };
+
+  const openStartModal = (item) => {
+    setStartModal({ listingId: item.listingId, title: item.title });
+    setCheckedItems({ frame: [0,1,2,3,4], brakes: [0,1,2,3,4], drivetrain: [0,1,2,3,4] });
+    setInspectorNote('');
+    setStartError('');
+  };
 
   // ── Approve modal ────────────────────────────────────────────
   const [approveModal, setApproveModal] = useState(null); // { listingId, title }
@@ -77,17 +125,29 @@ export default function InspectorManagement() {
     setStartLoading(true);
     setStartError('');
     try {
+      const framePercent     = (checkedItems.frame.length / 5) * 100;
+      const brakesPercent    = (checkedItems.brakes.length / 5) * 100;
+      const drivetrainPercent = (checkedItems.drivetrain.length / 5) * 100;
+
+      const payload = {
+        frameChecked:      framePercent > 50,
+        brakeChecked:      brakesPercent > 50,
+        drivetrainChecked: drivetrainPercent > 50,
+        notes: inspectorNote,
+      };
+
+      console.log('Payload gửi đi:', payload);
+
       const res = await fetch(`${API_BASE}/inspections/${startModal.listingId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(startForm),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.detail || d.message || `HTTP ${res.status}`);
       }
       setStartModal(null);
-      setStartForm({ frameChecked: false, brakeChecked: false, drivetrainChecked: false, notes: '' });
       fetchPending();
       fetchApprovals();
     } catch (e) {
@@ -300,11 +360,7 @@ export default function InspectorManagement() {
                       <td className="px-6 py-4 text-right">
                         {!item.isCompleted && (
                           <button
-                            onClick={() => {
-                              setStartModal({ listingId: item.listingId, title: item.title });
-                              setStartForm({ frameChecked: false, brakeChecked: false, drivetrainChecked: false, notes: '' });
-                              setStartError('');
-                            }}
+                            onClick={() => openStartModal(item)}
                             className="px-4 py-2 bg-secondary text-on-secondary rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
                           >
                             Bắt đầu kiểm định
@@ -324,55 +380,159 @@ export default function InspectorManagement() {
       {/* ── START INSPECTION MODAL ── */}
       {startModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-primary text-2xl">search</span>
-            </div>
-            <h3 className="font-headline text-xl font-bold text-on-surface mb-1">Bắt đầu kiểm định</h3>
-            <p className="text-sm text-on-surface-variant mb-6 line-clamp-2">{startModal.title}</p>
+          <div className="bg-white rounded-2xl w-[90vw] max-w-7xl shadow-2xl flex flex-col max-h-[90vh]">
 
-            <div className="space-y-4 mb-6">
-              {/* Checkboxes */}
-              {[
-                { key: 'frameChecked', label: 'Khung xe' },
-                { key: 'brakeChecked', label: 'Phanh' },
-                { key: 'drivetrainChecked', label: 'Hệ thống truyền động' },
-              ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-3 cursor-pointer">
-                  <button
-                    type="button"
-                    onClick={() => setStartForm(f => ({ ...f, [key]: !f[key] }))}
-                    className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${startForm[key] ? 'bg-primary border-primary' : 'border-outline'}`}
-                  >
-                    {startForm[key] && <span className="material-symbols-outlined text-on-primary" style={{ fontSize: '14px' }}>check</span>}
-                  </button>
-                  <span className="text-sm text-on-surface">{label}</span>
-                </label>
-              ))}
-
-              {/* Notes */}
-              <div>
-                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Ghi chú</label>
-                <textarea
-                  rows={3}
-                  value={startForm.notes}
-                  onChange={e => setStartForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="Nhập ghi chú kiểm định..."
-                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none resize-none transition-all"
-                />
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 border-b border-outline-variant/10 flex-shrink-0">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Kiểm định xe đạp</p>
+                  <h3 className="font-headline text-xl font-bold text-on-surface mt-0.5">Bắt đầu kiểm định</h3>
+                  <p className="text-sm text-on-surface-variant mt-1 line-clamp-1">{startModal.title}</p>
+                </div>
+                <button onClick={() => setStartModal(null)} className="p-2 hover:bg-gray-100 rounded-full ml-4 flex-shrink-0">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
               </div>
             </div>
 
-            {startError && <p className="text-error text-xs mb-4">{startError}</p>}
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
 
-            <div className="flex gap-3">
-              <button onClick={() => setStartModal(null)}
-                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+              {/* 3 bộ phận */}
+              {[
+                {
+                  key: 'frame', label: 'Khung xe', icon: 'directions_bike',
+                  img1: 'https://images.unsplash.com/photo-1772109065028-7c261692faa9?q=80&w=1074&auto=format&fit=crop',
+                  img2: 'https://plus.unsplash.com/premium_photo-1678718712069-4cd5ddc8819c?q=80&w=687&auto=format&fit=crop',
+                },
+                {
+                  key: 'brakes', label: 'Phanh', icon: 'do_not_touch',
+                  img1: 'https://images.unsplash.com/photo-1727281624958-fa9734ea4160?q=80&w=1170&auto=format&fit=crop',
+                  img2: 'https://images.unsplash.com/photo-1769445966495-f2a5822603a0?q=80&w=627&auto=format&fit=crop',
+                },
+                {
+                  key: 'drivetrain', label: 'Hệ thống truyền động', icon: 'settings',
+                  img1: 'https://images.unsplash.com/photo-1672138127452-3f538394f431?q=80&w=1171&auto=format&fit=crop',
+                  img2: 'https://images.unsplash.com/photo-1716494974209-3a2d562b8258?q=80&w=1170&auto=format&fit=crop',
+                },
+              ].map(({ key, label, icon, img1, img2 }) => {
+                const count   = checkedItems[key].length;
+                const percent = Math.round((count / 5) * 100);
+                const passed  = percent > 50;
+                return (
+                  <div key={key} className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10">
+
+                    {/* Tiêu đề bộ phận + % + badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-[20px]">{icon}</span>
+                        <span className="font-bold text-sm text-on-surface">{label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-headline font-bold text-sm text-on-surface">{percent}%</span>
+                        <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${
+                          passed
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                            : 'bg-red-100 text-red-600 border-red-200'
+                        }`}>
+                          {passed ? 'ĐẠT' : 'KHÔNG ĐẠT'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="w-full h-1.5 bg-surface-container-high rounded-full mb-4 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${passed ? 'bg-emerald-500' : 'bg-red-400'}`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+
+                    {/* Layout: [Hình 1] [Checklist] [Hình 2] */}
+                    <div className="flex items-center gap-6">
+                      {/* Hình trái */}
+                      <img
+                        src={img1}
+                        alt={`${label} tham chiếu 1`}
+                        className="w-40 h-40 aspect-square object-cover rounded-xl shadow-md flex-shrink-0"
+                      />
+
+                      {/* 5 tiêu chí */}
+                      <div className="flex-1 space-y-2.5">
+                        {inspectionCriteria[key].map((criterion, idx) => {
+                          const isChecked = checkedItems[key].includes(idx);
+                          return (
+                            <label
+                              key={idx}
+                              className="flex items-start gap-3 cursor-pointer group"
+                              onClick={() => handleCheck(key, idx)}
+                            >
+                              <div className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-all mt-0.5 ${
+                                isChecked ? 'bg-primary border-primary' : 'border-outline group-hover:border-primary/50'
+                              }`}>
+                                {isChecked && (
+                                  <span className="material-symbols-outlined text-on-primary" style={{ fontSize: '13px' }}>check</span>
+                                )}
+                              </div>
+                              <span className={`text-sm leading-relaxed transition-colors ${
+                                isChecked ? 'text-on-surface' : 'text-on-surface-variant'
+                              }`}>
+                                {criterion}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      {/* Hình phải */}
+                      <img
+                        src={img2}
+                        alt={`${label} tham chiếu 2`}
+                        className="w-40 h-40 aspect-square object-cover rounded-xl shadow-md flex-shrink-0"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Ghi chú chung */}
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">
+                  Ghi chú chung
+                </label>
+                <textarea
+                  rows={3}
+                  value={inspectorNote}
+                  onChange={e => setInspectorNote(e.target.value)}
+                  placeholder="Nhập ghi chú kiểm định tổng thể..."
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none resize-none transition-all"
+                />
+              </div>
+
+              {startError && (
+                <p className="text-error text-xs bg-error/5 border border-error/20 rounded-lg px-4 py-2">{startError}</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-outline-variant/10 flex gap-3 flex-shrink-0">
+              <button
+                onClick={() => setStartModal(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors"
+              >
                 Hủy
               </button>
-              <button onClick={handleStartInspection} disabled={startLoading}
-                className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60">
-                {startLoading ? 'Đang lưu...' : 'Xác nhận'}
+              <button
+                onClick={handleStartInspection}
+                disabled={startLoading}
+                className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              >
+                {startLoading ? (
+                  <><span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>Đang lưu...</>
+                ) : (
+                  <><span className="material-symbols-outlined text-[16px]">check_circle</span>Xác nhận</>
+                )}
               </button>
             </div>
           </div>
