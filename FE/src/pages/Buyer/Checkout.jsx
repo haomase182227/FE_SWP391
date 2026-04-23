@@ -16,6 +16,11 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const [editFullName, setEditFullName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [savingFullName, setSavingFullName] = useState(false);
+  const [savingPhone, setSavingPhone] = useState(false);
+
   // Fetch user info
   const fetchUserInfo = useCallback(async () => {
     if (!token) return;
@@ -31,6 +36,8 @@ export default function Checkout() {
         phone: data.user?.phone || data.phone || '',
         email: data.user?.email || data.email || '',
       });
+      setEditFullName(data.user?.fullName || data.user?.userName || data.fullName || data.userName || '');
+      setEditPhone(data.user?.phone || data.phone || '');
     } catch (err) {
       console.error('[Checkout] Error fetching user info:', err);
     }
@@ -54,6 +61,48 @@ export default function Checkout() {
       setLoading(false);
     }
   }, [token]);
+
+  async function handleBlurFullName() {
+    const trimmed = editFullName.trim();
+    if (!trimmed || trimmed === userInfo.fullName) return;
+    setSavingFullName(true);
+    try {
+      const res = await fetch(`${API_BASE}/Auth/users/me/fullname`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ newFullName: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Cập nhật thất bại');
+      setUserInfo((prev) => ({ ...prev, fullName: data.user?.fullName || trimmed }));
+      setEditFullName(data.user?.fullName || trimmed);
+    } catch (err) {
+      console.error('[Checkout] fullName update failed:', err.message);
+    } finally {
+      setSavingFullName(false);
+    }
+  }
+
+  async function handleBlurPhone() {
+    const trimmed = editPhone.trim();
+    if (!trimmed || trimmed === userInfo.phone) return;
+    setSavingPhone(true);
+    try {
+      const res = await fetch(`${API_BASE}/Auth/users/me/phone`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ newPhone: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Cập nhật thất bại');
+      setUserInfo((prev) => ({ ...prev, phone: data.user?.phone || trimmed }));
+      setEditPhone(data.user?.phone || trimmed);
+    } catch (err) {
+      console.error('[Checkout] phone update failed:', err.message);
+    } finally {
+      setSavingPhone(false);
+    }
+  }
 
   useEffect(() => {
     if (!token) {
@@ -149,43 +198,59 @@ export default function Checkout() {
             {/* User Information */}
             <div className="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
               <h2 className="text-2xl font-bold font-headline mb-6">Thông tin người nhận</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
-                    Họ và tên
-                  </label>
-                  <input
-                    type="text"
-                    value={userInfo.fullName}
-                    readOnly
-                    className="w-full px-4 py-3 bg-surface-container-high rounded-lg text-sm border border-outline-variant/20 cursor-not-allowed opacity-75"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
                     <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
-                      Số điện thoại
+                      Họ và tên
                     </label>
-                    <input
-                      type="text"
-                      value={userInfo.phone}
-                      readOnly
-                      className="w-full px-4 py-3 bg-surface-container-high rounded-lg text-sm border border-outline-variant/20 cursor-not-allowed opacity-75"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={editFullName}
+                        onChange={(e) => setEditFullName(e.target.value)}
+                        onBlur={handleBlurFullName}
+                        className="w-full px-4 py-3 bg-surface-container-high rounded-lg text-sm border border-outline-variant/20 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      />
+                      {savingFullName && (
+                        <span className="material-symbols-outlined animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-base text-primary">
+                          progress_activity
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={userInfo.email}
-                      readOnly
-                      className="w-full px-4 py-3 bg-surface-container-high rounded-lg text-sm border border-outline-variant/20 cursor-not-allowed opacity-75"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                        Số điện thoại
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={editPhone}
+                          onChange={(e) => setEditPhone(e.target.value)}
+                          onBlur={handleBlurPhone}
+                          className="w-full px-4 py-3 bg-surface-container-high rounded-lg text-sm border border-outline-variant/20 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
+                        {savingPhone && (
+                          <span className="material-symbols-outlined animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-base text-primary">
+                            progress_activity
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={userInfo.email}
+                        readOnly
+                        className="w-full px-4 py-3 bg-surface-container-high rounded-lg text-sm border border-outline-variant/20 cursor-not-allowed opacity-75"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
             </div>
 
             {/* Shipping Address */}
