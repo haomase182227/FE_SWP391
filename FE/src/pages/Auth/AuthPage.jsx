@@ -324,7 +324,7 @@ const AuthPage = () => {
               <span className="font-headline text-sm font-bold tracking-[0.3em] text-primary uppercase">
                 The Precision Velocity
               </span>
-              <Link to="/" className="font-headline text-7xl font-black italic tracking-tighter text-on-background leading-none hover:opacity-80 transition-opacity">
+              <Link to="/" className="block font-headline text-7xl font-black italic tracking-tighter text-on-background leading-none hover:opacity-80 transition-opacity">
                 THE<br />
                 <span
                   className="text-primary italic"
