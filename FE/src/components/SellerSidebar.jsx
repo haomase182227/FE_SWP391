@@ -9,7 +9,6 @@ const NAV_ITEMS = [
   { icon: 'rate_review', label: 'Reviews', to: '/seller/reviews' },
   { icon: 'chat', label: 'Messages', to: '/seller/messages', hasBadge: true },
   { icon: 'account_balance_wallet', label: 'Wallet', to: '/seller/wallet' },
-  { icon: 'verified', label: 'Inspections', to: '/seller/inspections' },
 ];
 
 export default function SellerSidebar({ brandName = 'Veloce Kinetic', avatarSrc, avatarAlt = 'Seller Avatar', merchantName = 'Verified Merchant', merchantSub = 'Seller Dashboard', bottomButton, onBottomButtonClick }) {
