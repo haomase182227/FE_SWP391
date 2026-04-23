@@ -91,7 +91,7 @@ export default function TopNavBar() {
     const q = searchInput.trim();
     if (!q) return;
     setShowSuggestions(false);
-    navigate(`/?search=${encodeURIComponent(q)}`);
+    navigate(`/search?q=${encodeURIComponent(q)}`);
   }
 
   function handleSuggestionClick(item) {
@@ -134,7 +134,7 @@ export default function TopNavBar() {
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                placeholder="Tìm kiếm theo tên xe, mẫu mã..."
+                placeholder="Search"
                 className="w-full pl-10 pr-8 py-2 bg-orange-50 border border-orange-200 rounded-lg text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
               />
               {searchInput && (

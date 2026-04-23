@@ -90,6 +90,11 @@ export function AuthProvider({ children }) {
 		}
 	}
 
+	function saveUser(safeUser) {
+		setCurrentUser(safeUser);
+		localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(safeUser));
+	}
+
 	function logout() {
 		setCurrentUser(null);
 		localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -102,6 +107,7 @@ export function AuthProvider({ children }) {
 			login,
 			logout,
 			register,
+			saveUser,
 			getRedirectPathByRole,
 		}),
 		[currentUser]

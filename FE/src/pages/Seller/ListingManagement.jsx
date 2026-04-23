@@ -33,6 +33,29 @@ export default function ListingManagement() {
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch]       = useState('');
 
+  // ── Detail modal ─────────────────────────────────────────────
+  const [detailTarget,  setDetailTarget]  = useState(null);
+  const [detailData,    setDetailData]    = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  async function openDetail(listing) {
+    setDetailTarget(listing);
+    setDetailData(null);
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/seller/listings/${listing.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setDetailData(data);
+    } catch {
+      setDetailData(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
   // ── Edit modal ────────────────────────────────────────────────
   const [editTarget,  setEditTarget]  = useState(null); // listing object
   const [editForm,    setEditForm]    = useState({ title: '', description: '', price: '', frameSize: '', requestInspection: false });
@@ -332,19 +355,28 @@ export default function ListingManagement() {
                     </p>
                   </div>
 
-                  {/* Condition */}
+                  {/* IsVerifiedBicycle */}
                   <div className="col-span-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Condition</p>
-                    <p className="text-sm font-semibold">{condition}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Verified</p>
+                    {listing.isVerifiedBicycle
+                      ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-tertiary">
+                          <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
+                          Inspected
+                        </span>
+                      : <span className="text-[10px] font-bold text-on-surface-variant/50">Not inspected</span>
+                    }
                   </div>
 
-                  {/* Views */}
+                  {/* Views → Chi tiết */}
                   <div className="col-span-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Views</p>
-                    <p className="text-sm font-semibold flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm text-on-surface-variant">visibility</span>
-                      {views}
-                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Detail</p>
+                    <button
+                      onClick={() => openDetail(listing)}
+                      className="flex items-center gap-1 text-sm font-semibold text-primary hover:opacity-70 transition-opacity"
+                      title="View detail"
+                    >
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                    </button>
                   </div>
 
                   {/* Status */}
@@ -389,6 +421,104 @@ export default function ListingManagement() {
           </button>
         </div>
       </main>
+
+      {/* ── Detail Modal ── */}
+      {detailTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setDetailTarget(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl border border-white/40" onClick={e => e.stopPropagation()}>
+            {detailLoading && (
+              <div className="p-12 text-center text-on-surface-variant">
+                <span className="material-symbols-outlined animate-spin text-3xl block mx-auto mb-2">progress_activity</span>
+                Đang tải...
+              </div>
+            )}
+            {!detailLoading && (() => {
+              const d = detailData ?? detailTarget;
+              const img = d.primaryImageUrl ?? d.imageUrl ?? d.image ?? null;
+              return (
+                <div>
+                  {img && <img src={img} alt={d.title} className="w-full h-56 object-cover rounded-t-2xl" />}
+                  <div className="p-8 space-y-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">#{d.id}</p>
+                        <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter">{d.title}</h3>
+                      </div>
+                      <p className="font-headline text-xl font-bold text-primary flex-shrink-0">
+                        {(d.price ?? 0).toLocaleString('vi-VN')}₫
+                      </p>
+                    </div>
+
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_STYLES[normalizeStatus(d.status)] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                        {normalizeStatus(d.status) ?? d.status}
+                      </span>
+                      {d.isVerifiedBicycle && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-tighter">
+                          <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
+                          Inspected
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Info grid */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {[
+                        ['Category', d.categoryName],
+                        ['Frame Size', d.frameSize],
+                        ['Year', d.year],
+                        ['Created', d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '—'],
+                      ].map(([k, v]) => (
+                        <div key={k}>
+                          <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
+                          <p className="font-medium text-on-surface">{v || '—'}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Inspection info */}
+                    {d.inspection && (
+                      <div className="bg-tertiary/5 border border-tertiary/20 rounded-xl p-4">
+                        <p className="font-label text-[10px] uppercase tracking-widest text-tertiary mb-2 font-bold">Inspection Details</p>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-[10px] text-on-surface-variant">Result</p>
+                            <p className="font-bold">{d.inspection.isPassed ? '✅ Passed' : '❌ Failed'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-on-surface-variant">Inspected At</p>
+                            <p className="font-medium">{d.inspection.inspectedAt ? new Date(d.inspection.inspectedAt).toLocaleDateString('vi-VN') : '—'}</p>
+                          </div>
+                          {d.inspection.notes && (
+                            <div className="col-span-2">
+                              <p className="text-[10px] text-on-surface-variant">Notes</p>
+                              <p className="font-medium">{d.inspection.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Description */}
+                    {d.description && (
+                      <div>
+                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Description</p>
+                        <p className="text-sm text-on-surface-variant leading-relaxed">{d.description}</p>
+                      </div>
+                    )}
+
+                    <button onClick={() => setDetailTarget(null)}
+                      className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                      Close
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* ── Edit Modal ── */}
       {editTarget && (

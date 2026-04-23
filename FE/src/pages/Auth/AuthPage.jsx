@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 
@@ -31,7 +31,21 @@ const AuthPage = () => {
   const [forgotResetSuccess, setForgotResetSuccess] = useState('');
 
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, currentUser, getRedirectPathByRole } = useAuth();
+
+  // Redirect nếu đã có token
+  useEffect(() => {
+    if (currentUser?.token) {
+      navigate(getRedirectPathByRole(currentUser.role), { replace: true });
+    }
+  }, []);
+
+  const [toast, setToast] = useState('');
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2500);
+  }
 
   async function handleForgotEmailSubmit(e) {
     e.preventDefault();
@@ -303,6 +317,12 @@ const AuthPage = () => {
   if (isLogin) {
     return (
       <div className="bg-background text-on-background font-body min-h-screen flex items-center justify-center relative overflow-hidden antialiased">
+        {/* Toast */}
+        {toast && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-on-surface text-surface px-6 py-3 rounded-xl shadow-xl text-sm font-bold tracking-wide animate-fade-in">
+            {toast}
+          </div>
+        )}
         {/* Background Cinematic Element */}
         <div className="absolute inset-0 z-0">
           <div
@@ -479,7 +499,9 @@ const AuthPage = () => {
             </div>
             {/* Social Logins */}
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex items-center justify-center space-x-2 py-3 px-4 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors">
+              <button
+                onClick={() => { window.location.href = 'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1/Auth/google/login'; }}
+                className="flex items-center justify-center space-x-2 py-3 px-4 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -502,7 +524,9 @@ const AuthPage = () => {
                   Google
                 </span>
               </button>
-              <button className="flex items-center justify-center space-x-2 py-3 px-4 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors">
+              <button
+                onClick={() => showToast('Coming soon')}
+                className="flex items-center justify-center space-x-2 py-3 px-4 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors">
                 <svg
                   className="w-5 h-5 text-[#1877F2]"
                   fill="currentColor"
@@ -534,7 +558,7 @@ const AuthPage = () => {
         <footer className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10 opacity-40 md:opacity-100">
           <div className="flex items-center space-x-8">
             <span className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
-              © 2024 Kinetic Editorial
+              © 2026 The Kinetic 
             </span>
             <div className="hidden md:flex items-center space-x-4">
               <a
@@ -566,6 +590,12 @@ const AuthPage = () => {
 
   return (
     <div className="bg-surface font-body text-on-surface selection:bg-primary/20 min-h-screen flex flex-col antialiased">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-on-surface text-surface px-6 py-3 rounded-xl shadow-xl text-sm font-bold tracking-wide">
+          {toast}
+        </div>
+      )}
       <main className="flex-1 flex items-stretch">
         {/* Left Side: Editorial Content / Hero Section */}
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-inverse-surface">
@@ -587,7 +617,7 @@ const AuthPage = () => {
           <div className="relative z-20 flex flex-col justify-between p-16 w-full h-full">
             <div>
               <Link to="/" className="font-headline font-black italic tracking-tighter text-6xl text-primary-fixed leading-none hover:opacity-80 transition-opacity">
-                KINETIC
+                THE KINETIC
               </Link>
               <p className="font-label uppercase tracking-widest text-on-primary/60 mt-4 text-xs">
                 Precision Velocity Editorial
@@ -622,7 +652,7 @@ const AuthPage = () => {
                 Bắt đầu hành trình
               </h3>
               <p className="text-on-surface-variant font-body">
-                Tham gia cộng đồng xe đạp chuyên nghiệp lớn nhất.
+                Tham gia cộng đồng mua bán xe đạp chuyên nghiệp lớn nhất.
               </p>
             </header>
             <form className="space-y-5" onSubmit={handleRegSubmit} noValidate>
@@ -792,7 +822,9 @@ const AuthPage = () => {
             </div>
             {/* Secondary Auth */}
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex items-center justify-center gap-3 py-4 rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-label font-bold text-xs uppercase tracking-widest">
+              <button
+                onClick={() => { window.location.href = 'https://swp391-bike-marketplace-backend-1.onrender.com/api/v1/Auth/google/login'; }}
+                className="flex items-center justify-center gap-3 py-4 rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-label font-bold text-xs uppercase tracking-widest">
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -813,7 +845,9 @@ const AuthPage = () => {
                 </svg>
                 Google
               </button>
-              <button className="flex items-center justify-center gap-3 py-4 rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-label font-bold text-xs uppercase tracking-widest">
+              <button
+                onClick={() => showToast('Coming soon')}
+                className="flex items-center justify-center gap-3 py-4 rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-colors font-label font-bold text-xs uppercase tracking-widest">
                 <svg
                   className="w-4 h-4 fill-secondary"
                   viewBox="0 0 24 24"
@@ -846,10 +880,10 @@ const AuthPage = () => {
         <div className="flex flex-col md:flex-row justify-between items-center px-12 max-w-7xl mx-auto w-full gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
             <span className="font-headline font-bold text-on-surface uppercase tracking-tighter text-lg">
-              KINETIC
+              THE KINETIC
             </span>
             <p className="font-label text-xs uppercase tracking-widest text-on-surface-variant/60">
-              © 2024 THE KINETIC EDITORIAL. PRECISION VELOCITY.
+              © 2026 THE KINETIC.
             </p>
           </div>
           <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
