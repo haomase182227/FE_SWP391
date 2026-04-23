@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminTopBar from '../../components/AdminTopBar';
 import { useAuth } from '../Context/AuthContext';
@@ -91,6 +91,15 @@ export default function ListingModeration() {
   const [actionNote, setActionNote]   = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
+
+  // ── Delete rejected modal ────────────────────────────────────
+  const [deleteTarget, setDeleteTarget]   = useState(null); // { id, title }
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ── Mark sold modal ──────────────────────────────────────────
+  const [soldTarget, setSoldTarget]   = useState(null); // { id, title }
+  const [soldLoading, setSoldLoading] = useState(false);
+  const [soldError, setSoldError]     = useState('');
 
   // ── Fetch pending ────────────────────────────────────────────
   const fetchPending = useCallback(async (p = 1) => {
@@ -194,6 +203,48 @@ export default function ListingModeration() {
     inspection: { label: 'Gửi kiểm định',           color: 'bg-blue-600 text-white',  icon: 'search' },
   };
 
+  // ── Delete rejected listing ──────────────────────────────────
+  async function handleDeleteRejected() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/listings/${deleteTarget.id}/rejected`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDeleteTarget(null);
+      fetchAll(allPage, filterStatus);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  // ── Mark listing as sold ─────────────────────────────────────
+  async function handleMarkSold() {
+    if (!soldTarget) return;
+    setSoldLoading(true);
+    setSoldError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/listings/${soldTarget.id}/sold`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || `HTTP ${res.status}`);
+      }
+      setSoldTarget(null);
+      fetchAll(allPage, filterStatus);
+    } catch (e) {
+      setSoldError(e.message);
+    } finally {
+      setSoldLoading(false);
+    }
+  }
+
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
@@ -236,20 +287,21 @@ export default function ListingModeration() {
                       Không có listing nào đang chờ duyệt.
                     </td></tr>
                   )}
-                  {!pendingLoading && pending.map(item => (
+                  {!pendingLoading && pending.map(item => {
+                    const imgSrc = item.imageUrl ?? item.primaryImageUrl ?? item.primaryImage ?? item.thumbnail ?? null;
+                    return (
                     <tr key={item.id} className="hover:bg-primary-container/5 transition-colors">
-                      {/* Listing info */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {item.imageUrl
-                            ? <img src={item.imageUrl} alt={item.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                          {imgSrc
+                            ? <img src={imgSrc} alt={item.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                             : <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
                                 <span className="material-symbols-outlined text-outline-variant">directions_bike</span>
                               </div>
                           }
                           <div>
                             <p className="font-headline text-sm font-bold text-on-surface line-clamp-1">{item.title}</p>
-                            <p className="text-[10px] text-on-surface-variant">ID #{item.id}</p>
+                            <p className="text-[10px] text-on-surface-variant">ID #{item.id}{item.sellerName ? ` · ${item.sellerName}` : ''}</p>
                           </div>
                         </div>
                       </td>
@@ -285,7 +337,8 @@ export default function ListingModeration() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -322,7 +375,7 @@ export default function ListingModeration() {
                     <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Giá</th>
                     <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Trạng thái</th>
                     <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Ngày tạo</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Chi tiết</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Chi tiết / Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-low">
@@ -334,19 +387,21 @@ export default function ListingModeration() {
                   {!allLoading && all.length === 0 && (
                     <tr><td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant text-sm">Không có listing nào.</td></tr>
                   )}
-                  {!allLoading && all.map(item => (
+                  {!allLoading && all.map(item => {
+                    const imgSrc = item.imageUrl ?? item.primaryImageUrl ?? item.primaryImage ?? item.thumbnail ?? null;
+                    return (
                     <tr key={item.id} className="hover:bg-primary-container/5 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {item.imageUrl
-                            ? <img src={item.imageUrl} alt={item.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                          {imgSrc
+                            ? <img src={imgSrc} alt={item.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                             : <div className="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
                                 <span className="material-symbols-outlined text-outline-variant">directions_bike</span>
                               </div>
                           }
                           <div>
                             <p className="font-headline text-sm font-bold text-on-surface line-clamp-1">{item.title}</p>
-                            <p className="text-[10px] text-on-surface-variant">ID #{item.id}</p>
+                            <p className="text-[10px] text-on-surface-variant">ID #{item.id}{item.sellerName ? ` · ${item.sellerName}` : ''}</p>
                           </div>
                         </div>
                       </td>
@@ -362,13 +417,26 @@ export default function ListingModeration() {
                         <p className="text-xs text-on-surface-variant">{formatDate(item.createdAt)}</p>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button onClick={() => openDetail(item.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors" title="Xem chi tiết">
-                          <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openDetail(item.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors" title="Xem chi tiết">
+                            <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
+                          </button>
+                          {item.status === 'Approved' && (
+                            <button onClick={() => { setSoldTarget({ id: item.id, title: item.title }); setSoldError(''); }}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary/10 transition-colors" title="Đánh dấu đã bán">
+                              <span className="material-symbols-outlined text-secondary text-lg">sell</span>
+                            </button>
+                          )}
+                          <button onClick={() => setDeleteTarget({ id: item.id, title: item.title })}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 transition-colors" title="Xóa listing">
+                            <span className="material-symbols-outlined text-error text-lg">delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -477,22 +545,15 @@ export default function ListingModeration() {
                   </div>
                   <h3 className="font-headline text-xl font-bold text-on-surface mb-1">{cfg.label}</h3>
                   <p className="text-sm text-on-surface-variant mb-6 line-clamp-2">{actionModal.title}</p>
-
                   <div className="mb-4">
                     <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">
                       {actionModal.type === 'reject' ? 'Lý do từ chối *' : 'Ghi chú (tuỳ chọn)'}
                     </label>
-                    <textarea
-                      rows={3}
-                      value={actionNote}
-                      onChange={e => setActionNote(e.target.value)}
+                    <textarea rows={3} value={actionNote} onChange={e => setActionNote(e.target.value)}
                       placeholder={actionModal.type === 'reject' ? 'Nhập lý do...' : 'Nhập ghi chú...'}
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none resize-none transition-all"
-                    />
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none resize-none transition-all" />
                   </div>
-
                   {actionError && <p className="text-error text-xs mb-4">{actionError}</p>}
-
                   <div className="flex gap-3">
                     <button onClick={() => setActionModal(null)}
                       className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
@@ -506,6 +567,57 @@ export default function ListingModeration() {
                 </>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE REJECTED MODAL ── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-white/40">
+            <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-error text-2xl">delete</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Xóa listing bị từ chối?</h3>
+            <p className="text-sm text-on-surface-variant mb-6 line-clamp-2">
+              Bạn có chắc muốn xóa <span className="font-bold text-on-surface">"{deleteTarget.title}"</span>? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                Hủy
+              </button>
+              <button onClick={handleDeleteRejected} disabled={deleteLoading}
+                className="flex-1 py-3 rounded-xl bg-error text-white font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
+                {deleteLoading ? 'Đang xóa...' : 'Xóa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MARK SOLD MODAL ── */}
+      {soldTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-white/40">
+            <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-secondary text-2xl">sell</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Đánh dấu đã bán?</h3>
+            <p className="text-sm text-on-surface-variant mb-6 line-clamp-2">
+              Đánh dấu <span className="font-bold text-on-surface">"{soldTarget.title}"</span> là đã bán.
+            </p>
+            {soldError && <p className="text-error text-xs mb-4">{soldError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setSoldTarget(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                Hủy
+              </button>
+              <button onClick={handleMarkSold} disabled={soldLoading}
+                className="flex-1 py-3 rounded-xl bg-secondary text-on-secondary font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
+                {soldLoading ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -576,7 +576,17 @@ export default function ListingManagement() {
 
             <div className="px-8 py-6 space-y-5">
               {/* Info banner theo status */}
-              {normalizeStatus(editTarget.status) === 'Active' ? (
+              {editTarget.status === 'PendingInspection' ? (
+                <div className="bg-error/10 border border-error/25 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-error text-lg">block</span>
+                    <p className="text-xs font-bold uppercase tracking-widest text-error">Không thể chỉnh sửa</p>
+                  </div>
+                  <p className="text-xs text-error/80 pl-6">
+                    Listing đang chờ Inspector kiểm định. Vui lòng chờ quá trình kiểm định hoàn tất trước khi chỉnh sửa.
+                  </p>
+                </div>
+              ) : normalizeStatus(editTarget.status) === 'Active' ? (
                 <div className="bg-orange-500/8 border border-orange-500/25 rounded-xl p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-orange-600 text-lg">warning</span>
@@ -608,9 +618,10 @@ export default function ListingManagement() {
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Title <span className="text-error">*</span></label>
                   <input
                     required
+                    disabled={editTarget.status === 'PendingInspection'}
                     value={editForm.title}
                     onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -619,9 +630,10 @@ export default function ListingManagement() {
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Description</label>
                   <textarea
                     rows={4}
+                    disabled={editTarget.status === 'PendingInspection'}
                     value={editForm.description}
                     onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none resize-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -631,9 +643,10 @@ export default function ListingManagement() {
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Price (₫) <span className="text-error">*</span></label>
                     <input
                       type="number" min="0" step="1" required
+                      disabled={editTarget.status === 'PendingInspection'}
                       value={editForm.price}
                       onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     {normalizeStatus(editTarget.status) === 'Active' && editForm.price && (
                       <p className="text-[10px] text-orange-600 mt-1 font-medium">
@@ -644,10 +657,11 @@ export default function ListingManagement() {
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Frame Size</label>
                     <input
+                      disabled={editTarget.status === 'PendingInspection'}
                       value={editForm.frameSize}
                       onChange={e => setEditForm(f => ({ ...f, frameSize: e.target.value }))}
                       placeholder="e.g. S, M, L, XL"
-                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -690,8 +704,9 @@ export default function ListingManagement() {
                     className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
                     Cancel
                   </button>
-                  <button type="submit" disabled={editLoading}
-                    className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60">
+                  <button type="submit"
+                    disabled={editLoading || editTarget.status === 'PendingInspection'}
+                    className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
                     {editLoading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
