@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
 
 const API_BASE = '/api/v1';
 
@@ -695,9 +694,8 @@ export default function AdminReportManagement() {
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
-      <AdminTopBar title="Quản lý Tố Cáo" />
 
-      <main className="ml-64 pt-24 px-8 pb-12 min-h-screen">
+      <main className="ml-64 pt-8 px-8 pb-12 min-h-screen">
         {/* Page header */}
         <div className="mb-8">
           <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Admin</span>

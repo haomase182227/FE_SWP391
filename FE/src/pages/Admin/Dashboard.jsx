@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
@@ -61,10 +60,9 @@ const Dashboard = () => {
   return (
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
-      <AdminTopBar title="Admin Overview" searchPlaceholder="Search..." />
 
       {/* Main Content Canvas */}
-      <main className="md:ml-64 pt-24 px-8 pb-12 min-h-screen">
+      <main className="md:ml-64 pt-8 px-8 pb-12 min-h-screen">
         {/* Header Section */}
         <header className="mb-12">
           <h2 className="text-6xl md:text-7xl font-headline font-black text-on-surface tracking-tighter leading-tight">
