@@ -465,10 +465,10 @@ export default function ListingManagement() {
                     {/* Info grid */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       {[
-                        ['Danh mục', d.categoryName],
+                        ['Category', d.categoryName],
                         ['Frame Size', d.frameSize],
-                        ['Năm', d.year],
-                        ['Ngày tạo', d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '—'],
+                        ['Year', d.year],
+                        ['Created', d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '—'],
                       ].map(([k, v]) => (
                         <div key={k}>
                           <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
@@ -480,19 +480,19 @@ export default function ListingManagement() {
                     {/* Inspection info */}
                     {d.inspection && (
                       <div className="bg-tertiary/5 border border-tertiary/20 rounded-xl p-4">
-                        <p className="font-label text-[10px] uppercase tracking-widest text-tertiary mb-2 font-bold">Thông tin kiểm định</p>
+                        <p className="font-label text-[10px] uppercase tracking-widest text-tertiary mb-2 font-bold">Inspection Details</p>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <p className="text-[10px] text-on-surface-variant">Kết quả</p>
-                            <p className="font-bold">{d.inspection.isPassed ? '✅ Đạt' : '❌ Không đạt'}</p>
+                            <p className="text-[10px] text-on-surface-variant">Result</p>
+                            <p className="font-bold">{d.inspection.isPassed ? '✅ Passed' : '❌ Failed'}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-on-surface-variant">Ngày kiểm định</p>
+                            <p className="text-[10px] text-on-surface-variant">Inspected At</p>
                             <p className="font-medium">{d.inspection.inspectedAt ? new Date(d.inspection.inspectedAt).toLocaleDateString('vi-VN') : '—'}</p>
                           </div>
                           {d.inspection.notes && (
                             <div className="col-span-2">
-                              <p className="text-[10px] text-on-surface-variant">Ghi chú</p>
+                              <p className="text-[10px] text-on-surface-variant">Notes</p>
                               <p className="font-medium">{d.inspection.notes}</p>
                             </div>
                           )}
@@ -503,14 +503,14 @@ export default function ListingManagement() {
                     {/* Description */}
                     {d.description && (
                       <div>
-                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</p>
+                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Description</p>
                         <p className="text-sm text-on-surface-variant leading-relaxed">{d.description}</p>
                       </div>
                     )}
 
                     <button onClick={() => setDetailTarget(null)}
                       className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
-                      Đóng
+                      Close
                     </button>
                   </div>
                 </div>
