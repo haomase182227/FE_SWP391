@@ -357,23 +357,23 @@ export default function ListingManagement() {
 
                   {/* IsVerifiedBicycle */}
                   <div className="col-span-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Kiểm định</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Verified</p>
                     {listing.isVerifiedBicycle
                       ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-tertiary">
                           <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: '"FILL" 1' }}>verified</span>
-                          Đã kiểm định
+                          Inspected
                         </span>
-                      : <span className="text-[10px] font-bold text-on-surface-variant/50">Chưa kiểm định</span>
+                      : <span className="text-[10px] font-bold text-on-surface-variant/50">Not inspected</span>
                     }
                   </div>
 
                   {/* Views → Chi tiết */}
                   <div className="col-span-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Chi tiết</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Detail</p>
                     <button
                       onClick={() => openDetail(listing)}
                       className="flex items-center gap-1 text-sm font-semibold text-primary hover:opacity-70 transition-opacity"
-                      title="Xem chi tiết"
+                      title="View detail"
                     >
                       <span className="material-symbols-outlined text-sm">visibility</span>
                     </button>
