@@ -41,6 +41,7 @@ export default function WalletSellerManagement() {
         const txnRef = searchParams.get('vnp_TxnRef') ?? searchParams.get('txnRef');
         const rawAmount = searchParams.get('vnp_Amount');
         const amount = rawAmount ? Number(rawAmount) / 100 : null;
+        if (isSuccess) window.dispatchEvent(new Event('walletUpdated'));
         setTopupResult({ isSuccess, message: msg, txnRef, amount });
       })
       .catch(() => {
@@ -48,6 +49,7 @@ export default function WalletSellerManagement() {
         const txnRef = searchParams.get('vnp_TxnRef') ?? searchParams.get('txnRef');
         const rawAmount = searchParams.get('vnp_Amount');
         const amount = rawAmount ? Number(rawAmount) / 100 : null;
+        if (isSuccess) window.dispatchEvent(new Event('walletUpdated'));
         setTopupResult({ isSuccess, message: isSuccess ? 'Nạp tiền thành công.' : 'Giao dịch không thành công.', txnRef, amount });
       });
   }, []);
@@ -273,7 +275,7 @@ export default function WalletSellerManagement() {
                       {tx.status}
                     </span>
                     <p className={`font-headline text-base font-bold ${tx.isRefunded ? 'text-error' : 'text-tertiary'}`}>
-                      {tx.isRefunded ? '-' : '+'}{vnd(tx.totalPrice)}
+                      {tx.status === 'Cancelled' ? '' : tx.isRefunded ? '-' : '+'}{vnd(tx.totalPrice)}
                     </p>
                   </div>
                   <span className="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>

@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+
+// Helper: dispatch this event from any page after a wallet change
+// e.g. window.dispatchEvent(new Event('walletUpdated'));
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../pages/Context/AuthContext';
 
@@ -20,15 +23,28 @@ export default function TopNavBar() {
   const searchRef   = useRef(null);
   const debounceRef = useRef(null);
 
-  useEffect(() => {
+  const fetchWalletBalance = useCallback(async () => {
     if (!isAuthenticated || !currentUser?.token) { setWalletBalance(null); return; }
-    fetch('/api/v1/Auth/users/me', {
-      headers: { Authorization: `Bearer ${currentUser.token}` },
-    })
-      .then(r => r.json())
-      .then(data => setWalletBalance(data?.user?.wallet ?? 0))
-      .catch(() => setWalletBalance(0));
+    try {
+      const r = await fetch('/api/v1/Auth/users/me', {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      const data = await r.json();
+      setWalletBalance(data?.user?.wallet ?? 0);
+    } catch {
+      setWalletBalance(0);
+    }
   }, [isAuthenticated, currentUser?.token]);
+
+  useEffect(() => {
+    fetchWalletBalance();
+  }, [fetchWalletBalance]);
+
+  // Re-fetch balance whenever any part of the app dispatches 'walletUpdated'
+  useEffect(() => {
+    window.addEventListener('walletUpdated', fetchWalletBalance);
+    return () => window.removeEventListener('walletUpdated', fetchWalletBalance);
+  }, [fetchWalletBalance]);
 
   // Fetch unread message count for Buyer role
   const fetchUnread = useCallback(async () => {

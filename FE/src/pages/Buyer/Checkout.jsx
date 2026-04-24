@@ -143,6 +143,7 @@ export default function Checkout() {
       }
 
       console.log('[Checkout] Order placed successfully');
+      window.dispatchEvent(new Event('walletUpdated'));
       // Navigate to orders page
       navigate('/order');
     } catch (err) {

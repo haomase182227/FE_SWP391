@@ -20,6 +20,7 @@ export default function WalletTopupResult() {
         const txnRef = searchParams.get('vnp_TxnRef') ?? searchParams.get('txnRef');
         const rawAmount = searchParams.get('vnp_Amount');
         const amount = rawAmount ? (Number(rawAmount) / 100).toLocaleString('vi-VN') + '₫' : null;
+        if (isSuccess) window.dispatchEvent(new Event('walletUpdated'));
         setResult({ isSuccess, message: msg, txnRef, amount });
       })
       .catch(() => {
@@ -29,6 +30,7 @@ export default function WalletTopupResult() {
         const txnRef = searchParams.get('vnp_TxnRef') ?? searchParams.get('txnRef');
         const rawAmount = searchParams.get('vnp_Amount');
         const amount = rawAmount ? (Number(rawAmount) / 100).toLocaleString('vi-VN') + '₫' : null;
+        if (isSuccess) window.dispatchEvent(new Event('walletUpdated'));
         setResult({
           isSuccess,
           message: isSuccess ? 'Nạp tiền vào ví thành công.' : 'Giao dịch không thành công.',
