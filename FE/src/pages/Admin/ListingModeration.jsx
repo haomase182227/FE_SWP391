@@ -10,6 +10,7 @@ const STATUS_BADGE = {
   Pending:   'bg-orange-500/10 text-orange-600',
   Approved:  'bg-tertiary/10 text-tertiary',
   Rejected:  'bg-error/10 text-error',
+  Sold:      'bg-purple-500/10 text-purple-600',
   PendingInspection: 'bg-blue-500/10 text-blue-600',
 };
 
@@ -60,7 +61,6 @@ function Pagination({ page, totalPages, onChange }) {
     </div>
   );
 }
-
 export default function ListingModeration() {
   const { currentUser } = useAuth();
   const token = currentUser?.token;
@@ -100,6 +100,31 @@ export default function ListingModeration() {
   const [soldLoading, setSoldLoading] = useState(false);
   const [soldError, setSoldError]     = useState('');
 
+  // ── Bike Categories ───────────────────────────────────────────
+  const [categories, setCategories]         = useState([]);
+  const [catLoading, setCatLoading]         = useState(false);
+  const [catError, setCatError]             = useState('');
+
+  // Create modal
+  const [showCatCreate, setShowCatCreate]   = useState(false);
+  const [catCreateName, setCatCreateName]   = useState('');
+  const [catCreateDesc, setCatCreateDesc]   = useState('');
+  const [catCreateLoading, setCatCreateLoading] = useState(false);
+  const [catCreateError, setCatCreateError] = useState('');
+
+  // Edit modal
+  const [catEdit, setCatEdit]               = useState(null); // { id, name, description }
+  const [catEditLoading, setCatEditLoading] = useState(false);
+  const [catEditError, setCatEditError]     = useState('');
+
+  // Delete modal
+  const [catDelete, setCatDelete]           = useState(null); // { id, name }
+  const [catDeleteLoading, setCatDeleteLoading] = useState(false);
+
+  // Detail modal
+  const [catDetail, setCatDetail]           = useState(null);
+  const [catDetailLoading, setCatDetailLoading] = useState(false);
+
   // ── Fetch pending ────────────────────────────────────────────
   const fetchPending = useCallback(async (p = 1) => {
     setPendingLoading(true);
@@ -124,15 +149,16 @@ export default function ListingModeration() {
     setAllLoading(true);
     try {
       if (status === '__all__') {
-        // fetch cả Approved và Rejected rồi merge
-        const [r1, r2] = await Promise.all([
+        // fetch cả Approved, Rejected và Sold rồi merge
+        const [r1, r2, r3] = await Promise.all([
           fetch(`${API_BASE}/admin/listings?page=${p}&pageSize=${ALL_PAGE_SIZE}&status=Approved`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${API_BASE}/admin/listings?page=${p}&pageSize=${ALL_PAGE_SIZE}&status=Rejected`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE}/admin/listings?page=${p}&pageSize=${ALL_PAGE_SIZE}&status=Sold`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
-        const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
-        const items = [...(d1.items ?? []), ...(d2.items ?? [])];
-        const total = (d1.totalCount ?? 0) + (d2.totalCount ?? 0);
-        const pages = Math.max(d1.totalPages ?? 1, d2.totalPages ?? 1);
+        const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
+        const items = [...(d1.items ?? []), ...(d2.items ?? []), ...(d3.items ?? [])];
+        const total = (d1.totalCount ?? 0) + (d2.totalCount ?? 0) + (d3.totalCount ?? 0);
+        const pages = Math.max(d1.totalPages ?? 1, d2.totalPages ?? 1, d3.totalPages ?? 1);
         setAll(items);
         setAllTotal(total);
         setAllPages(pages);
@@ -218,6 +244,118 @@ export default function ListingModeration() {
       console.error(e);
     } finally {
       setDeleteLoading(false);
+    }
+  }
+
+  // ── Bike Categories: fetch all ───────────────────────────────
+  const fetchCategories = useCallback(async () => {
+    setCatLoading(true);
+    setCatError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/bike-categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setCategories(Array.isArray(data) ? data : (data.items ?? data.categories ?? []));
+    } catch (e) {
+      setCatError(e.message);
+    } finally {
+      setCatLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  // ── Bike Categories: get by id ───────────────────────────────
+  async function openCatDetail(id) {
+    setCatDetailLoading(true);
+    setCatDetail(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/bike-categories/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setCatDetail(data);
+    } catch (e) {
+      setCatDetail({ error: e.message });
+    } finally {
+      setCatDetailLoading(false);
+    }
+  }
+
+  // ── Bike Categories: create ──────────────────────────────────
+  async function handleCatCreate() {
+    setCatCreateLoading(true);
+    setCatCreateError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/bike-categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: catCreateName, description: catCreateDesc }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || `HTTP ${res.status}`);
+      }
+      setShowCatCreate(false);
+      setCatCreateName('');
+      setCatCreateDesc('');
+      fetchCategories();
+    } catch (e) {
+      setCatCreateError(e.message);
+    } finally {
+      setCatCreateLoading(false);
+    }
+  }
+
+  // ── Bike Categories: update ──────────────────────────────────
+  async function handleCatEdit() {
+    if (!catEdit) return;
+    setCatEditLoading(true);
+    setCatEditError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/bike-categories/${catEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: catEdit.name, description: catEdit.description }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || `HTTP ${res.status}`);
+      }
+      setCatEdit(null);
+      fetchCategories();
+    } catch (e) {
+      setCatEditError(e.message);
+    } finally {
+      setCatEditLoading(false);
+    }
+  }
+
+  // ── Bike Categories: delete ──────────────────────────────────
+  const [catDeleteError, setCatDeleteError] = useState('');
+
+  async function handleCatDelete() {
+    if (!catDelete) return;
+    setCatDeleteLoading(true);
+    setCatDeleteError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/bike-categories/${catDelete.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.title || d.error || `HTTP ${res.status}`);
+      }
+      setCatDelete(null);
+      fetchCategories();
+    } catch (e) {
+      setCatDeleteError(e.message);
+    } finally {
+      setCatDeleteLoading(false);
     }
   }
 
@@ -355,7 +493,7 @@ export default function ListingModeration() {
             </div>
             {/* Filter by status */}
             <div className="flex items-center gap-2">
-              {[['__all__', 'Tất cả'], ['Approved', 'Approved'], ['Rejected', 'Rejected']].map(([val, label]) => (
+              {[['__all__', 'Tất cả'], ['Approved', 'Approved'], ['Rejected', 'Rejected'], ['Sold', 'Sold']].map(([val, label]) => (
                 <button key={val} onClick={() => { setFilterStatus(val); setAllPage(1); }}
                   className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${filterStatus === val ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low'}`}>
                   {label}
@@ -439,6 +577,78 @@ export default function ListingModeration() {
               </table>
             </div>
             <Pagination page={allPage} totalPages={allPages} onChange={setAllPage} />
+          </div>
+        </section>
+
+        {/* ── BẢNG 3: BIKE CATEGORIES ── */}
+        <section>
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
+                Danh mục xe đạp
+              </h2>
+              <p className="text-xs text-on-surface-variant mt-1">{categories.length} danh mục</p>
+            </div>
+            <button onClick={() => { setShowCatCreate(true); setCatCreateName(''); setCatCreateDesc(''); setCatCreateError(''); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity">
+              <span className="material-symbols-outlined text-base">add</span>
+              Thêm danh mục
+            </button>
+          </div>
+
+          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-white shadow-[0_20px_40px_rgba(78,33,32,0.06)]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-low/50">
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">ID</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Tên danh mục</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Mô tả</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container-low">
+                  {catLoading && (
+                    <tr><td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant text-sm">
+                      <span className="material-symbols-outlined animate-spin text-2xl block mx-auto mb-2">progress_activity</span>Đang tải...
+                    </td></tr>
+                  )}
+                  {!catLoading && catError && (
+                    <tr><td colSpan={4} className="px-6 py-12 text-center text-error text-sm">{catError}</td></tr>
+                  )}
+                  {!catLoading && !catError && categories.length === 0 && (
+                    <tr><td colSpan={4} className="px-6 py-12 text-center text-on-surface-variant text-sm">Chưa có danh mục nào.</td></tr>
+                  )}
+                  {!catLoading && categories.map(cat => (
+                    <tr key={cat.id} className="hover:bg-primary-container/5 transition-colors">
+                      <td className="px-6 py-4 text-xs text-on-surface-variant">#{cat.id}</td>
+                      <td className="px-6 py-4">
+                        <p className="font-headline text-sm font-bold text-on-surface">{cat.name}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-xs text-on-surface-variant line-clamp-2">{cat.description || '—'}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openCatDetail(cat.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors" title="Xem chi tiết">
+                            <span className="material-symbols-outlined text-on-surface-variant text-lg">visibility</span>
+                          </button>
+                          <button onClick={() => { setCatEdit({ id: cat.id, name: cat.name, description: cat.description ?? '' }); setCatEditError(''); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-primary/10 transition-colors" title="Chỉnh sửa">
+                            <span className="material-symbols-outlined text-primary text-lg">edit</span>
+                          </button>
+                          <button onClick={() => { setCatDelete({ id: cat.id, name: cat.name }); setCatDeleteError(''); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 transition-colors" title="Xóa">
+                            <span className="material-symbols-outlined text-error text-lg">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       </main>
@@ -614,6 +824,134 @@ export default function ListingModeration() {
               <button onClick={handleMarkSold} disabled={soldLoading}
                 className="flex-1 py-3 rounded-xl bg-secondary text-on-secondary font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
                 {soldLoading ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAT DETAIL MODAL ── */}
+      {(catDetailLoading || catDetail) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setCatDetail(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40" onClick={e => e.stopPropagation()}>
+            {catDetailLoading && (
+              <div className="py-8 text-center text-on-surface-variant">
+                <span className="material-symbols-outlined animate-spin text-3xl block mx-auto mb-2">progress_activity</span>Đang tải...
+              </div>
+            )}
+            {!catDetailLoading && catDetail && (
+              catDetail.error
+                ? <p className="text-error text-sm">{catDetail.error}</p>
+                : <div className="space-y-4">
+                    <h3 className="font-headline text-xl font-bold text-on-surface">Chi tiết danh mục</h3>
+                    <div>
+                      <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">ID</p>
+                      <p className="text-sm text-on-surface">#{catDetail.id}</p>
+                    </div>
+                    <div>
+                      <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Tên</p>
+                      <p className="text-sm font-bold text-on-surface">{catDetail.name}</p>
+                    </div>
+                    <div>
+                      <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Mô tả</p>
+                      <p className="text-sm text-on-surface-variant">{catDetail.description || '—'}</p>
+                    </div>
+                    <button onClick={() => setCatDetail(null)}
+                      className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                      Đóng
+                    </button>
+                  </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── CAT CREATE MODAL ── */}
+      {showCatCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40">
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-6">Thêm danh mục mới</h3>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Tên danh mục *</label>
+                <input type="text" value={catCreateName} onChange={e => setCatCreateName(e.target.value)}
+                  placeholder="Nhập tên danh mục..."
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none transition-all" />
+              </div>
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</label>
+                <textarea rows={3} value={catCreateDesc} onChange={e => setCatCreateDesc(e.target.value)}
+                  placeholder="Nhập mô tả..."
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none resize-none transition-all" />
+              </div>
+            </div>
+            {catCreateError && <p className="text-error text-xs mb-4">{catCreateError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setShowCatCreate(false)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                Hủy
+              </button>
+              <button onClick={handleCatCreate} disabled={catCreateLoading || !catCreateName.trim()}
+                className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
+                {catCreateLoading ? 'Đang tạo...' : 'Tạo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAT EDIT MODAL ── */}
+      {catEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/40">
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-6">Chỉnh sửa danh mục</h3>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Tên danh mục *</label>
+                <input type="text" value={catEdit.name} onChange={e => setCatEdit(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface outline-none transition-all" />
+              </div>
+              <div>
+                <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</label>
+                <textarea rows={3} value={catEdit.description} onChange={e => setCatEdit(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface outline-none resize-none transition-all" />
+              </div>
+            </div>
+            {catEditError && <p className="text-error text-xs mb-4">{catEditError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setCatEdit(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                Hủy
+              </button>
+              <button onClick={handleCatEdit} disabled={catEditLoading || !catEdit.name.trim()}
+                className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
+                {catEditLoading ? 'Đang lưu...' : 'Lưu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAT DELETE MODAL ── */}
+      {catDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-white/40">
+            <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-error text-2xl">delete</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Xóa danh mục?</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Bạn có chắc muốn xóa <span className="font-bold text-on-surface">"{catDelete.name}"</span>? Hành động này không thể hoàn tác.
+            </p>
+            {catDeleteError && <p className="text-error text-xs mb-4">{catDeleteError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setCatDelete(null)}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                Hủy
+              </button>
+              <button onClick={handleCatDelete} disabled={catDeleteLoading}
+                className="flex-1 py-3 rounded-xl bg-error text-white font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
+                {catDeleteLoading ? 'Đang xóa...' : 'Xóa'}
               </button>
             </div>
           </div>
