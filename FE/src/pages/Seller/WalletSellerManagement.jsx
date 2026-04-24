@@ -273,7 +273,7 @@ export default function WalletSellerManagement() {
                       {tx.status}
                     </span>
                     <p className={`font-headline text-base font-bold ${tx.isRefunded ? 'text-error' : 'text-tertiary'}`}>
-                      {tx.isRefunded ? '-' : '+'}{vnd(tx.totalPrice)}
+                      {tx.status === 'Cancelled' ? '' : tx.isRefunded ? '-' : '+'}{vnd(tx.totalPrice)}
                     </p>
                   </div>
                   <span className="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>
