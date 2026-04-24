@@ -4,6 +4,35 @@ import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
 
+function LoadingRow() {
+  return (
+    <div className="flex items-center gap-3 text-on-surface-variant py-8">
+      <span className="material-symbols-outlined animate-spin">progress_activity</span>
+      Đang tải...
+    </div>
+  );
+}
+
+function EmptyRow({ text }) {
+  return <p className="text-sm text-on-surface-variant py-8">{text}</p>;
+}
+
+function TxStatusBadge({ status }) {
+  const map = {
+    Success:   'bg-tertiary/10 text-tertiary',
+    Completed: 'bg-tertiary/10 text-tertiary',
+    Pending:   'bg-orange-500/10 text-orange-600',
+    Failed:    'bg-error/10 text-error',
+    Cancelled: 'bg-error/10 text-error',
+  };
+  const cls = map[status] ?? 'bg-surface-container-high text-on-surface-variant';
+  return (
+    <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-tighter ${cls}`}>
+      {status ?? '—'}
+    </span>
+  );
+}
+
 export default function Wallet() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -17,6 +46,22 @@ export default function Wallet() {
   const [topUpAmount, setTopUpAmount] = useState('');
   const [topUpLoading, setTopUpLoading] = useState(false);
   const [topUpError, setTopUpError] = useState('');
+
+  // ── Transaction history tabs ─────────────────────────────────
+  const [txTab, setTxTab] = useState('purchases'); // 'purchases' | 'wallet'
+
+  // GET /api/v1/buyer/transactions
+  const [purchases, setPurchases] = useState([]);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
+  const [purchaseStats, setPurchaseStats] = useState(null);
+
+  // GET /api/v1/buyer/transactions/{orderId} — detail modal
+  const [orderDetail, setOrderDetail] = useState(null);
+  const [orderDetailLoading, setOrderDetailLoading] = useState(false);
+
+  // GET /api/v1/wallet/history  +  GET /api/v1/buyer/wallet/history
+  const [walletHistory, setWalletHistory] = useState([]);
+  const [walletHistoryLoading, setWalletHistoryLoading] = useState(false);
 
   // Fetch wallet balance from API
   const fetchWalletBalance = useCallback(async () => {
@@ -40,12 +85,90 @@ export default function Wallet() {
     }
   }, [token]);
 
+  // ── Fetch buyer transactions ─────────────────────────────────
+  const fetchPurchases = useCallback(async () => {
+    if (!token) return;
+    setPurchasesLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/buyer/transactions?page=1&pageSize=50`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // Response shape: { totalSpent, activeEscrows, ..., transactions: [...] }
+      const list = Array.isArray(data) ? data : (data.transactions ?? data.items ?? []);
+      setPurchases(list);
+      if (!Array.isArray(data)) {
+        setPurchaseStats({
+          totalSpent:       data.totalSpent ?? 0,
+          activeEscrows:    data.activeEscrows ?? 0,
+          totalRefunded:    data.totalRefunded ?? 0,
+          totalOrders:      data.totalOrders ?? 0,
+          completedOrders:  data.completedOrders ?? 0,
+          pendingOrders:    data.pendingOrders ?? 0,
+          cancelledOrders:  data.cancelledOrders ?? 0,
+        });
+      }
+    } catch {
+      setPurchases([]);
+    } finally {
+      setPurchasesLoading(false);
+    }
+  }, [token]);
+
+  // ── Fetch order detail ───────────────────────────────────────
+  async function fetchOrderDetail(orderId) {
+    setOrderDetailLoading(true);
+    setOrderDetail(null);
+    try {
+      const res = await fetch(`${API_BASE}/buyer/transactions/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setOrderDetail(data);
+    } catch (e) {
+      setOrderDetail({ error: e.message });
+    } finally {
+      setOrderDetailLoading(false);
+    }
+  }
+
+  // ── Fetch wallet history (both endpoints, merge) ─────────────
+  const fetchWalletHistory = useCallback(async () => {
+    if (!token) return;
+    setWalletHistoryLoading(true);
+    try {
+      const [r1, r2] = await Promise.allSettled([
+        fetch(`${API_BASE}/wallet/history`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/buyer/wallet/history`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const parse = async (result) => {
+        if (result.status !== 'fulfilled' || !result.value.ok) return [];
+        const d = await result.value.json();
+        return Array.isArray(d) ? d : (d.items ?? d.transactions ?? []);
+      };
+      const [list1, list2] = await Promise.all([parse(r1), parse(r2)]);
+      // Deduplicate by id
+      const merged = [...list1];
+      const ids = new Set(list1.map(x => x.id ?? x.transactionId));
+      list2.forEach(x => { if (!ids.has(x.id ?? x.transactionId)) merged.push(x); });
+      setWalletHistory(merged);
+    } catch {
+      setWalletHistory([]);
+    } finally {
+      setWalletHistoryLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (!token) {
       navigate('/auth');
       return;
     }
     fetchWalletBalance();
+    fetchPurchases();
+    fetchWalletHistory();
 
     setDepositLoading(true);
     fetch(`${API_BASE}/wallet/top-up/history`, { headers: { Authorization: `Bearer ${token}` } })
@@ -53,7 +176,7 @@ export default function Wallet() {
       .then(data => setDepositHistory(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setDepositLoading(false));
-  }, [token, fetchWalletBalance, navigate]);
+  }, [token, fetchWalletBalance, fetchPurchases, fetchWalletHistory, navigate]);
 
   async function handleTopUp() {
     const amount = Number(topUpAmount);
@@ -174,53 +297,232 @@ export default function Wallet() {
         </div>
       </section>
 
-      {/* Deposit History */}
-      <section className="max-w-screen-lg mx-auto px-8 pb-16">
-        <h2 className="font-headline text-2xl font-bold tracking-tight mb-6">Deposit History</h2>
-        {depositLoading ? (
-          <div className="flex items-center gap-3 text-on-surface-variant py-8">
-            <span className="material-symbols-outlined animate-spin">progress_activity</span>
-            Đang tải...
+      {/* Transaction History Tabs */}
+      <section className="max-w-screen-lg mx-auto px-8 pb-16 space-y-6">
+        {/* Tab header */}
+        <div className="flex items-center justify-between">
+          <h2 className="font-headline text-2xl font-bold tracking-tight">Lịch sử giao dịch</h2>
+          <div className="flex gap-1 bg-surface-container-low rounded-xl p-1">
+            {[
+              { key: 'purchases', label: 'Mua hàng', icon: 'shopping_bag' },
+              { key: 'deposit',   label: 'Nạp tiền',  icon: 'add_card' },
+            ].map(({ key, label, icon }) => (
+              <button key={key} onClick={() => setTxTab(key)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
+                  txTab === key ? 'bg-surface-container-lowest shadow text-on-surface' : 'text-on-surface-variant hover:text-on-surface'
+                }`}>
+                <span className="material-symbols-outlined text-[14px]">{icon}</span>
+                {label}
+              </button>
+            ))}
           </div>
-        ) : depositHistory.length === 0 ? (
-          <p className="text-sm text-on-surface-variant py-8">Không có lịch sử nạp tiền.</p>
-        ) : (
-          <div className="space-y-3">
-            {depositHistory.map((tx) => {
-              const isSuccess = tx.status === 'Success';
-              return (
-                <div key={tx.id} className="flex items-center justify-between p-5 bg-surface-container-lowest rounded-2xl border border-outline-variant/10">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSuccess ? 'bg-tertiary-container/30' : 'bg-surface-container-high'}`}>
-                      <span className={`material-symbols-outlined text-xl ${isSuccess ? 'text-tertiary' : 'text-on-surface-variant'}`}>
-                        {isSuccess ? 'add_card' : 'schedule'}
-                      </span>
+        </div>
+
+        {/* ── TAB: MUA HÀNG ── */}
+        {txTab === 'purchases' && (
+          purchasesLoading
+            ? <LoadingRow />
+            : purchases.length === 0
+              ? <EmptyRow text="Chưa có giao dịch mua hàng nào." />
+              : <div className="space-y-4">
+                  {/* Dashboard stats */}
+                  {purchaseStats && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+                      {[
+                        { label: 'Đã chi', value: purchaseStats.totalSpent.toLocaleString('vi-VN') + '₫', color: 'text-primary' },
+                        { label: 'Đang escrow', value: purchaseStats.activeEscrows, color: 'text-orange-600' },
+                        { label: 'Hoàn tiền', value: purchaseStats.totalRefunded.toLocaleString('vi-VN') + '₫', color: 'text-blue-600' },
+                        { label: 'Tổng đơn', value: `${purchaseStats.completedOrders}/${purchaseStats.totalOrders}`, color: 'text-tertiary' },
+                      ].map(({ label, value, color }) => (
+                        <div key={label} className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10">
+                          <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{label}</p>
+                          <p className={`font-headline text-lg font-bold mt-1 ${color}`}>{value}</p>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <p className="font-bold text-sm text-on-surface">Nạp tiền qua VNPay</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5">
-                        {tx.transactionRef}{tx.bankCode ? ` • ${tx.bankCode}` : ''} • {new Date(tx.createdAt).toLocaleString('vi-VN')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded uppercase tracking-tighter ${
-                      isSuccess
-                        ? 'bg-tertiary-container/40 text-on-tertiary-container'
-                        : 'bg-surface-container-highest text-on-surface-variant'
-                    }`}>
-                      {tx.status}
-                    </span>
-                    <p className={`font-bold font-headline ${isSuccess ? 'text-secondary' : 'text-on-surface-variant'}`}>
-                      +{tx.amount.toLocaleString('vi-VN')}₫
-                    </p>
-                  </div>
+                  )}
+                  {/* Transaction rows */}
+                  {purchases.map(tx => {
+                    const orderId = tx.orderId ?? tx.id;
+                    const firstItem = tx.items?.[0];
+                    const title = firstItem?.listingTitle ?? tx.orderCode ?? `Đơn hàng #${orderId}`;
+                    const imgSrc = firstItem?.imageUrl ?? null;
+                    const extraItems = (tx.items?.length ?? 0) - 1;
+                    return (
+                      <div key={orderId}
+                        className="flex items-center justify-between p-5 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group"
+                        onClick={() => fetchOrderDetail(orderId)}>
+                        <div className="flex items-center gap-4">
+                          {imgSrc
+                            ? <img src={imgSrc} alt={title} className="w-11 h-11 rounded-xl object-cover flex-shrink-0" />
+                            : <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <span className="material-symbols-outlined text-primary text-xl">shopping_bag</span>
+                              </div>
+                          }
+                          <div>
+                            <p className="font-bold text-sm text-on-surface line-clamp-1">
+                              {title}{extraItems > 0 ? ` +${extraItems} sản phẩm` : ''}
+                            </p>
+                            <p className="text-xs text-on-surface-variant mt-0.5">
+                              {tx.orderCode ?? `#${orderId}`}
+                              {tx.sellerName ? ` • ${tx.sellerName}` : ''}
+                              {tx.orderDate ? ` • ${new Date(tx.orderDate).toLocaleDateString('vi-VN')}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <TxStatusBadge status={tx.status} />
+                          <p className="font-bold font-headline text-on-surface">
+                            {(tx.totalPrice ?? tx.amount ?? 0).toLocaleString('vi-VN')}₫
+                          </p>
+                          <span className="material-symbols-outlined text-on-surface-variant text-lg group-hover:text-primary transition-colors">chevron_right</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+        )}
+
+        {/* ── TAB: VÍ ── */}
+        {txTab === 'wallet' && (
+          walletHistoryLoading
+            ? <LoadingRow />
+            : walletHistory.length === 0
+              ? <EmptyRow text="Chưa có lịch sử giao dịch ví." />
+              : <div className="space-y-3">
+                  {walletHistory.map((tx, i) => {
+                    const isCredit = (tx.amount ?? 0) > 0 || tx.type === 'Credit' || tx.transactionType === 'Credit';
+                    return (
+                      <div key={tx.id ?? tx.transactionId ?? i}
+                        className="flex items-center justify-between p-5 bg-surface-container-lowest rounded-2xl border border-outline-variant/10">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${isCredit ? 'bg-tertiary/10' : 'bg-error/10'}`}>
+                            <span className={`material-symbols-outlined text-xl ${isCredit ? 'text-tertiary' : 'text-error'}`}>
+                              {isCredit ? 'arrow_downward' : 'arrow_upward'}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-on-surface">
+                              {tx.description ?? tx.note ?? (isCredit ? 'Tiền vào ví' : 'Tiền ra ví')}
+                            </p>
+                            <p className="text-xs text-on-surface-variant mt-0.5">
+                              {tx.createdAt ? new Date(tx.createdAt).toLocaleString('vi-VN') : '—'}
+                              {tx.referenceId ? ` • Ref #${tx.referenceId}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <p className={`font-bold font-headline ${isCredit ? 'text-tertiary' : 'text-error'}`}>
+                          {isCredit ? '+' : '-'}{Math.abs(tx.amount ?? 0).toLocaleString('vi-VN')}₫
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+        )}
+
+        {/* ── TAB: NẠP TIỀN ── */}
+        {txTab === 'deposit' && (
+          depositLoading
+            ? <LoadingRow />
+            : depositHistory.length === 0
+              ? <EmptyRow text="Không có lịch sử nạp tiền." />
+              : <div className="space-y-3">
+                  {depositHistory.map((tx) => {
+                    const isSuccess = tx.status === 'Success';
+                    return (
+                      <div key={tx.id} className="flex items-center justify-between p-5 bg-surface-container-lowest rounded-2xl border border-outline-variant/10">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSuccess ? 'bg-tertiary-container/30' : 'bg-surface-container-high'}`}>
+                            <span className={`material-symbols-outlined text-xl ${isSuccess ? 'text-tertiary' : 'text-on-surface-variant'}`}>
+                              {isSuccess ? 'add_card' : 'schedule'}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-on-surface">Nạp tiền qua VNPay</p>
+                            <p className="text-xs text-on-surface-variant mt-0.5">
+                              {tx.transactionRef}{tx.bankCode ? ` • ${tx.bankCode}` : ''} • {new Date(tx.createdAt).toLocaleString('vi-VN')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <TxStatusBadge status={tx.status} />
+                          <p className={`font-bold font-headline ${isSuccess ? 'text-secondary' : 'text-on-surface-variant'}`}>
+                            +{tx.amount.toLocaleString('vi-VN')}₫
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
         )}
       </section>
+
+      {/* Order Detail Modal */}
+      {(orderDetailLoading || orderDetail) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setOrderDetail(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl w-full max-w-lg shadow-2xl border border-white/40 max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}>
+            {orderDetailLoading && (
+              <div className="p-12 text-center text-on-surface-variant">
+                <span className="material-symbols-outlined animate-spin text-3xl block mx-auto mb-2">progress_activity</span>Đang tải...
+              </div>
+            )}
+            {!orderDetailLoading && orderDetail && (
+              orderDetail.error
+                ? <div className="p-8 text-center text-error">{orderDetail.error}</div>
+                : <div className="p-8 space-y-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Chi tiết đơn hàng</p>
+                        <h3 className="font-headline text-xl font-bold text-on-surface mt-1">
+                          {orderDetail.orderCode ?? `#${orderDetail.orderId ?? orderDetail.id}`}
+                        </h3>
+                      </div>
+                      <TxStatusBadge status={orderDetail.status} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {[
+                        ['Người bán', orderDetail.sellerName ?? '—'],
+                        ['Địa chỉ giao', orderDetail.shippingAddress ?? '—'],
+                        ['Tổng tiền', `${(orderDetail.totalPrice ?? orderDetail.amount ?? 0).toLocaleString('vi-VN')}₫`],
+                        ['Ngày đặt', orderDetail.orderDate ? new Date(orderDetail.orderDate).toLocaleString('vi-VN') : '—'],
+                        ['Escrow', orderDetail.isEscrowReleased ? 'Đã giải phóng' : 'Đang giữ'],
+                        ['Hoàn tiền', orderDetail.isRefunded ? `Đã hoàn • ${new Date(orderDetail.refundedAt).toLocaleDateString('vi-VN')}` : 'Không'],
+                      ].map(([k, v]) => (
+                        <div key={k}>
+                          <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-0.5">{k}</p>
+                          <p className="font-medium text-on-surface text-sm">{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Items */}
+                    {orderDetail.items?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-3">Sản phẩm</p>
+                        <div className="space-y-2">
+                          {orderDetail.items.map(item => (
+                            <div key={item.orderItemId} className="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl">
+                              {item.imageUrl && <img src={item.imageUrl} alt={item.listingTitle} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-on-surface line-clamp-1">{item.listingTitle}</p>
+                                <p className="text-xs text-on-surface-variant">{item.brandName} {item.modelName}</p>
+                              </div>
+                              <p className="font-bold text-sm text-on-surface flex-shrink-0">{item.price.toLocaleString('vi-VN')}₫</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={() => setOrderDetail(null)}
+                      className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                      Đóng
+                    </button>
+                  </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Top Up Modal */}
       {showTopUp && (

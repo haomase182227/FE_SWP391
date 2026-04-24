@@ -218,21 +218,52 @@ export default function InspectorReports() {
         {/* Stats */}
         {!loading && !error && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Tổng</p>
-              <p className="font-headline text-3xl font-bold text-on-surface mt-1">{totalCount}</p>
+            {/* Tổng */}
+            <div className="relative overflow-hidden bg-white rounded-2xl p-5 border border-outline-variant/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] group hover:shadow-[0_12px_40px_rgba(0,0,0,0.10)] transition-all duration-300">
+              <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-on-surface/4 group-hover:scale-110 transition-transform duration-300" />
+              <div className="absolute -right-1 -top-1 w-10 h-10 rounded-full bg-on-surface/5" />
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-3">Tổng</p>
+              <p className="font-headline text-4xl font-black text-on-surface">{totalCount}</p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-on-surface-variant text-[14px]">summarize</span>
+                <p className="text-[10px] text-on-surface-variant">tố cáo</p>
+              </div>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Chờ xử lý</p>
-              <p className="font-headline text-3xl font-bold text-yellow-600 mt-1">{pendingReports.length}</p>
+
+            {/* Chờ xử lý */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-5 border border-yellow-200/60 shadow-[0_8px_32px_rgba(234,179,8,0.12)] group hover:shadow-[0_12px_40px_rgba(234,179,8,0.20)] transition-all duration-300">
+              <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-yellow-400/10 group-hover:scale-110 transition-transform duration-300" />
+              <div className="absolute -right-1 -top-1 w-10 h-10 rounded-full bg-yellow-400/10" />
+              <p className="text-[10px] uppercase tracking-widest text-yellow-700 font-bold mb-3">Chờ xử lý</p>
+              <p className="font-headline text-4xl font-black text-yellow-600">{pendingReports.length}</p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-yellow-500 text-[14px]">pending</span>
+                <p className="text-[10px] text-yellow-600">cần xử lý</p>
+              </div>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Under Review</p>
-              <p className="font-headline text-3xl font-bold text-blue-600 mt-1">{underReview.length}</p>
+
+            {/* Under Review */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-200/60 shadow-[0_8px_32px_rgba(59,130,246,0.12)] group hover:shadow-[0_12px_40px_rgba(59,130,246,0.20)] transition-all duration-300">
+              <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-blue-400/10 group-hover:scale-110 transition-transform duration-300" />
+              <div className="absolute -right-1 -top-1 w-10 h-10 rounded-full bg-blue-400/10" />
+              <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold mb-3">Under Review</p>
+              <p className="font-headline text-4xl font-black text-blue-600">{underReview.length}</p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-blue-500 text-[14px]">manage_search</span>
+                <p className="text-[10px] text-blue-600">đang xem xét</p>
+              </div>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Đã xử lý</p>
-              <p className="font-headline text-3xl font-bold text-emerald-600 mt-1">{handledReports.length}</p>
+
+            {/* Đã xử lý */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-200/60 shadow-[0_8px_32px_rgba(16,185,129,0.12)] group hover:shadow-[0_12px_40px_rgba(16,185,129,0.20)] transition-all duration-300">
+              <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-emerald-400/10 group-hover:scale-110 transition-transform duration-300" />
+              <div className="absolute -right-1 -top-1 w-10 h-10 rounded-full bg-emerald-400/10" />
+              <p className="text-[10px] uppercase tracking-widest text-emerald-700 font-bold mb-3">Đã xử lý</p>
+              <p className="font-headline text-4xl font-black text-emerald-600">{handledReports.length}</p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-emerald-500 text-[14px]">check_circle</span>
+                <p className="text-[10px] text-emerald-600">hoàn thành</p>
+              </div>
             </div>
           </div>
         )}
@@ -303,7 +334,7 @@ export default function InspectorReports() {
                   </span>
                 </div>
 
-                <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
+                <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
@@ -351,7 +382,7 @@ export default function InspectorReports() {
                   </span>
                 </div>
 
-                <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
+                <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
@@ -371,11 +402,11 @@ export default function InspectorReports() {
                             </td>
                           </tr>
                         ) : handledReports.map((report) => (
-                          <tr key={report.reportId || report.id} className="hover:bg-surface-container-lowest/50 transition-colors">
+                          <tr key={report.reportId || report.id} className="hover:bg-primary/[0.02] transition-colors group">
                             <td className="px-6 py-4">
-                              <p className="text-xs font-mono text-on-surface-variant">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container-low text-[10px] font-mono font-bold text-on-surface-variant">
                                 #{report.orderId || report.orderCode || '—'}
-                              </p>
+                              </span>
                             </td>
                             <td className="px-6 py-4">
                               <p className="text-sm font-bold text-on-surface line-clamp-1">
@@ -383,7 +414,7 @@ export default function InspectorReports() {
                               </p>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="text-sm text-on-surface">
+                              <p className="text-sm text-on-surface-variant">
                                 {report.reportTypeName || report.reportType || '—'}
                               </p>
                             </td>
@@ -393,10 +424,10 @@ export default function InspectorReports() {
                             <td className="px-6 py-4 text-right">
                               <button
                                 onClick={() => handleViewDetail(report.reportId || report.id)}
-                                className="p-2 hover:bg-primary/10 rounded-lg transition-colors inline-flex items-center justify-center"
+                                className="w-9 h-9 inline-flex items-center justify-center rounded-xl bg-primary/5 hover:bg-primary/15 border border-primary/10 hover:border-primary/30 transition-all duration-200 group-hover:scale-105"
                                 title="Xem chi tiết"
                               >
-                                <span className="material-symbols-outlined text-primary text-[20px]">visibility</span>
+                                <span className="material-symbols-outlined text-primary text-[18px]">visibility</span>
                               </button>
                             </td>
                           </tr>
