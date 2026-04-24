@@ -12,6 +12,7 @@ const Dashboard = () => {
     totalEscrowVolume: null,
     totalUsers: null,
     totalReviews: null,
+    totalSoldListings: null,
     totalApprovedListings: null,
     totalTransactions: null,
     pendingListings: null,
@@ -50,6 +51,12 @@ const Dashboard = () => {
         const avg = list.length > 0 ? (list.reduce((s, r) => s + (r.rating ?? 0), 0) / list.length).toFixed(1) : 0;
         setStats(s => ({ ...s, totalReviews: list.length, avgRating: avg }));
       })
+      .catch(() => {});
+
+    // Sold listings
+    fetch(`${API_BASE}/admin/listings?page=1&pageSize=1&status=Sold`, { headers: h })
+      .then(r => r.json())
+      .then(d => setStats(s => ({ ...s, totalSoldListings: d.totalItems ?? d.totalCount ?? d.total ?? (d.items ?? d.listings ?? []).length })))
       .catch(() => {});
 
     // Approved listings
@@ -158,20 +165,20 @@ const Dashboard = () => {
               <span className="text-xs font-bold">Tổng đánh giá</span>
             </div>
           </div>
-          {/* Total Approved Listings */}
+          {/* Total Sold Listings */}
           <div className="bg-gradient-to-br from-tertiary/10 to-tertiary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-tertiary hover:-translate-y-1 transition-transform duration-300">
             <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-8xl text-tertiary">directions_bike</span>
+              <span className="material-symbols-outlined text-8xl text-tertiary">sell</span>
             </div>
             <p className="text-[10px] uppercase font-black text-tertiary tracking-widest mb-4 h-10 flex items-start">
-              Total Approved Listings
+              Total Sold Listings
             </p>
             <h3 className="text-5xl font-headline font-black text-on-surface mb-3 tracking-tighter">
-              {fmt(stats.totalApprovedListings)}
+              {fmt(stats.totalSoldListings)}
             </h3>
             <div className="flex items-center gap-2 text-tertiary/70 mt-auto">
-              <span className="material-symbols-outlined text-sm">check_circle</span>
-              <span className="text-xs font-bold">Xe đã được duyệt</span>
+              <span className="material-symbols-outlined text-sm">directions_bike</span>
+              <span className="text-xs font-bold">Tổng xe đã bán</span>
             </div>
           </div>
         </div>
@@ -228,11 +235,13 @@ const Dashboard = () => {
             const approved = stats.totalApprovedListings ?? 0;
             const pending  = stats.pendingListings ?? 0;
             const rejected = stats.rejectedListings ?? 0;
-            const total    = approved + pending + rejected || 1;
+            const sold     = stats.totalSoldListings ?? 0;
+            const total    = approved + pending + rejected + sold || 1;
             const segs = [
               { label: 'Approved', value: approved, c1: '#6ee7b7', c2: '#10b981', glow: 'rgba(16,185,129,0.6)' },
               { label: 'Pending',  value: pending,  c1: '#fde68a', c2: '#f59e0b', glow: 'rgba(245,158,11,0.6)' },
               { label: 'Rejected', value: rejected, c1: '#fca5a5', c2: '#ef4444', glow: 'rgba(239,68,68,0.6)'  },
+              { label: 'Sold',     value: sold,     c1: '#c4b5fd', c2: '#8b5cf6', glow: 'rgba(139,92,246,0.6)' },
             ];
             return (
               <div className="relative rounded-3xl overflow-hidden p-7 flex flex-col gap-5 cursor-default"
