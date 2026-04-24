@@ -74,6 +74,10 @@ function ReportsTab({ token }) {
   const [adminDecisionNote, setAdminDecisionNote] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  // Modal chi tiết (read-only)
+  const [detailModal, setDetailModal] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
@@ -129,13 +133,36 @@ function ReportsTab({ token }) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || JSON.stringify(err.errors) || `HTTP ${res.status}`);
       }
+      
+      // ✅ THÀNH CÔNG - BẮT BUỘC GỌI LẠI fetchReports() ĐỂ LÀM MỚI DANH SÁCH
       closeDecide();
       setToast({ type: 'success', message: 'Đã ra quyết định thành công!' });
-      fetchReports();
+      
+      // ✅ GỌI LẠI API ĐỂ LÀM MỚI MÀN HÌNH
+      await fetchReports();
     } catch (err) {
       setToast({ type: 'error', message: err.message });
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  // XEM CHI TIẾT REPORT
+  const handleViewDetail = async (reportId) => {
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setDetailModal(data);
+    } catch (err) {
+      setToast({ type: 'error', message: `Không thể tải chi tiết: ${err.message}` });
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -218,15 +245,27 @@ function ReportsTab({ token }) {
                       <p className="text-xs text-on-surface-variant">{formatDate(r.createdAt)}</p>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      {canDecide(r.status) && (
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Icon xem chi tiết */}
                         <button
-                          onClick={() => openDecide(r)}
-                          className="px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 inline-flex items-center gap-1.5 whitespace-nowrap"
+                          onClick={() => handleViewDetail(r.reportId)}
+                          className="p-2 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center justify-center"
+                          title="Xem chi tiết"
                         >
-                          <span className="material-symbols-outlined text-[14px]">gavel</span>
-                          Quyết định
+                          <span className="material-symbols-outlined text-blue-600 text-[20px]">visibility</span>
                         </button>
-                      )}
+                        
+                        {/* Nút quyết định */}
+                        {canDecide(r.status) && (
+                          <button
+                            onClick={() => openDecide(r)}
+                            className="px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 inline-flex items-center gap-1.5 whitespace-nowrap"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">gavel</span>
+                            Quyết định
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -332,6 +371,144 @@ function ReportsTab({ token }) {
           </div>
         </div>
       )}
+
+      {/* MODAL CHI TIẾT (READ-ONLY) */}
+      {detailModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-outline-variant/20 pb-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Chi tiết tố cáo</p>
+                <h2 className="font-headline text-2xl font-bold mt-1 text-on-surface">
+                  {detailModal.title || 'Chi tiết Report'}
+                </h2>
+              </div>
+              <button onClick={() => setDetailModal(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            </div>
+
+            {/* Thông tin chung */}
+            <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 space-y-4">
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Thông tin chung</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Mã đơn</p>
+                  <p className="text-sm font-mono text-on-surface">#{detailModal.orderId || detailModal.orderCode || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Phân loại</p>
+                  <p className="text-sm font-medium text-on-surface">{detailModal.reportTypeName || detailModal.reportType || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Trạng thái</p>
+                  <StatusBadge status={detailModal.status} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Ngày tạo</p>
+                  <p className="text-sm text-on-surface">{formatDate(detailModal.createdAt)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Người tham gia */}
+            <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 space-y-4">
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Người tham gia</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Người gửi tố cáo</p>
+                  <p className="text-sm font-medium text-on-surface">{detailModal.reporterName || detailModal.reporterUserName || '—'}</p>
+                  {detailModal.reporterEmail && (
+                    <p className="text-xs text-on-surface-variant mt-0.5">{detailModal.reporterEmail}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wide font-bold mb-1">Người bị tố cáo</p>
+                  <p className="text-sm font-medium text-on-surface">{detailModal.reportedUserName || detailModal.reportedUser || '—'}</p>
+                  {detailModal.reportedUserEmail && (
+                    <p className="text-xs text-on-surface-variant mt-0.5">{detailModal.reportedUserEmail}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Nội dung gốc */}
+            {detailModal.content && (
+              <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Nội dung tố cáo</p>
+                <div className="bg-white rounded-lg p-4 border border-outline-variant/20">
+                  <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">{detailModal.content}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Lịch sử xử lý của Inspector */}
+            {detailModal.inspectorNote && (
+              <div className="bg-blue-50 rounded-xl p-5 border border-blue-200 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold">Xử lý của Inspector</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] text-blue-600 uppercase tracking-wide font-bold mb-1">Inspector</p>
+                    <p className="text-sm text-on-surface">{detailModal.inspectorName || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-blue-600 uppercase tracking-wide font-bold mb-1">Thời gian duyệt</p>
+                    <p className="text-sm text-on-surface">{formatDate(detailModal.reviewedAt)}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] text-blue-600 uppercase tracking-wide font-bold mb-1">Ghi chú Inspector</p>
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">{detailModal.inspectorNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quyết định của Admin */}
+            {detailModal.adminDecision && (
+              <div className="bg-purple-50 rounded-xl p-5 border border-purple-200 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-purple-700 font-bold">Quyết định của Admin</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Quyết định cuối</p>
+                    <StatusBadge status={detailModal.adminDecision} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Thời gian đóng</p>
+                    <p className="text-sm text-on-surface">{formatDate(detailModal.resolvedAt)}</p>
+                  </div>
+                </div>
+                {detailModal.adminName && (
+                  <div>
+                    <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Admin xử lý</p>
+                    <p className="text-sm font-medium text-on-surface">{detailModal.adminName}</p>
+                  </div>
+                )}
+                {detailModal.adminNote && (
+                  <div>
+                    <p className="text-[10px] text-purple-600 uppercase tracking-wide font-bold mb-1">Ghi chú Admin</p>
+                    <div className="bg-white rounded-lg p-3 border border-purple-200">
+                      <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">{detailModal.adminNote}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Nút đóng */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setDetailModal(null)}
+                className="px-6 py-3 bg-error text-on-error font-bold uppercase text-sm rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -388,12 +565,16 @@ function ReportTypesTab({ token }) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `HTTP ${res.status}`);
+        throw new Error(err.message || JSON.stringify(err.errors) || `HTTP ${res.status}`);
       }
+      
+      // ✅ THÀNH CÔNG - BẮT BUỘC GỌI LẠI fetchTypes()
       setAddModal(false);
       setNewTypeName('');
       setToast({ type: 'success', message: 'Thêm loại tố cáo thành công!' });
-      fetchTypes();
+      
+      // ✅ GỌI LẠI API ĐỂ LÀM MỚI DANH SÁCH
+      await fetchTypes();
     } catch (err) {
       setToast({ type: 'error', message: err.message });
     } finally {
@@ -423,12 +604,16 @@ function ReportTypesTab({ token }) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `HTTP ${res.status}`);
+        throw new Error(err.message || JSON.stringify(err.errors) || `HTTP ${res.status}`);
       }
+      
+      // ✅ THÀNH CÔNG - BẮT BUỘC GỌI LẠI fetchTypes()
       setEditModal(null);
       setEditTypeName('');
       setToast({ type: 'success', message: 'Cập nhật thành công!' });
-      fetchTypes();
+      
+      // ✅ GỌI LẠI API ĐỂ LÀM MỚI DANH SÁCH
+      await fetchTypes();
     } catch (err) {
       setToast({ type: 'error', message: err.message });
     } finally {
@@ -455,11 +640,15 @@ function ReportTypesTab({ token }) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `HTTP ${res.status}`);
+        throw new Error(err.message || JSON.stringify(err.errors) || `HTTP ${res.status}`);
       }
+      
+      // ✅ THÀNH CÔNG - BẮT BUỘC GỌI LẠI fetchTypes()
       setDeleteConfirm(null);
       setToast({ type: 'success', message: 'Đã xóa loại tố cáo!' });
-      fetchTypes();
+      
+      // ✅ GỌI LẠI API ĐỂ LÀM MỚI DANH SÁCH
+      await fetchTypes();
     } catch (err) {
       setDeleteConfirm(null);
       setToast({ type: 'error', message: err.message });

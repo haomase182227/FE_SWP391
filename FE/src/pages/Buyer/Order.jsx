@@ -108,6 +108,9 @@ export default function Order() {
         const typesData = await typesRes.json();
         const typesList = Array.isArray(typesData) ? typesData : (typesData.reportTypes || typesData.data || []);
         setReportTypes(typesList);
+      } else {
+        const errorData = await typesRes.json().catch(() => ({}));
+        console.error('[ReportTypes] Fetch error:', errorData);
       }
 
       if (historyRes.ok) {
@@ -116,6 +119,9 @@ export default function Order() {
         setReportHistory(historyList);
       } else if (historyRes.status === 404) {
         setReportHistory([]);
+      } else {
+        const errorData = await historyRes.json().catch(() => ({}));
+        console.error('[ReportHistory] Fetch error:', errorData);
       }
     } catch (err) {
       console.error('[ReportData] Fetch error:', err);
@@ -378,7 +384,7 @@ export default function Order() {
     setIsReReviewModal(true);
   };
 
-  // HÀM SUBMIT TỐ CÁO (POST /api/v1/reports)
+  // HÀM SUBMIT TỐ CÁO (POST /api/v1/reports) - BẮT BUỘC GỌI fetchReportData() SAU KHI THÀNH CÔNG
   const handleSubmitReport = async () => {
     if (!reportForm.reportTypeId) {
       showError('Vui lòng chọn loại tố cáo!');
@@ -417,22 +423,24 @@ export default function Order() {
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         console.error('[Report] Submit error:', errorData);
+        showError(errorData.message || JSON.stringify(errorData.errors) || 'Không thể gửi tố cáo. Vui lòng thử lại!');
         setIsReportModalOpen(false);
-        showError(errorData.message || 'Không thể gửi tố cáo. Vui lòng thử lại!');
         return;
       }
 
-      // Thành công
+      // ✅ THÀNH CÔNG - BẮT BUỘC GỌI LẠI fetchReportData() ĐỂ LÀM MỚI DANH SÁCH
       setIsReportModalOpen(false);
       setReportForm({ reportTypeId: '', title: '', content: '' });
       setSelectedReportOrder(null);
       setSuccessMessage('Báo cáo thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.');
       setShowSuccessModal(true);
+      
+      // ✅ GỌI LẠI API ĐỂ LÀM MỚI DANH SÁCH
       await fetchReportData();
     } catch (err) {
       console.error('[Report] Network error:', err);
-      setIsReportModalOpen(false);
       showError('Có lỗi xảy ra khi gửi tố cáo. Vui lòng thử lại!');
+      setIsReportModalOpen(false);
     } finally {
       setIsReportLoading(false);
     }

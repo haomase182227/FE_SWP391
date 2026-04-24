@@ -13,11 +13,11 @@ function formatDate(d) {
 }
 
 const STATUS_CONFIG = {
-  pending:            { label: 'Pending',       color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  underreview:        { label: 'Under Review',  color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  inspectordone:      { label: 'Inspector Done', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  dismissedbyinspector: { label: 'Dismissed',   color: 'bg-red-100 text-red-700 border-red-200' },
-  resolved:           { label: 'Resolved',      color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  pending:              { label: 'Pending',       color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+  inspectordone:        { label: 'Inspector Done', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  dismissedbyinspector: { label: 'Dismissed (Insp)', color: 'bg-red-100 text-red-700 border-red-200' },
+  resolved:             { label: 'Resolved',      color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  dismissed:            { label: 'Dismissed',     color: 'bg-gray-100 text-gray-700 border-gray-200' },
 };
 
 function StatusBadge({ status }) {
@@ -158,9 +158,12 @@ export default function InspectorReports() {
         return;
       }
 
+      // ✅ THÀNH CÔNG - BẮT BUỘC GỌI LẠI fetchReports() ĐỂ LÀM MỚI DANH SÁCH
       closeModal();
       showToast('success', 'Đã xử lý tố cáo thành công!');
-      fetchReports();
+      
+      // ✅ GỌI LẠI API ĐỂ XÓA ĐƠN VỪA DUYỆT KHỎI MÀN HÌNH
+      await fetchReports();
     } catch (err) {
       console.error('Lỗi mạng:', err);
       showToast('error', 'Có lỗi xảy ra. Vui lòng thử lại!');
@@ -194,9 +197,10 @@ export default function InspectorReports() {
     setReportDetail(null);
   };
 
-  const pendingReports  = reports.filter(r => (r.status || '').toLowerCase() === 'pending');
-  const underReview     = reports.filter(r => (r.status || '').toLowerCase() === 'underreview');
-  const totalCount      = reports.length + handledReports.length;
+  const pendingReports     = reports.filter(r => (r.status || '').toLowerCase() === 'pending');
+  const inspectorDone      = reports.filter(r => (r.status || '').toLowerCase() === 'inspectordone');
+  const dismissedByInsp    = reports.filter(r => (r.status || '').toLowerCase() === 'dismissedbyinspector');
+  const totalCount         = reports.length + handledReports.length;
 
   return (
     <div className="min-h-screen bg-surface font-body text-on-surface antialiased flex">
@@ -242,15 +246,15 @@ export default function InspectorReports() {
               </div>
             </div>
 
-            {/* Under Review */}
+            {/* Inspector Done */}
             <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-200/60 shadow-[0_8px_32px_rgba(59,130,246,0.12)] group hover:shadow-[0_12px_40px_rgba(59,130,246,0.20)] transition-all duration-300">
               <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-blue-400/10 group-hover:scale-110 transition-transform duration-300" />
               <div className="absolute -right-1 -top-1 w-10 h-10 rounded-full bg-blue-400/10" />
-              <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold mb-3">Under Review</p>
-              <p className="font-headline text-4xl font-black text-blue-600">{underReview.length}</p>
+              <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold mb-3">Inspector Done</p>
+              <p className="font-headline text-4xl font-black text-blue-600">{inspectorDone.length}</p>
               <div className="mt-3 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-blue-500 text-[14px]">manage_search</span>
-                <p className="text-[10px] text-blue-600">đang xem xét</p>
+                <span className="material-symbols-outlined text-blue-500 text-[14px]">task_alt</span>
+                <p className="text-[10px] text-blue-600">chờ admin</p>
               </div>
             </div>
 
@@ -532,8 +536,7 @@ export default function InspectorReports() {
                   className="w-full px-4 py-3 border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white"
                 >
                   <option value="">-- Chọn quyết định --</option>
-                  <option value="UnderReview">Chuyển lên Admin duyệt (UnderReview)</option>
-                  <option value="InspectorDone">Inspector tự xử lý xong (InspectorDone)</option>
+                  <option value="InspectorDone">Xử lý xong - Chuyển lên Admin (InspectorDone)</option>
                   <option value="DismissedByInspector">Bác bỏ tố cáo (DismissedByInspector)</option>
                 </select>
               </div>
