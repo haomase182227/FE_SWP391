@@ -24,6 +24,7 @@ import ReportManagement from './pages/Admin/ReportManagement';
 import AdminReportManagement from './pages/Admin/AdminReportManagement';
 import AdminReviews from './pages/Admin/AdminReviews';
 import NotFound from './pages/NotFound';
+import ComingSoon from './pages/ComingSoon';
 import AccountSellerManagement from './pages/Seller/AccountSellerManagement';
 import NewListing from './pages/Seller/NewListing';
 import ListingManagement from './pages/Seller/ListingManagement';
@@ -101,6 +102,7 @@ function AppContent() {
           <Route path="/feed" element={<div className="pt-20 p-8 text-center">Feature Coming Soon</div>} />
           <Route path="/support" element={<Support />} />
           <Route path="/profile" element={<UserProfile />} />
+          <Route path="/coming-soon" element={<ComingSoon />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

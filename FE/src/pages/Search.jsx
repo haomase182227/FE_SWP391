@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import TopNavBar from '../components/TopNavBar';
-import Footer from '../components/Footer';
 
 const API_BASE = '/api/v1';
 const PAGE_SIZE = 12;
@@ -316,8 +315,6 @@ export default function Search() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

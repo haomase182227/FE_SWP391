@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import TopNavBar from '../components/TopNavBar';
-import Footer from '../components/Footer';
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -68,7 +67,6 @@ export default function NotFound() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

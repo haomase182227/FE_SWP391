@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 import TopNavBar from '../../components/TopNavBar';
-import Footer from '../../components/Footer';
 import * as signalR from '@microsoft/signalr';
 
 const API_BASE = '/api/v1';
@@ -397,7 +396,6 @@ export default function Message() {
             </button>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
