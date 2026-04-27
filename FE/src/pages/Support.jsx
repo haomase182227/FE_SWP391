@@ -64,9 +64,9 @@ export default function Support() {
       {/* Hero */}
       <section className="bg-surface-container-low py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-3">Veloce Kinetic</p>
-          <h1 className="text-5xl font-headline font-black tracking-tighter text-on-surface mb-4">
-            Hỗ trợ &amp; <span className="text-primary italic">Điều khoản.</span>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-600 mb-3">Veloce Kinetic</p>
+          <h1 className="font-headline text-4xl font-bold tracking-tight text-on-surface mb-4">
+            Hỗ trợ &amp; <span className="text-orange-600 italic">Điều khoản.</span>
           </h1>
           <p className="text-on-surface-variant max-w-xl mx-auto leading-relaxed">
             Mọi thắc mắc, góp ý hoặc yêu cầu hỗ trợ — chúng tôi luôn sẵn sàng lắng nghe và phản hồi trong thời gian sớm nhất.
@@ -86,7 +86,7 @@ export default function Support() {
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-8 py-4 text-sm font-bold uppercase tracking-widest transition-colors border-b-2 ${
                 activeTab === tab.key
-                  ? 'border-primary text-primary'
+                  ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -111,17 +111,18 @@ export default function Support() {
             {TERMS.map((item, i) => (
               <div
                 key={i}
-                className="bg-surface-container-lowest rounded-xl overflow-hidden"
-                style={{ boxShadow: '0 4px 20px rgba(78,33,32,0.05)' }}
+                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
               >
                 <button
                   onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                  className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-primary-container/5 transition-colors"
+                  className={`w-full flex items-center justify-between px-6 py-5 text-left hover:bg-orange-50 transition-colors ${
+                    openIndex === i ? 'text-orange-600' : 'text-on-surface'
+                  }`}
                 >
-                  <span className="font-headline font-bold text-base text-on-surface">{item.title}</span>
+                  <span className="font-headline font-bold text-base">{item.title}</span>
                   <span
-                    className={`material-symbols-outlined text-primary transition-transform duration-200 ${
-                      openIndex === i ? 'rotate-180' : ''
+                    className={`material-symbols-outlined transition-transform duration-200 ${
+                      openIndex === i ? 'rotate-180 text-orange-600' : 'text-orange-500'
                     }`}
                   >
                     expand_more
@@ -179,7 +180,7 @@ export default function Support() {
                       type="text"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20"
+                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30"
                       placeholder="Nguyễn Văn A"
                     />
                   </div>
@@ -192,7 +193,7 @@ export default function Support() {
                       type="email"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20"
+                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30"
                       placeholder="email@example.com"
                     />
                   </div>
@@ -204,7 +205,7 @@ export default function Support() {
                   <select
                     value={form.subject}
                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20"
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30"
                   >
                     <option value="">Chọn chủ đề...</option>
                     <option>Hỗ trợ giao dịch</option>
@@ -223,13 +224,13 @@ export default function Support() {
                     rows={5}
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 resize-none"
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30 resize-none"
                     placeholder="Mô tả chi tiết vấn đề của bạn..."
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-4 bg-primary text-on-primary font-headline font-bold uppercase tracking-widest text-xs rounded-lg shadow-[0_10px_30px_rgba(168,49,0,0.2)] hover:bg-primary-dim transition-all active:scale-95"
+                  className="w-full py-4 bg-orange-500 text-white font-headline font-bold uppercase tracking-widest text-xs rounded-lg shadow-lg hover:bg-orange-600 transition-all active:scale-95"
                 >
                   Gửi tin nhắn
                 </button>
@@ -243,7 +244,7 @@ export default function Support() {
                   { icon: 'schedule', label: 'Thứ 2 – Thứ 6, 8:00 – 18:00 (GMT+7)' },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-3 text-sm text-on-surface-variant">
-                    <span className="material-symbols-outlined text-primary text-base">{item.icon}</span>
+                    <span className="material-symbols-outlined text-orange-600 text-base">{item.icon}</span>
                     {item.label}
                   </div>
                 ))}
@@ -275,15 +276,15 @@ export default function Support() {
 
               {/* Address card */}
               <div className="bg-surface-container-lowest rounded-xl p-6 flex gap-4 items-start" style={{ boxShadow: '0 4px 20px rgba(78,33,32,0.05)' }}>
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary text-base">location_on</span>
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-orange-600 text-base">location_on</span>
                 </div>
                 <div>
                   <p className="font-headline font-bold text-sm mb-1">The Kinetic Editorial</p>
                   <p className="text-xs text-on-surface-variant leading-relaxed">
                     Khu Công nghệ cao, Quận 9<br />
                     TP. Hồ Chí Minh, Việt Nam<br />
-                    <span className="font-mono text-[10px] text-primary mt-1 block">
+                    <span className="font-mono text-[10px] text-orange-600 mt-1 block">
                       {LAT.toFixed(6)}, {LNG.toFixed(6)}
                     </span>
                   </p>
@@ -291,7 +292,7 @@ export default function Support() {
                     href={`https://www.google.com/maps?q=${LAT},${LNG}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
+                    className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold uppercase tracking-widest text-orange-600 hover:underline"
                   >
                     Mở trong Google Maps
                     <span className="material-symbols-outlined text-sm">open_in_new</span>
@@ -312,10 +313,10 @@ export default function Support() {
                     <button
                       key={q}
                       onClick={() => setActiveTab('terms')}
-                      className="w-full text-left flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-lg hover:bg-primary-container/5 transition-colors text-xs font-medium text-on-surface group"
+                      className="w-full text-left flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-lg hover:bg-orange-50 transition-colors text-xs font-medium text-on-surface group"
                     >
                       {q}
-                      <span className="material-symbols-outlined text-sm text-on-surface-variant group-hover:text-primary transition-colors">
+                      <span className="material-symbols-outlined text-sm text-on-surface-variant group-hover:text-orange-600 transition-colors">
                         chevron_right
                       </span>
                     </button>

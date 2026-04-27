@@ -108,9 +108,9 @@ export default function WalletTopupResult() {
 
         <button
           onClick={() => { sessionStorage.removeItem('topup_role'); navigate(walletPath); }}
-          className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-3 rounded-xl font-bold uppercase tracking-wider hover:opacity-90 transition-all"
+          className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold uppercase tracking-wider hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/30"
         >
-          Về ví ngay
+          Quay lại ví
         </button>
       </div>
     </main>

@@ -89,12 +89,12 @@ export default function Wishlist() {
         {/* Header */}
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-outline-variant/20">
           <div>
-            <span className="label-md uppercase font-bold text-primary tracking-widest block mb-2">
+            <span className="label-md uppercase font-bold text-orange-600 tracking-widest block mb-2">
               Curated Selection
             </span>
             <h1 className="text-5xl md:text-6xl font-bold tracking-tighter font-headline text-on-surface flex items-center gap-4">
               Your Wishlist
-              <span className="bg-surface-container-high text-primary text-2xl px-4 py-1 rounded-full font-bold">
+              <span className="bg-orange-100 text-orange-600 text-2xl px-4 py-1 rounded-full font-bold">
                 {items.length}
               </span>
             </h1>
@@ -104,21 +104,21 @@ export default function Wishlist() {
         {/* Loading */}
         {loading && (
           <div className="flex justify-center py-24">
-            <span className="material-symbols-outlined animate-spin text-4xl text-on-surface-variant/40">progress_activity</span>
+            <span className="material-symbols-outlined animate-spin text-4xl text-orange-500">progress_activity</span>
           </div>
         )}
 
         {/* Empty state */}
         {!loading && items.length === 0 && (
           <div className="py-24 flex flex-col items-center justify-center text-center">
-            <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center mb-6">
-              <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">favorite_border</span>
+            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mb-6">
+              <span className="material-symbols-outlined text-4xl text-orange-500">favorite_border</span>
             </div>
             <h2 className="text-3xl font-bold font-headline tracking-tight mb-4">Your wishlist is empty</h2>
             <p className="text-on-surface-variant max-w-md mb-8">Save your favorite bikes here to keep track of them or buy them later.</p>
             <button
               onClick={() => navigate('/')}
-              className="px-8 py-4 bg-primary text-on-primary font-bold text-xs uppercase tracking-[0.2em] rounded-xl hover:opacity-90 transition-opacity"
+              className="px-8 py-4 bg-orange-500 text-white font-bold text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-orange-600 transition-all shadow-lg"
             >
               Explore Marketplace
             </button>
@@ -140,7 +140,7 @@ export default function Wishlist() {
               return (
                 <div
                   key={id}
-                  className="group relative bg-surface-container-lowest p-5 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-[0_20px_40px_rgba(78,33,32,0.06)] border border-outline-variant/10 flex flex-col"
+                  className="group relative bg-white p-5 rounded-2xl transition-all duration-300 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.1)] hover:-translate-y-2 border border-gray-100 flex flex-col"
                 >
                   {/* Image */}
                   <div className={`relative aspect-square bg-surface-container rounded-xl overflow-hidden mb-6 shrink-0 ${!available ? 'grayscale opacity-70' : ''}`}>
@@ -157,7 +157,7 @@ export default function Wishlist() {
                     )}
 
                     {/* Wishlist heart */}
-                    <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-primary shadow-sm hover:scale-110 active:scale-95 transition-transform">
+                    <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-orange-500 shadow-sm hover:scale-110 hover:text-red-500 active:scale-95 transition-all">
                       <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
                         favorite
                       </span>
@@ -186,7 +186,7 @@ export default function Wishlist() {
                   <div className="flex-grow flex flex-col justify-between space-y-4">
                     <div className={!available ? 'opacity-70' : ''}>
                       <h3 className="text-xl font-bold font-headline tracking-tight text-on-surface mb-1">{title}</h3>
-                      <span className={`text-lg font-black font-headline tracking-tighter block mb-2 ${available ? 'text-primary' : 'text-on-surface-variant line-through'}`}>
+                      <span className={`text-lg font-black font-headline tracking-tighter block mb-2 ${available ? 'text-orange-600' : 'text-on-surface-variant line-through'}`}>
                         {price.toLocaleString('vi-VN')}₫
                       </span>
                       {(frameSize || condition) && available && (
@@ -207,7 +207,7 @@ export default function Wishlist() {
                         <button
                           onClick={() => handleAddToCart(id)}
                           disabled={addingToCart[id]}
-                          className="w-full py-4 bg-surface-container-high text-on-surface hover:bg-primary hover:text-on-primary transition-all font-bold text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-on-primary disabled:opacity-60"
+                          className="w-full py-4 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white transition-all font-bold text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 border border-orange-200 disabled:opacity-60 shadow-sm"
                         >
                           {addingToCart[id]
                             ? <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
@@ -218,7 +218,7 @@ export default function Wishlist() {
                         <button
                           onClick={() => handleRemove(id)}
                           disabled={removing[id]}
-                          className="w-full py-3 text-error hover:bg-error-container/20 transition-all font-bold text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 border border-error/20 disabled:opacity-50"
+                          className="w-full py-3 text-red-600 hover:bg-red-50 transition-all font-bold text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 border border-red-200 disabled:opacity-50"
                         >
                           {removing[id]
                             ? <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
@@ -231,13 +231,13 @@ export default function Wishlist() {
                       <button
                         onClick={() => handleRemove(id)}
                         disabled={removing[id]}
-                        className="w-full py-4 text-error hover:bg-error-container/20 transition-all font-bold text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 border border-error/20 disabled:opacity-50"
+                        className="w-full py-4 text-red-600 hover:bg-red-50 transition-all font-bold text-[10px] uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 border border-red-200 disabled:opacity-50"
                       >
                         {removing[id]
                           ? <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                           : <span className="material-symbols-outlined text-[16px]">delete</span>
                         }
-                        {removing[id] ? 'Removing...' : 'Remove from List'}
+                        {removing[id] ? 'Removing..' : 'Remove from List'}
                       </button>
                     )}
                   </div>

@@ -26,7 +26,6 @@ export default function FloatingChatbot() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       setSessionId(crypto.randomUUID());
     } else {
-      // Fallback cho trình duyệt cũ
       setSessionId(`session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
     }
   }, []);
@@ -37,7 +36,7 @@ export default function FloatingChatbot() {
       if (!token) return;
       try {
         const res = await fetch(`${API_BASE}/Chatbot/suggestions`, {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json'
           },
@@ -80,8 +79,7 @@ export default function FloatingChatbot() {
     }
 
     const userMessage = messageText.trim();
-    
-    // Thêm tin nhắn user vào UI ngay lập tức
+
     const newUserMsg = {
       role: 'user',
       content: userMessage,
@@ -111,13 +109,11 @@ export default function FloatingChatbot() {
       }
 
       const responseData = await res.json();
-      
-      // Cập nhật sessionId nếu server trả về
+
       if (responseData.sessionId && responseData.sessionId !== sessionId) {
         setSessionId(responseData.sessionId);
       }
 
-      // Thêm tin nhắn AI vào UI
       const newAssistantMsg = {
         role: 'assistant',
         content: responseData.answer || responseData.message || 'Xin lỗi, tôi không hiểu câu hỏi của bạn.',
@@ -128,7 +124,6 @@ export default function FloatingChatbot() {
 
     } catch (err) {
       console.error('[Chatbot] Send message error:', err);
-      // Thêm tin nhắn lỗi
       const errorMsg = {
         role: 'assistant',
         content: `Xin lỗi, đã có lỗi xảy ra: ${err.message}. Vui lòng thử lại sau.`,
@@ -140,67 +135,75 @@ export default function FloatingChatbot() {
     }
   };
 
-  // Xử lý khi click suggestion
   const handleSuggestionClick = (suggestionText) => {
     setInputMessage(suggestionText);
     sendMessage(suggestionText);
   };
 
-  // Xử lý submit form
   const handleSubmit = (e) => {
     e.preventDefault();
     sendMessage();
   };
 
-  // Xử lý click vào sản phẩm
   const handleProductClick = (listingId) => {
     navigate(`/bike/${listingId}`);
-    setIsOpen(false); // Đóng chatbot khi chuyển trang
+    setIsOpen(false);
   };
 
   return (
     <>
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(16px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+
       {/* FLOATING BUTTON */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-br from-primary to-orange-600 text-white rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 flex items-center justify-center group"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center
+                   shadow-[0_0_20px_rgba(249,115,22,0.5)] hover:shadow-[0_0_30px_rgba(249,115,22,0.7)]
+                   transition-all duration-300 active:scale-95 group hover:bg-orange-700"
         aria-label="Open AI Chatbot"
       >
         {isOpen ? (
-          <span className="material-symbols-outlined text-3xl">close</span>
+          <span className="material-symbols-outlined text-2xl">close</span>
         ) : (
-          <span className="material-symbols-outlined text-3xl animate-pulse">smart_toy</span>
+          <span className="material-symbols-outlined text-2xl">smart_toy</span>
         )}
-        
+
         {/* Tooltip */}
         {!isOpen && (
-          <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="absolute bottom-full right-0 mb-2 bg-orange-600 text-white text-xs rounded-xl px-3 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
             Trợ lý AI
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-600" />
           </div>
         )}
       </button>
 
       {/* CHAT WINDOW */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 border border-outline-variant/20">
-          
+        <div
+          className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden z-50"
+          style={{ animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+        >
           {/* HEADER */}
-          <div className="bg-gradient-to-r from-primary to-orange-600 text-white px-6 py-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl">smart_toy</span>
+              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined text-xl">smart_toy</span>
               </div>
               <div>
-                <h3 className="font-bold text-lg">AI Assistant</h3>
+                <h3 className="font-bold text-base">AI Assistant</h3>
                 <p className="text-xs text-white/80">Tư vấn mua xe đạp</p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-lg transition-all duration-200"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-xl">close</span>
             </button>
           </div>
 
@@ -210,11 +213,11 @@ export default function FloatingChatbot() {
             {messages.length === 0 && (
               <div className="flex justify-center items-center h-full">
                 <div className="text-center space-y-3">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                    <span className="material-symbols-outlined text-4xl text-primary">waving_hand</span>
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                    <span className="material-symbols-outlined text-4xl text-gray-500">waving_hand</span>
                   </div>
-                  <h4 className="font-bold text-lg text-on-surface">Xin chào!</h4>
-                  <p className="text-sm text-on-surface-variant max-w-xs">
+                  <h4 className="font-bold text-lg text-gray-900">Xin chào!</h4>
+                  <p className="text-sm text-gray-500 max-w-xs">
                     Tôi là trợ lý AI. Tôi có thể giúp bạn tìm xe đạp phù hợp. Hãy hỏi tôi bất cứ điều gì!
                   </p>
                 </div>
@@ -228,12 +231,11 @@ export default function FloatingChatbot() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
-                  {/* Message bubble */}
                   <div
                     className={`rounded-2xl px-4 py-3 ${
                       msg.role === 'user'
-                        ? 'bg-primary text-white rounded-br-none'
-                        : 'bg-white text-on-surface rounded-bl-none shadow-sm border border-outline-variant/20'
+                        ? 'bg-orange-600 text-white rounded-br-none'
+                        : 'bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-100'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
@@ -242,7 +244,7 @@ export default function FloatingChatbot() {
                   {/* Product recommendations */}
                   {msg.role === 'assistant' && msg.listings && msg.listings.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wide px-2">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide px-2">
                         Gợi ý sản phẩm
                       </p>
                       <div className="space-y-2">
@@ -250,10 +252,9 @@ export default function FloatingChatbot() {
                           <button
                             key={listing.listingId || listing.id}
                             onClick={() => handleProductClick(listing.listingId || listing.id)}
-                            className="w-full bg-white rounded-xl p-3 border border-outline-variant/20 hover:border-primary hover:shadow-md transition-all duration-200 flex items-center gap-3 group"
+                            className="w-full bg-white rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-200 p-3 flex items-center gap-3 group"
                           >
-                            {/* Image */}
-                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                               {listing.imageUrl ? (
                                 <img
                                   src={listing.imageUrl}
@@ -262,28 +263,24 @@ export default function FloatingChatbot() {
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <span className="material-symbols-outlined text-2xl text-on-surface-variant/30">
+                                  <span className="material-symbols-outlined text-2xl text-gray-300">
                                     directions_bike
                                   </span>
                                 </div>
                               )}
                             </div>
-
-                            {/* Info */}
                             <div className="flex-1 text-left min-w-0">
-                              <p className="text-sm font-bold text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
+                              <p className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-gray-600 transition-colors">
                                 {listing.title || 'Xe đạp'}
                               </p>
-                              <p className="text-xs text-on-surface-variant mt-0.5">
+                              <p className="text-xs text-gray-400 mt-0.5">
                                 {listing.brandName || 'Brand'}
                               </p>
-                              <p className="text-sm font-bold text-primary mt-1">
+                              <p className="text-sm font-bold text-gray-900 mt-1">
                                 {(listing.price || 0).toLocaleString('vi-VN')}₫
                               </p>
                             </div>
-
-                            {/* Arrow icon */}
-                            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary group-hover:translate-x-1 transition-all">
+                            <span className="material-symbols-outlined text-gray-400 group-hover:text-gray-700 group-hover:translate-x-1 transition-all">
                               arrow_forward
                             </span>
                           </button>
@@ -292,8 +289,7 @@ export default function FloatingChatbot() {
                     </div>
                   )}
 
-                  {/* Timestamp */}
-                  <p className="text-[10px] text-on-surface-variant mt-1 px-2">
+                  <p className="text-[10px] text-gray-400 mt-1 px-2">
                     {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -306,24 +302,23 @@ export default function FloatingChatbot() {
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white rounded-2xl rounded-bl-none px-4 py-3 shadow-sm border border-outline-variant/20">
+                <div className="bg-white rounded-2xl rounded-bl-none px-4 py-3 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Scroll anchor */}
             <div ref={messagesEndRef} />
           </div>
 
           {/* SUGGESTIONS */}
           {suggestions.length > 0 && messages.length === 0 && (
-            <div className="px-4 py-3 bg-white border-t border-outline-variant/10">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide mb-2">
+            <div className="px-4 py-3 bg-white border-t border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">
                 Câu hỏi gợi ý
               </p>
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -331,7 +326,7 @@ export default function FloatingChatbot() {
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="flex-shrink-0 px-4 py-2 bg-primary/10 text-primary text-xs font-medium rounded-full hover:bg-primary hover:text-white transition-colors whitespace-nowrap"
+                    className="flex-shrink-0 bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white border border-orange-200 rounded-full px-4 py-2 text-xs font-medium transition-all duration-200 whitespace-nowrap"
                   >
                     {suggestion}
                   </button>
@@ -341,7 +336,7 @@ export default function FloatingChatbot() {
           )}
 
           {/* FOOTER - INPUT */}
-          <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-outline-variant/10">
+          <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-gray-100">
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
@@ -350,12 +345,12 @@ export default function FloatingChatbot() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Nhập câu hỏi của bạn..."
                 disabled={isLoading}
-                className="flex-1 px-4 py-3 border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 text-sm transition-all duration-200 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
                 disabled={isLoading || !inputMessage.trim()}
-                className="w-12 h-12 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+                className="w-11 h-11 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-all duration-200 active:scale-95 disabled:opacity-40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/30"
               >
                 {isLoading ? (
                   <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>

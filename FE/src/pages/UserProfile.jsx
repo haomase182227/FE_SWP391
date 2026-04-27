@@ -15,10 +15,10 @@ function Field({ label, value }) {
 
 function SectionCard({ title, icon, children }) {
   return (
-    <div className="bg-surface-container-lowest rounded-2xl border border-white shadow-[0_8px_32px_rgba(78,33,32,0.06)] p-8">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] p-8">
       <div className="flex items-center gap-3 mb-6">
-        <span className="material-symbols-outlined text-primary">{icon}</span>
-        <h3 className="font-headline text-lg font-bold text-on-surface uppercase tracking-tight">{title}</h3>
+        <span className="material-symbols-outlined text-orange-600">{icon}</span>
+        <h3 className="font-headline text-lg font-bold text-orange-600 uppercase tracking-tight">{title}</h3>
       </div>
       {children}
     </div>
@@ -37,13 +37,13 @@ function MsgBanner({ msg }) {
 function InputField({ label, type = 'text', value, onChange, placeholder }) {
   return (
     <div>
-      <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1.5 font-bold">{label}</label>
+      <label className="block font-label text-[10px] uppercase tracking-widest text-gray-500 mb-1.5 font-bold">{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant/50 outline-none transition-all"
+        className="w-full bg-gray-50 border-2 border-transparent focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all"
       />
     </div>
   );
@@ -174,14 +174,14 @@ export default function UserProfile() {
 
         {/* Header */}
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center font-headline font-black text-2xl text-primary">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-headline font-black text-3xl text-white shadow-lg shadow-orange-500/30">
             {profile?.userName?.slice(0, 2).toUpperCase() ?? '??'}
           </div>
           <div>
-            <h1 className="font-headline text-3xl font-black tracking-tighter text-on-surface uppercase">
+            <h1 className="font-headline text-3xl font-black tracking-tighter text-gray-900 uppercase">
               {profile?.fullName || profile?.userName || '...'}
             </h1>
-            <p className="text-sm text-on-surface-variant">{profile?.email} · <span className="font-bold text-primary">{profile?.role}</span></p>
+            <p className="text-sm text-gray-600">{profile?.email} · <span className="font-bold text-orange-600">{profile?.role}</span></p>
           </div>
         </div>
 
@@ -213,8 +213,8 @@ export default function UserProfile() {
               <form onSubmit={handleFullName} className="space-y-4">
                 <InputField label="Họ và tên mới" value={fullName} onChange={setFullName} placeholder="Nguyễn Văn A" />
                 <MsgBanner msg={fullNameMsg} />
-                <button disabled={fullNameLoading} className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-60">
-                  {fullNameLoading ? 'Đang lưu...' : 'Lưu'}
+                <button disabled={fullNameLoading} className="px-6 py-3 bg-orange-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-orange-600 transition-all disabled:opacity-60 shadow-lg shadow-orange-500/30">
+                  {fullNameLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>
               </form>
             </SectionCard>
@@ -225,7 +225,7 @@ export default function UserProfile() {
                 <InputField label="Mật khẩu hiện tại" type="password" value={emailForm.currentPassword} onChange={v => setEmailForm(f => ({ ...f, currentPassword: v }))} placeholder="••••••••" />
                 <InputField label="Email mới" type="email" value={emailForm.newEmail} onChange={v => setEmailForm(f => ({ ...f, newEmail: v }))} placeholder="new@email.com" />
                 <MsgBanner msg={emailMsg} />
-                <button disabled={emailLoading} className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-60">
+                <button disabled={emailLoading} className="px-6 py-3 bg-orange-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-orange-600 transition-all disabled:opacity-60 shadow-lg shadow-orange-500/30">
                   {emailLoading ? 'Đang lưu...' : 'Cập nhật email'}
                 </button>
               </form>
@@ -237,7 +237,7 @@ export default function UserProfile() {
                 <InputField label="Mật khẩu hiện tại" type="password" value={phoneForm.currentPassword} onChange={v => setPhoneForm(f => ({ ...f, currentPassword: v }))} placeholder="••••••••" />
                 <InputField label="Số điện thoại mới" type="tel" value={phoneForm.newPhone} onChange={v => setPhoneForm(f => ({ ...f, newPhone: v }))} placeholder="0912 345 678" />
                 <MsgBanner msg={phoneMsg} />
-                <button disabled={phoneLoading} className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-60">
+                <button disabled={phoneLoading} className="px-6 py-3 bg-orange-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-orange-600 transition-all disabled:opacity-60 shadow-lg shadow-orange-500/30">
                   {phoneLoading ? 'Đang lưu...' : 'Cập nhật số điện thoại'}
                 </button>
               </form>
@@ -250,7 +250,7 @@ export default function UserProfile() {
                 <InputField label="Mật khẩu mới" type="password" value={pwForm.newPassword} onChange={v => setPwForm(f => ({ ...f, newPassword: v }))} placeholder="••••••••" />
                 <InputField label="Nhập lại mật khẩu mới" type="password" value={pwForm.confirmPassword} onChange={v => setPwForm(f => ({ ...f, confirmPassword: v }))} placeholder="••••••••" />
                 <MsgBanner msg={pwMsg} />
-                <button disabled={pwLoading} className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-60">
+                <button disabled={pwLoading} className="px-6 py-3 bg-orange-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-orange-600 transition-all disabled:opacity-60 shadow-lg shadow-orange-500/30">
                   {pwLoading ? 'Đang lưu...' : 'Đổi mật khẩu'}
                 </button>
               </form>

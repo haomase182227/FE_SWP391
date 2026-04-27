@@ -540,7 +540,7 @@ export default function Order() {
               <button
                 onClick={() => setActiveStatus('all')}
                 className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'all' ? 'text-primary border-b-primary' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                  activeStatus === 'all' ? 'text-orange-600 border-b-orange-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 All Orders
@@ -548,7 +548,7 @@ export default function Order() {
               <button
                 onClick={() => setActiveStatus('paid')}
                 className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 inline-flex items-center gap-1.5 ${
-                  activeStatus === 'paid' ? 'text-indigo-500 border-b-indigo-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                  activeStatus === 'paid' ? 'text-orange-600 border-b-orange-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 <span className="material-symbols-outlined text-[16px]">credit_card</span>
@@ -557,7 +557,7 @@ export default function Order() {
               <button
                 onClick={() => setActiveStatus('completed')}
                 className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'completed' ? 'text-tertiary border-b-tertiary' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                  activeStatus === 'completed' ? 'text-orange-600 border-b-orange-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 Completed
@@ -565,7 +565,7 @@ export default function Order() {
               <button
                 onClick={() => setActiveStatus('cancelled')}
                 className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'cancelled' ? 'text-error border-b-error' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                  activeStatus === 'cancelled' ? 'text-orange-600 border-b-orange-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 Cancelled
@@ -573,7 +573,7 @@ export default function Order() {
               <button
                 onClick={() => setActiveStatus('reviews')}
                 className={`ml-auto px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'reviews' ? 'text-purple-600 border-b-purple-600' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                  activeStatus === 'reviews' ? 'text-orange-600 border-b-orange-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -584,7 +584,7 @@ export default function Order() {
               <button
                 onClick={() => setActiveStatus('reports')}
                 className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'reports' ? 'text-red-600 border-b-red-600' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                  activeStatus === 'reports' ? 'text-orange-600 border-b-orange-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -765,7 +765,7 @@ export default function Order() {
                         {/* Trạng thái đơn hàng */}
                         <div className="flex items-center gap-2">
                           {status === 'paid' && (
-                            <span className="bg-blue-100 text-blue-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-blue-200">
+                            <span className="bg-orange-100 text-orange-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-orange-200">
                               <span className="material-symbols-outlined text-[14px]">payments</span>
                               Paid
                             </span>
@@ -777,13 +777,13 @@ export default function Order() {
                             </span>
                           )}
                           {status === 'completed' && (
-                            <span className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-emerald-200">
                               <span className="material-symbols-outlined text-[14px]">check_circle</span>
                               Completed
                             </span>
                           )}
                           {status === 'cancelled' && (
-                            <span className="bg-error text-on-error text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                            <span className="bg-red-100 text-red-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-red-200">
                               <span className="material-symbols-outlined text-[14px]">cancel</span>
                               Cancelled
                             </span>
@@ -923,7 +923,7 @@ export default function Order() {
                                             setReportForm({ reportTypeId: '', title: '', content: '' });
                                             setIsReportModalOpen(true);
                                           }}
-                                          className="bg-red-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:opacity-90 inline-flex items-center gap-1 cursor-pointer"
+                                          className="bg-red-600 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full hover:bg-red-700 inline-flex items-center gap-1 cursor-pointer border border-red-700"
                                         >
                                           <span className="material-symbols-outlined text-[14px]">flag</span>
                                           Report
@@ -957,21 +957,21 @@ export default function Order() {
                         <div className="flex items-center gap-3 mt-4 pt-4 border-t border-outline-variant/10">
                           <button
                             onClick={() => handleCompleteOrder(orderId)}
-                            className="bg-tertiary text-on-tertiary text-[10px] font-bold uppercase px-4 py-2 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                            className="bg-emerald-500 text-white text-[10px] font-bold uppercase px-4 py-2 rounded-full hover:bg-emerald-600 inline-flex items-center gap-1"
                           >
                             <span className="material-symbols-outlined text-[14px]">check_circle</span>
                             Complete Order
                           </button>
                           <button
                             onClick={() => handleCancelOrder(orderId)}
-                            className="bg-error text-on-error text-[10px] font-bold uppercase px-4 py-2 rounded-full hover:opacity-90 inline-flex items-center gap-1"
+                            className="bg-red-500 text-white text-[10px] font-bold uppercase px-4 py-2 rounded-full hover:bg-red-600 inline-flex items-center gap-1"
                           >
                             <span className="material-symbols-outlined text-[14px]">cancel</span>
                             Cancel Order
                           </button>
                           <button 
                             onClick={() => setSelectedOrder(order)} 
-                            className="ml-auto p-2 text-on-surface hover:text-primary rounded-lg transition-colors"
+                            className="ml-auto p-2 text-on-surface hover:text-orange-600 rounded-lg transition-colors"
                           >
                             <span className="material-symbols-outlined">visibility</span>
                           </button>

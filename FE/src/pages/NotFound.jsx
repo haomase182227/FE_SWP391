@@ -1,12 +1,74 @@
-import React from "react";
+import { useNavigate } from 'react-router-dom';
+import TopNavBar from '../components/TopNavBar';
+import Footer from '../components/Footer';
 
-const NotFound = () => {
+export default function NotFound() {
+  const navigate = useNavigate();
+
   return (
-    <div>
-      <h1>404 - Page Not Found</h1>
-      <p>Trang bạn đang tìm kiếm không tồn tại.</p>
-    </div>
-  );
-};
+    <>
+      <TopNavBar />
+      <main className="min-h-screen bg-surface flex items-center justify-center px-6" style={{ marginTop: '80px' }}>
+        <div className="text-center max-w-2xl mx-auto">
+          {/* Icon 404 */}
+          <div className="flex justify-center mb-8">
+            <div className="relative">
+              <span className="material-symbols-outlined text-orange-500/10 absolute inset-0 blur-2xl" style={{ fontSize: '200px' }}>
+                error
+              </span>
+              <span className="material-symbols-outlined text-orange-500 relative" style={{ fontSize: '120px', fontVariationSettings: '"FILL" 1' }}>
+                error
+              </span>
+            </div>
+          </div>
 
-export default NotFound;
+          {/* Text 404 */}
+          <h1 className="font-headline text-9xl font-black text-orange-500 tracking-tighter mb-4">
+            404
+          </h1>
+          
+          <h2 className="font-headline text-3xl font-bold text-on-surface mb-4">
+            Trang không tồn tại
+          </h2>
+          
+          <p className="text-on-surface-variant text-lg leading-relaxed mb-8 max-w-md mx-auto">
+            Rất tiếc, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển. 
+            Hãy quay về trang chủ để tiếp tục khám phá.
+          </p>
+
+          {/* Nút quay về */}
+          <button
+            onClick={() => navigate('/')}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-base px-8 py-3 rounded-full inline-flex items-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined">home</span>
+            Quay về trang chủ
+          </button>
+
+          {/* Gợi ý */}
+          <div className="mt-12 pt-8 border-t border-outline-variant/20">
+            <p className="text-sm text-on-surface-variant mb-4">Hoặc bạn có thể:</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                onClick={() => navigate('/search')}
+                className="text-sm text-orange-600 hover:text-orange-700 font-medium hover:underline inline-flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">search</span>
+                Tìm kiếm xe đạp
+              </button>
+              <span className="text-on-surface-variant">•</span>
+              <button
+                onClick={() => navigate('/support')}
+                className="text-sm text-orange-600 hover:text-orange-700 font-medium hover:underline inline-flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">contact_support</span>
+                Liên hệ hỗ trợ
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
+}

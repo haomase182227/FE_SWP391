@@ -236,27 +236,27 @@ export default function Wallet() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           
           {/* Available Balance Card */}
-          <div className="bg-surface-container-lowest rounded-2xl p-8 editorial-shadow border border-outline-variant/10">
-            <span className="font-label text-[10px] uppercase tracking-[0.28em] text-on-surface-variant font-bold">
+          <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-8 shadow-xl shadow-orange-500/30 text-white">
+            <span className="font-label text-[10px] uppercase tracking-[0.28em] text-white/80 font-bold">
               Available Balance
             </span>
             <div className="mt-6 flex items-end justify-between gap-4">
               <div>
                 {loading ? (
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
-                    <p className="font-headline text-2xl font-bold text-on-surface-variant">Đang tải...</p>
+                    <span className="material-symbols-outlined animate-spin text-2xl text-white">progress_activity</span>
+                    <p className="font-headline text-2xl font-bold text-white/80">Đang tải...</p>
                   </div>
                 ) : (
                   <>
-                    <p className="font-headline text-4xl md:text-5xl font-bold text-secondary">
+                    <p className="font-headline text-4xl md:text-5xl font-bold text-white">
                       {walletBalance.toLocaleString('vi-VN')}₫
                     </p>
-                    <p className="text-sm text-on-surface-variant mt-2">Ready for checkout</p>
+                    <p className="text-sm text-white/80 mt-2">Ready for checkout</p>
                   </>
                 )}
               </div>
-              <span className="material-symbols-outlined text-4xl text-primary">account_balance_wallet</span>
+              <span className="material-symbols-outlined text-4xl text-white/90">account_balance_wallet</span>
             </div>
           </div>
 
@@ -275,11 +275,11 @@ export default function Wallet() {
                 setTopUpAmount('');
                 setTopUpError('');
               }}
-              className="w-full flex items-center justify-between rounded-2xl px-6 py-5 bg-primary text-on-primary hover:opacity-95 transition-opacity shadow-lg"
+              className="w-full flex items-center justify-between rounded-2xl px-6 py-5 bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/30"
             >
               <span className="flex items-center gap-3 font-bold uppercase tracking-[0.18em] text-sm">
                 <span className="material-symbols-outlined text-[20px]">add</span>
-                Top Up Funds
+                Nạp tiền
               </span>
               <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
             </button>
@@ -574,7 +574,7 @@ export default function Wallet() {
             <button
               onClick={handleTopUp}
               disabled={topUpLoading}
-              className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-xl font-bold uppercase tracking-wider hover:opacity-90 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold uppercase tracking-wider hover:bg-orange-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30"
             >
               {topUpLoading ? (
                 <>

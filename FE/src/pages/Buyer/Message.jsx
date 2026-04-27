@@ -552,14 +552,14 @@ export default function Message() {
                 return (
                   <div key={msg.id ?? idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-[65%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm
+                      className={`max-w-[65%] px-4 py-2.5 text-sm leading-relaxed shadow-sm
                         ${isMine
-                          ? 'bg-primary text-on-primary rounded-br-none'
-                          : 'bg-white text-on-surface rounded-bl-none border border-outline-variant/20'
+                          ? 'bg-orange-500 text-white rounded-l-2xl rounded-tr-2xl'
+                          : 'bg-gray-100 text-black rounded-r-2xl rounded-tl-2xl'
                         } ${msg.isOptimistic ? 'opacity-60' : ''} ${msg.isFailed ? 'opacity-40 border-error' : ''}`}
                     >
                       <p>{msg.content}</p>
-                      <p className={`text-[10px] mt-1 text-right ${isMine ? 'text-on-primary/70' : 'text-on-surface-variant'}`}>
+                      <p className={`text-[10px] mt-1 text-right ${isMine ? 'text-white/70' : 'text-gray-600'}`}>
                         {(msg.sentAt ?? msg.createdAt)
                           ? (() => {
                               const raw = msg.sentAt ?? msg.createdAt;
@@ -592,12 +592,12 @@ export default function Message() {
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 placeholder="Nhập tin nhắn..."
-                className="flex-1 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/20 rounded-full text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                className="flex-1 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/20 rounded-full text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
               <button
                 type="submit"
                 disabled={!inputText.trim() || sending}
-                className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 shrink-0"
+                className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 active:scale-95 transition-all disabled:opacity-40 shrink-0"
               >
                 <span className="material-symbols-outlined text-lg">send</span>
               </button>

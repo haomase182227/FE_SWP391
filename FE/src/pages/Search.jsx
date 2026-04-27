@@ -132,16 +132,16 @@ export default function Search() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-1">
+          <p className="text-xs font-label uppercase tracking-widest text-orange-600 mb-1">
             {q ? 'Kết quả tìm kiếm' : 'Tất cả sản phẩm'}
           </p>
           {q && (
-            <h1 className="font-headline text-3xl font-black tracking-tighter text-on-surface">
+            <h1 className="font-headline text-3xl font-black tracking-tighter text-orange-600">
               "{q}"
             </h1>
           )}
           {!loading && (
-            <p className="text-sm text-on-surface-variant mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               {total > 0 ? `${total} kết quả` : 'Không tìm thấy kết quả nào'}
             </p>
           )}
@@ -153,7 +153,7 @@ export default function Search() {
 
             {/* Khoảng giá */}
             <div className="bg-surface-container-lowest rounded-2xl border border-white shadow-[0_8px_24px_rgba(78,33,32,0.06)] p-5">
-              <h3 className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-4 font-bold">Khoảng giá</h3>
+              <h3 className="font-label text-[10px] uppercase tracking-widest text-orange-600 mb-4 font-bold">Khoảng giá</h3>
               <div className="space-y-3">
                 <div>
                   <label className="text-[10px] text-on-surface-variant uppercase tracking-widest">Từ (₫)</label>
@@ -161,7 +161,7 @@ export default function Search() {
                     type="number" value={minPrice}
                     onChange={e => setMinPrice(e.target.value)}
                     placeholder="0"
-                    className="w-full mt-1 bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface outline-none border-2 border-transparent focus:border-primary/30 transition-all"
+                    className="w-full mt-1 bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface outline-none border-2 border-transparent focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
                   />
                 </div>
                 <div>
@@ -170,11 +170,11 @@ export default function Search() {
                     type="number" value={maxPrice}
                     onChange={e => setMaxPrice(e.target.value)}
                     placeholder="100.000.000"
-                    className="w-full mt-1 bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface outline-none border-2 border-transparent focus:border-primary/30 transition-all"
+                    className="w-full mt-1 bg-surface-container-low rounded-lg px-3 py-2 text-sm text-on-surface outline-none border-2 border-transparent focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
                   />
                 </div>
                 <button onClick={applyPrice}
-                  className="w-full py-2 bg-primary text-on-primary rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity">
+                  className="w-full py-2 bg-orange-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-orange-700 transition-all">
                   Áp dụng
                 </button>
               </div>
@@ -182,7 +182,7 @@ export default function Search() {
 
             {/* Frame size */}
             <div className="bg-surface-container-lowest rounded-2xl border border-white shadow-[0_8px_24px_rgba(78,33,32,0.06)] p-5">
-              <h3 className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3 font-bold">Cỡ khung</h3>
+              <h3 className="font-label text-[10px] uppercase tracking-widest text-orange-600 mb-3 font-bold">Cỡ khung</h3>
               <div className="grid grid-cols-4 gap-2">
                 {FRAME_SIZES.map(s => (
                   <button key={s} onClick={() => setFrameSize(frameSize === s ? '' : s)}

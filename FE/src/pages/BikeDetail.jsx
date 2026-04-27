@@ -171,30 +171,30 @@ export default function BikeDetail() {
   }
 
   return (
-    <main className="pt-24 pb-32 max-w-screen-2xl mx-auto px-8">
+    <main className="pt-24 pb-32 max-w-screen-2xl mx-auto px-6 md:px-8">
       {/* Breadcrumb & Title Section */}
-      <div className="mb-12">
-        <div className="flex items-center gap-2 text-label-sm text-on-surface-variant uppercase tracking-widest mb-4">
-          <Link to="/" className="hover:text-primary transition-colors">Marketplace</Link>
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-[10px] text-gray-500 uppercase tracking-widest mb-4">
+          <Link to="/" className="hover:text-orange-600 transition-colors">Marketplace</Link>
           <span className="material-symbols-outlined text-xs">chevron_right</span>
           <span>{listing.technicalSpecs?.Category || 'Category'}</span>
           <span className="material-symbols-outlined text-xs">chevron_right</span>
-          <span className="text-primary">{listing.title}</span>
+          <span className="text-orange-600">{listing.title}</span>
         </div>
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-6xl font-headline font-bold tracking-tighter text-on-surface">{listing.title}</h1>
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-orange-600 leading-tight">{listing.title}</h1>
           </div>
-          <div className="text-right">
-            <div className="text-5xl font-headline font-bold text-primary tracking-tight">{(listing.price ?? 0).toLocaleString('vi-VN')}₫</div>
-            <div className="flex gap-2 justify-end mt-2">
+          <div className="text-left md:text-right">
+            <div className="text-2xl md:text-3xl font-extrabold text-orange-600 tracking-tight">{(listing.price ?? 0).toLocaleString('vi-VN')}₫</div>
+            <div className="flex gap-2 md:justify-end mt-2">
               {listing.isVerified && (
-                <span className="px-3 py-1 bg-tertiary text-on-tertiary rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
+                <span className="px-3 py-1 bg-orange-500 text-white rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs" style={{fontVariationSettings: "'FILL' 1"}}>verified_user</span> Verified
                 </span>
               )}
-              <span className="px-3 py-1 bg-secondary text-on-secondary rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
+              <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs" style={{fontVariationSettings: "'FILL' 1"}}>speed</span> {listing.status || 'Available'}
               </span>
             </div>
@@ -202,251 +202,250 @@ export default function BikeDetail() {
         </div>
       </div>
 
-      {/* Asymmetric Editorial Gallery */}
-      <section className="mb-24 space-y-6">
-        {/* Main image row */}
-        <div className="flex gap-6">
-          <div className={`${listing.additionalImages && listing.additionalImages.length > 0 ? 'flex-[2]' : 'w-full'} aspect-[16/9] bg-surface-container-low rounded-xl overflow-hidden relative group cursor-zoom-in`}>
-            <img 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-              alt={listing.title} 
-              src={listing.imageUrl}
-            />
-            <div className="absolute bottom-6 left-6 flex gap-2">
-              <span className="bg-white/90 backdrop-blur-md p-2 rounded-lg editorial-shadow material-symbols-outlined">fullscreen</span>
+      {/* Gallery Section */}
+      <section className="mb-12 lg:mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Main Image Gallery */}
+          <div className="space-y-4">
+            <div className="aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden relative group">
+              <img 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                alt={listing.title} 
+                src={listing.imageUrl}
+              />
             </div>
-          </div>
-          {listing.additionalImages && listing.additionalImages.length > 0 && (
-            <div className="flex-1 flex flex-col gap-6">
-              {listing.additionalImages.slice(0, 2).map((img, index) => (
-                <div key={index} className="flex-1 bg-surface-container-low rounded-xl overflow-hidden">
-                  <img 
-                    className="w-full h-full object-cover" 
-                    alt={`Additional image ${index + 1}`} 
-                    src={img}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Thumbnail strip — only when there are extra images */}
-        {listing.additionalImages && listing.additionalImages.length > 0 && (
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {listing.additionalImages.map((img, index) => (
-              <div key={index} className="flex-none w-40 aspect-square bg-surface-container-lowest rounded-lg border border-outline-variant/10 overflow-hidden">
-                <img 
-                  className="w-full h-full object-cover" 
-                  alt={`Thumbnail ${index + 1}`} 
-                  src={img}
-                />
+            {/* Thumbnail strip */}
+            {listing.additionalImages && listing.additionalImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-3">
+                {listing.additionalImages.slice(0, 4).map((img, index) => (
+                  <div key={index} className="aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-orange-500 transition-colors cursor-pointer">
+                    <img 
+                      className="w-full h-full object-cover" 
+                      alt={`Thumbnail ${index + 1}`} 
+                      src={img}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+
+          {/* Right: Sticky Action Box */}
+          <div className="lg:sticky lg:top-24 h-fit">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl p-6 md:p-8 border border-orange-200 shadow-xl shadow-orange-500/10">
+              {/* Price */}
+              <div className="mb-6 pb-6 border-b border-orange-200">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-orange-600 mb-2">Giá bán</p>
+                <div className="text-3xl font-extrabold text-orange-600 tracking-tight">
+                  {(listing.price ?? 0).toLocaleString('vi-VN')}₫
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3 mb-6">
+                <button
+                  onClick={handleBuyNow}
+                  disabled={cartLoading}
+                  className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-base uppercase tracking-widest
+                             hover:bg-orange-600 active:scale-[0.98] transition-all shadow-lg shadow-orange-500/30
+                             disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {cartLoading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-xl">shopping_bag</span>
+                      Mua ngay
+                    </>
+                  )}
+                </button>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={cartLoading || cartDone}
+                    className={`w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2
+                      ${cartDone 
+                        ? 'bg-orange-500 text-white' 
+                        : 'bg-white text-orange-600 border-2 border-orange-500 hover:bg-orange-50'
+                      } disabled:opacity-60`}
+                  >
+                    <span className="material-symbols-outlined text-lg">shopping_cart</span>
+                    {cartDone ? 'Đã thêm' : 'Thêm vào giỏ'}
+                  </button>
+                  <button
+                    onClick={handleAddToWishlist}
+                    disabled={wishlistLoading || wishlistDone}
+                    className={`w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2
+                      ${wishlistDone 
+                        ? 'bg-orange-500 text-white' 
+                        : 'bg-white text-orange-600 border-2 border-orange-500 hover:bg-orange-50'
+                      } disabled:opacity-60`}
+                  >
+                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: wishlistDone ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+                    {wishlistDone ? 'Đã lưu' : 'Yêu thích'}
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleChat}
+                  disabled={chatLoading}
+                  className="w-full bg-white text-orange-600 border-2 border-orange-200 py-4 rounded-xl font-bold text-sm uppercase tracking-wider
+                             hover:bg-orange-50 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {chatLoading ? (
+                    <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-lg">chat_bubble</span>
+                  )}
+                  {chatLoading ? 'Đang kết nối...' : 'Chat với người bán'}
+                </button>
+                {chatError && (
+                  <p className="text-xs text-red-600 text-center mt-1 px-2">{chatError}</p>
+                )}
+              </div>
+
+              {/* Trust Badges */}
+              <div className="space-y-4 pt-6 border-t border-orange-200">
+                <div className="flex gap-3 items-start">
+                  <div className="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-white text-[18px]" style={{fontVariationSettings: "'FILL' 1"}}>verified_user</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-orange-900">Escrow Protection</p>
+                    <p className="text-xs text-orange-700 leading-relaxed">Tiền được bảo vệ đến khi bạn nhận hàng</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-white text-[18px]">local_shipping</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-orange-900">Giao hàng miễn phí</p>
+                    <p className="text-xs text-orange-700 leading-relaxed">Vận chuyển an toàn, bảo hiểm toàn bộ</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seller Info */}
+              <div className="mt-6 pt-6 border-t border-orange-200">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-orange-600 mb-3">Người bán</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-orange-200 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-orange-700 text-xl">person</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-gray-900">{listing.sellerName}</p>
+                    <div className="flex items-center gap-1 text-orange-500">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className="material-symbols-outlined text-xs" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Product Details Grid */}
-      <div className="grid grid-cols-12 gap-16">
-        {/* Left Column: Specs & Inspection */}
-        <div className="col-span-12 lg:col-span-8 space-y-24">
+      <div className="grid grid-cols-1 gap-12">
+        {/* Full Width: Specs & Inspection */}
+        <div className="space-y-16">
           
           {/* Spec Grid Component */}
-          <section>
-            <div className="flex items-center gap-4 mb-10">
-              <h2 className="text-3xl font-headline font-bold tracking-tight">Technical Specifications</h2>
-              <div className="h-px bg-outline-variant/20 flex-grow"></div>
+          <section className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-4 mb-6">
+              <h2 className="text-2xl font-bold tracking-tight text-orange-600">Thông số kỹ thuật</h2>
+              <div className="h-px bg-gray-200 flex-grow"></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {listing.technicalSpecs && Object.entries(listing.technicalSpecs).map(([key, value]) => (
-                <div key={key} className="flex justify-between items-end border-b border-outline-variant/10 pb-4">
-                  <span className="text-xs font-label text-on-surface-variant uppercase tracking-widest">{key}</span>
-                  <span className="text-lg font-headline font-bold text-on-surface">{value}</span>
+                <div key={key} className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{key}</span>
+                  <span className="text-sm font-bold text-gray-900">{value}</span>
                 </div>
               ))}
             </div>
           </section>
 
           {/* Description Section */}
-          <section>
-            <div className="flex items-center gap-4 mb-10">
-              <h2 className="text-3xl font-headline font-bold tracking-tight">Description</h2>
-              <div className="h-px bg-outline-variant/20 flex-grow"></div>
+          <section className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-4 mb-6">
+              <h2 className="text-2xl font-bold tracking-tight text-orange-600">Mô tả chi tiết</h2>
+              <div className="h-px bg-gray-200 flex-grow"></div>
             </div>
-            <p className="text-on-surface leading-relaxed">{listing.description || 'No description available.'}</p>
+            <p className="text-gray-700 leading-relaxed">{listing.description || 'Chưa có mô tả.'}</p>
           </section>
 
           {/* Inspection Report Section */}
           {listing.inspectionResult && (
-          <section className="bg-surface-container-low rounded-xl p-10 editorial-shadow">
-            <div className="flex items-center justify-between mb-8">
+          <section className="bg-orange-50 rounded-2xl p-6 md:p-8 border border-orange-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="text-xs font-label text-secondary font-bold uppercase tracking-[0.2em] mb-1">Authentic Performance</div>
-                <h2 className="text-3xl font-headline font-bold tracking-tight">Inspection Report</h2>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-orange-600 mb-1">Kiểm định chất lượng</p>
+                <h2 className="text-2xl font-bold tracking-tight text-orange-600">Báo cáo kiểm tra</h2>
               </div>
               <div className="text-right">
                 {listing.inspectionResult ? (
                   listing.inspectionResult.isPassed ? (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary text-on-tertiary text-xs font-bold uppercase tracking-widest">
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-500 text-white text-xs font-bold uppercase tracking-wider">
                       <span className="material-symbols-outlined text-[14px]" style={{fontVariationSettings:"'FILL' 1"}}>verified</span>
-                      Passed
+                      Đạt chuẩn
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error text-on-error text-xs font-bold uppercase tracking-widest">
-                      Failed
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-500 text-white text-xs font-bold uppercase tracking-wider">
+                      Không đạt
                     </span>
                   )
                 ) : (
-                  <>
-                    <div className="text-3xl font-headline font-bold text-tertiary">N/A</div>
-                    <div className="text-[10px] font-bold text-on-surface-variant uppercase">Pending Inspection</div>
-                  </>
+                  <span className="text-xs font-bold text-gray-500 uppercase">Đang kiểm tra</span>
                 )}
               </div>
             </div>
 
-            <div className="bg-surface-container-lowest rounded-lg p-6 mb-8 border border-secondary/5">
+            <div className="bg-white rounded-xl p-5 mb-6 border border-orange-100">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden flex-none">
+                <div className="w-12 h-12 rounded-full overflow-hidden flex-none bg-orange-200">
                   <img
                     className="w-full h-full object-cover"
-                    alt="Inspector placeholder"
+                    alt="Inspector"
                     src="https://via.placeholder.com/48"
                   />
                 </div>
                 <div>
-                  <div className="font-bold text-on-surface">Inspector</div>
-                  <div className="text-xs text-on-surface-variant mb-4">Certified Mechanic</div>
-                  <p className="text-on-surface leading-relaxed italic">
-                    "{listing.inspectionResult?.notes || 'Inspection report will be available soon.'}"
+                  <p className="font-bold text-sm text-gray-900">Chuyên gia kiểm định</p>
+                  <p className="text-xs text-gray-500 mb-3">Certified Mechanic</p>
+                  <p className="text-sm text-gray-700 leading-relaxed italic">
+                    "{listing.inspectionResult?.notes || 'Báo cáo kiểm định sẽ sớm được cập nhật.'}"
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               {[
-                { label: 'Frame Checked', value: listing.inspectionResult?.frameChecked },
-                { label: 'Brake Checked', value: listing.inspectionResult?.brakeChecked },
-                { label: 'Drivetrain Checked', value: listing.inspectionResult?.drivetrainChecked },
+                { label: 'Khung xe', value: listing.inspectionResult?.frameChecked },
+                { label: 'Phanh', value: listing.inspectionResult?.brakeChecked },
+                { label: 'Truyền động', value: listing.inspectionResult?.drivetrainChecked },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-white/50 p-4 rounded text-center">
+                <div key={label} className="bg-white p-4 rounded-xl text-center border border-orange-100">
                   <span
-                    className={`material-symbols-outlined mb-2 ${value ? 'text-tertiary' : 'text-on-surface-variant/40'}`}
+                    className={`material-symbols-outlined mb-2 text-2xl ${value ? 'text-orange-600' : 'text-gray-300'}`}
                     style={{fontVariationSettings: "'FILL' 1"}}
                   >
                     {value ? 'check_circle' : 'radio_button_unchecked'}
                   </span>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{label}</div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600">{label}</p>
                 </div>
               ))}
             </div>
           </section>
           )}
-        </div>
-
-        {/* Right Column: Transactions & Seller */}
-        <div className="col-span-12 lg:col-span-4 space-y-8">
-          
-          {/* Action Card */}
-          <div className="sticky top-28 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10 editorial-shadow">
-            <div className="space-y-3 mb-8">
-              <button
-                onClick={handleBuyNow}
-                disabled={cartLoading}
-                className="w-full bg-gradient-to-r from-primary to-primary-fixed text-on-primary py-5 rounded-lg font-headline font-bold text-xl uppercase tracking-widest scale-[0.98] hover:scale-100 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-60"
-              >
-                {cartLoading ? 'Đang xử lý...' : 'Mua ngay'}
-              </button>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleAddToCart}
-                  disabled={cartLoading || cartDone}
-                  className={`py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer
-                    ${cartDone ? 'bg-tertiary text-on-tertiary' : 'bg-surface-container-low text-on-background hover:bg-surface-container-high'}`}
-                >
-                  <span className="material-symbols-outlined text-lg">shopping_cart</span>
-                  {cartDone ? 'Đã thêm' : 'Add to cart'}
-                </button>
-                <button
-                  onClick={handleAddToWishlist}
-                  disabled={wishlistLoading || wishlistDone}
-                  className={`py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer
-                    ${wishlistDone ? 'bg-tertiary text-on-tertiary' : 'bg-surface-container-low text-on-background hover:bg-surface-container-high'}`}
-                >
-                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: wishlistDone ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
-                  {wishlistDone ? 'Đã thêm' : 'Wishlist'}
-                </button>
-              </div>
-              <button
-                onClick={handleChat}
-                disabled={chatLoading}
-                className="w-full bg-surface-container-low text-on-background py-4 rounded-lg font-label font-bold text-sm uppercase tracking-wider hover:bg-secondary-container/30 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
-                {chatLoading
-                  ? <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-                  : <span className="material-symbols-outlined text-lg">chat_bubble</span>
-                }
-                {chatLoading ? 'Đang kết nối...' : 'Chat với người bán'}
-              </button>
-              {chatError && (
-                <p className="text-xs text-red-500 text-center mt-1 px-2 break-words">{chatError}</p>
-              )}
-            </div>
-            
-            <div className="space-y-6 pt-8 border-t border-outline-variant/10">
-              <div className="flex gap-4 items-start">
-                <span className="material-symbols-outlined text-primary">security</span>
-                <div>
-                  <div className="font-bold text-sm">Escrow Protection</div>
-                  <div className="text-xs text-on-surface-variant">Funds are held safely until you confirm delivery and condition.</div>
-                </div>
-              </div>
-              <div className="flex gap-4 items-start">
-                <span className="material-symbols-outlined text-primary">local_shipping</span>
-                <div>
-                  <div className="font-bold text-sm">Premium Logistics</div>
-                  <div className="text-xs text-on-surface-variant">White-glove bike delivery across major metropolitan areas.</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Seller Profile */}
-            <div className="mt-12 pt-8 border-t border-outline-variant/10">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant">Seller Information</h3>
-                <span className="text-[10px] px-2 py-0.5 bg-tertiary-container text-on-tertiary-container rounded-full font-bold">SELLER</span>
-              </div>
-              
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-surface-container-low flex items-center justify-center">
-                  <span className="material-symbols-outlined text-2xl text-on-surface-variant">person</span>
-                </div>
-                <div>
-                  <div className="font-headline font-bold text-lg">{listing.sellerName}</div>
-                  <div className="flex items-center gap-1 text-primary">
-                    <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                    <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                    <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                    <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                    <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>star</span>
-                    <span className="text-xs font-bold ml-1 text-on-surface">Rating</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-on-surface-variant">Email:</span>
-                  <span className="text-sm font-bold text-on-surface">{listing.sellerEmail}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-on-surface-variant">Phone:</span>
-                  <span className="text-sm font-bold text-on-surface">{listing.sellerPhone}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
         </div>
       </div>
     </main>
