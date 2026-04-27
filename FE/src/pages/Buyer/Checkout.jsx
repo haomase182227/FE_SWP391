@@ -15,6 +15,8 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [orderSuccessData, setOrderSuccessData] = useState(null);
 
   const [editFullName, setEditFullName] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -142,10 +144,40 @@ export default function Checkout() {
         throw new Error(errorData.message || 'Đặt hàng thất bại');
       }
 
-      console.log('[Checkout] Order placed successfully');
+      const responseData = await res.json();
+      console.log('[Checkout] Order placed successfully — full response:', JSON.stringify(responseData, null, 2));
       window.dispatchEvent(new Event('walletUpdated'));
-      // Navigate to orders page
-      navigate('/order');
+
+      // Lưu dữ liệu đơn hàng và mở Success Modal thay vì navigate ngay
+      const orderCode =
+        responseData.orderCode ??
+        responseData.order?.orderCode ??
+        responseData.data?.orderCode ??
+        responseData.orderId ??
+        responseData.order?.orderId ??
+        responseData.id ??
+        null;
+
+      const totalAmount =
+        responseData.totalAmount ??
+        responseData.order?.totalAmount ??
+        responseData.data?.totalAmount ??
+        subtotal;
+
+      const resolvedAddress =
+        responseData.shippingAddress ??
+        responseData.order?.shippingAddress ??
+        responseData.data?.shippingAddress ??
+        shippingAddress.trim();
+
+      const itemCount =
+        responseData.itemCount ??
+        responseData.order?.itemCount ??
+        responseData.data?.itemCount ??
+        cartItems.length;
+
+      setOrderSuccessData({ orderCode, totalAmount, shippingAddress: resolvedAddress, itemCount });
+      setIsSuccessModalOpen(true);
     } catch (err) {
       console.error('[Checkout] Error placing order:', err);
       setError(err.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
@@ -184,6 +216,7 @@ export default function Checkout() {
   }
 
   return (
+    <>
     <div className="bg-background text-on-background min-h-screen font-body antialiased">
       <main className="pt-20 pb-24 px-8 max-w-screen-2xl mx-auto">
         <header className="mb-12">
@@ -435,5 +468,124 @@ export default function Checkout() {
         </div>
       </main>
     </div>
+
+    {/* ===== SUCCESS MODAL — ĐẶT HÀNG THÀNH CÔNG ===== */}
+    {isSuccessModalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        style={{ animation: 'fadeIn 0.2s ease-out' }}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 text-center"
+          style={{ animation: 'scaleUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+        >
+          {/* Icon check */}
+          <div className="flex justify-center mb-5">
+            <div className="w-20 h-20 rounded-full bg-green-50 border-4 border-green-100 flex items-center justify-center">
+              <span
+                className="material-symbols-outlined text-5xl text-green-500"
+                style={{ fontVariationSettings: '"FILL" 1' }}
+              >
+                check_circle
+              </span>
+            </div>
+          </div>
+
+          {/* Tiêu đề */}
+          <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-1">
+            Đặt hàng thành công
+          </p>
+          <h2 className="font-headline text-2xl font-bold text-on-surface leading-tight">
+            Cảm ơn bạn đã tin tưởng<br />
+            <span className="text-primary">The Kinetic!</span>
+          </h2>
+
+          {/* Bill Summary */}
+          <div className="bg-gray-50 border border-outline-variant/20 rounded-xl mt-6 p-5 text-left space-y-3">
+            <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-3">
+              Chi tiết đơn hàng
+            </p>
+
+            {/* Số lượng sản phẩm */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-on-surface-variant">Số sản phẩm</span>
+              <span className="font-bold text-sm text-on-surface">
+                {orderSuccessData?.itemCount ?? cartItems.length} sản phẩm
+              </span>
+            </div>
+
+            {/* Phí ship */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-on-surface-variant">Phí vận chuyển</span>
+              <span className="font-bold text-sm text-tertiary">Miễn phí</span>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-outline-variant/20 pt-3 flex items-center justify-between">
+              <span className="text-sm font-bold text-on-surface">Tổng thanh toán</span>
+              <span className="font-headline text-xl font-bold text-primary">
+                {(orderSuccessData?.totalAmount ?? subtotal).toLocaleString('vi-VN')}₫
+              </span>
+            </div>
+
+            {/* Địa chỉ */}
+            {orderSuccessData?.shippingAddress && (
+              <div className="pt-2 border-t border-outline-variant/10">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-1">
+                  Giao đến
+                </p>
+                <p className="text-sm text-on-surface leading-relaxed">
+                  {orderSuccessData.shippingAddress}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Escrow note */}
+          <div className="flex items-start gap-2 mt-4 px-4 py-3 bg-tertiary/5 border border-tertiary/20 rounded-lg text-left">
+            <span className="material-symbols-outlined text-tertiary text-[18px] shrink-0 mt-0.5">verified_user</span>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Tiền của bạn được bảo vệ bởi <strong className="text-on-surface">Kinetic Escrow Vault</strong> — chỉ chuyển cho người bán sau khi bạn xác nhận nhận hàng.
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => {
+                setIsSuccessModalOpen(false);
+                navigate('/');
+              }}
+              className="flex-1 px-4 py-3 border-2 border-outline-variant text-on-surface font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-surface-container-low transition-colors"
+            >
+              Tiếp tục mua sắm
+            </button>
+            <button
+              onClick={() => {
+                setIsSuccessModalOpen(false);
+                navigate('/order');
+              }}
+              className="flex-1 px-4 py-3 bg-primary text-on-primary font-bold text-xs uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+              Xem đơn hàng
+            </button>
+          </div>
+        </div>
+
+        {/* Keyframe styles */}
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+          }
+          @keyframes scaleUp {
+            from { opacity: 0; transform: scale(0.88); }
+            to   { opacity: 1; transform: scale(1); }
+          }
+        `}</style>
+      </div>
+    )}
+    </>
   );
 }
