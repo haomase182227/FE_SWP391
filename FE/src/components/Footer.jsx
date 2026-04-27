@@ -271,7 +271,92 @@ export default function Footer() {
             ĐƯỜNG PHÂN CÁCH (DIVIDER)
             ═══════════════════════════════════════════════════════════════ */}
         <div className="border-t border-gray-800 mt-16 pt-8">
-          {/* TODO: Add Bottom Bar (Copyright & Legal) in next request */}
+          
+          {/* ═══════════════════════════════════════════════════════════════
+              BOTTOM BAR (LEGAL & COPYRIGHT)
+              ═══════════════════════════════════════════════════════════════ */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            
+            {/* PHẦN TRÁI: Bản quyền & Legal Links */}
+            <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+              {/* Copyright */}
+              <p className="text-sm text-gray-500">
+                © 2026 The Kinetic. All rights reserved.
+              </p>
+              
+              {/* Legal Links */}
+              <div className="flex items-center gap-1">
+                <span className="hidden md:inline text-gray-700">•</span>
+                <div className="flex items-center gap-4">
+                  <a
+                    href="#"
+                    className="text-sm text-gray-500 hover:text-orange-500 transition-colors"
+                  >
+                    Privacy Policy
+                  </a>
+                  <span className="text-gray-700">•</span>
+                  <a
+                    href="#"
+                    className="text-sm text-gray-500 hover:text-orange-500 transition-colors"
+                  >
+                    Terms of Service
+                  </a>
+                  <span className="text-gray-700">•</span>
+                  <a
+                    href="#"
+                    className="text-sm text-gray-500 hover:text-orange-500 transition-colors"
+                  >
+                    Cookie Policy
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* PHẦN PHẢI: Payment Methods & Trust Badges */}
+            <div className="flex items-center gap-6">
+              {/* Payment Methods */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-600 uppercase tracking-wider font-semibold">
+                  Thanh toán
+                </span>
+                <div className="flex items-center gap-2">
+                  {/* Visa */}
+                  <div className="w-10 h-7 bg-gray-900 rounded border border-gray-800 flex items-center justify-center">
+                    <svg className="w-6 h-6" viewBox="0 0 48 32" fill="none">
+                      <rect width="48" height="32" rx="4" fill="#1A1F71"/>
+                      <path d="M20.5 11h-3.2l-2 10h2l2-10zm7.3 6.5l1.1-3 .6 3h-1.7zm2.4 3.5h1.8l-1.6-10h-1.6c-.4 0-.7.2-.8.5l-2.8 9.5h2.1l.4-1.2h2.5v1.2zm-6.5-3.3c0-2.6-3.6-2.7-3.6-3.9 0-.4.4-.8 1.2-.9.4 0 1.5-.1 2.7.5l.5-2.3c-.7-.2-1.5-.5-2.6-.5-2.8 0-4.7 1.5-4.7 3.6 0 1.6 1.4 2.4 2.5 3 1.1.5 1.5.9 1.5 1.4 0 .7-.9 1-1.7 1-1.4 0-2.2-.4-2.8-.7l-.5 2.4c.6.3 1.8.5 3 .5 2.9 0 4.8-1.4 4.8-3.6l.2-.5z" fill="white"/>
+                    </svg>
+                  </div>
+                  {/* Mastercard */}
+                  <div className="w-10 h-7 bg-gray-900 rounded border border-gray-800 flex items-center justify-center">
+                    <svg className="w-6 h-6" viewBox="0 0 48 32" fill="none">
+                      <rect width="48" height="32" rx="4" fill="#000000"/>
+                      <circle cx="18" cy="16" r="7" fill="#EB001B"/>
+                      <circle cx="30" cy="16" r="7" fill="#F79E1B"/>
+                      <path d="M24 11.5c-1.3 1.2-2 2.9-2 4.5s.7 3.3 2 4.5c1.3-1.2 2-2.9 2-4.5s-.7-3.3-2-4.5z" fill="#FF5F00"/>
+                    </svg>
+                  </div>
+                  {/* PayPal */}
+                  <div className="w-10 h-7 bg-gray-900 rounded border border-gray-800 flex items-center justify-center">
+                    <svg className="w-6 h-4" viewBox="0 0 48 32" fill="none">
+                      <path d="M18.5 8h-5c-.3 0-.6.3-.7.6l-2 13c0 .3.2.5.4.5h2.5c.3 0 .6-.3.7-.6l.5-3.4c.1-.4.4-.6.7-.6h1.7c3.5 0 5.5-1.7 6-5 .2-1.4 0-2.6-.7-3.4-.8-.9-2.2-1.3-4.1-1.3zm.6 5c-.3 1.8-1.6 1.8-2.9 1.8h-.7l.5-3.2c0-.2.2-.4.4-.4h.4c1 0 1.9 0 2.4.6.3.3.4.8.3 1.4zm13.4 0h-2.5c-.2 0-.4.2-.4.4l-.1.6-.2-.3c-.5-.8-1.7-1-2.9-1-2.7 0-5 2-5.4 4.9-.2 1.4.1 2.8 1 3.7.8.8 1.9 1.2 3.2 1.2 2.3 0 3.5-1.5 3.5-1.5l-.1.6c0 .3.2.5.4.5h2.3c.3 0 .6-.3.7-.6l1.2-7.9c.1-.3-.1-.6-.4-.6zm-3.5 5c-.2 1.4-1.3 2.3-2.7 2.3-.7 0-1.2-.2-1.6-.6-.4-.4-.5-1-.4-1.6.2-1.3 1.3-2.3 2.7-2.3.7 0 1.2.2 1.6.6.4.4.6 1 .4 1.6z" fill="#139AD6"/>
+                      <path d="M38.5 8h-2.5c-.2 0-.4.2-.4.4l-.1.6-.2-.3c-.5-.8-1.7-1-2.9-1-2.7 0-5 2-5.4 4.9-.2 1.4.1 2.8 1 3.7.8.8 1.9 1.2 3.2 1.2 2.3 0 3.5-1.5 3.5-1.5l-.1.6c0 .3.2.5.4.5h2.3c.3 0 .6-.3.7-.6l1.2-7.9c.1-.3-.1-.6-.4-.6zm-3.5 5c-.2 1.4-1.3 2.3-2.7 2.3-.7 0-1.2-.2-1.6-.6-.4-.4-.5-1-.4-1.6.2-1.3 1.3-2.3 2.7-2.3.7 0 1.2.2 1.6.6.4.4.6 1 .4 1.6z" fill="#263B80"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Badge */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 rounded-lg border border-gray-800">
+                <span className="material-symbols-outlined text-emerald-500 text-[18px]" style={{ fontVariationSettings: '"FILL" 1' }}>
+                  verified_user
+                </span>
+                <span className="text-xs text-gray-400 font-semibold">
+                  Secured
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
