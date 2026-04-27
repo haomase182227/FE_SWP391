@@ -5,6 +5,7 @@ import TopNavBar from './components/TopNavBar';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
 import FloatingChatbot from './components/FloatingChatbot';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import BikeDetail from './pages/BikeDetail';
 import Wishlist from './pages/Buyer/Wishlist';
@@ -63,6 +64,7 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <ScrollToTop />
       {!hidePublicChrome && <TopNavBar />}
       <div className={isChatPage ? 'contents' : 'flex-grow'}>
         <Routes>
