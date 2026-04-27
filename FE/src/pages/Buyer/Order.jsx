@@ -17,6 +17,7 @@ export default function Order() {
   const [error, setError] = useState('');
   const [stats, setStats] = useState({
     totalOrders: 0,
+    paidOrders: 0,
     pendingOrders: 0,
     cancelledOrders: 0,
     receivedOrders: 0,
@@ -81,6 +82,7 @@ export default function Order() {
 
       setStats({
         totalOrders: data.totalOrders ?? ordersList.length,
+        paidOrders: data.paidOrders ?? ordersList.filter(o => o.status?.toLowerCase() === 'paid').length,
         pendingOrders: data.pendingOrders ?? 0,
         cancelledOrders: data.cancelledOrders ?? 0,
         receivedOrders: data.receivedOrders ?? 0,
@@ -490,11 +492,22 @@ export default function Order() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Total Orders */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {/* Total Orders — cộng dồn tất cả trạng thái */}
                 <div className="bg-surface-container-low rounded-lg p-4">
                   <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Total Orders</p>
-                  <p className="font-headline text-3xl font-bold text-on-surface mt-2">{stats.totalOrders}</p>
+                  <p className="font-headline text-3xl font-bold text-on-surface mt-2">
+                    {(stats.totalOrders ?? 0)}
+                  </p>
+                </div>
+
+                {/* Paid */}
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="material-symbols-outlined text-[16px] text-indigo-500">credit_card</span>
+                    <p className="text-[10px] uppercase tracking-widest text-indigo-700 font-bold">Paid</p>
+                  </div>
+                  <p className="font-headline text-3xl font-bold text-indigo-500 mt-0">{stats.paidOrders ?? 0}</p>
                 </div>
                 
                 {/* Completed */}
@@ -531,6 +544,15 @@ export default function Order() {
                 }`}
               >
                 All Orders
+              </button>
+              <button
+                onClick={() => setActiveStatus('paid')}
+                className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 inline-flex items-center gap-1.5 ${
+                  activeStatus === 'paid' ? 'text-indigo-500 border-b-indigo-500' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">credit_card</span>
+                Paid
               </button>
               <button
                 onClick={() => setActiveStatus('completed')}
@@ -723,6 +745,7 @@ export default function Order() {
                   const status = order.status?.toLowerCase() ?? '';
                   const canTakeAction = status === 'paid';
                   const isCompleted = status === 'completed';
+                  const isPaid = status === 'paid';
                   
                   // Lấy danh sách items từ order (API mới trả về mảng items)
                   const orderItems = order.items || [];
@@ -745,6 +768,12 @@ export default function Order() {
                             <span className="bg-blue-100 text-blue-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-blue-200">
                               <span className="material-symbols-outlined text-[14px]">payments</span>
                               Paid
+                            </span>
+                          )}
+                          {status === 'pending' && (
+                            <span className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-amber-200">
+                              <span className="material-symbols-outlined text-[14px]">hourglass_empty</span>
+                              Pending
                             </span>
                           )}
                           {status === 'completed' && (
@@ -912,6 +941,16 @@ export default function Order() {
                           </div>
                         )}
                       </div>
+
+                      {/* BANNER THÔNG BÁO CHO ĐƠN PAID — chờ giao hàng */}
+                      {isPaid && (
+                        <div className="flex items-center gap-2 mt-4 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                          <span className="material-symbols-outlined text-indigo-500 text-[20px] shrink-0">local_shipping</span>
+                          <p className="text-sm text-indigo-700 font-medium">
+                            Đơn hàng đã thanh toán — đang chờ giao đến bạn
+                          </p>
+                        </div>
+                      )}
 
                       {/* FOOTER ĐƠN HÀNG - NÚT COMPLETE/CANCEL */}
                       {canTakeAction && (
