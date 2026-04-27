@@ -16,6 +16,11 @@ export default function FloatingChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [sessionId, setSessionId] = useState(null);
+  
+  // History States
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -115,7 +120,7 @@ export default function FloatingChatbot() {
       }
 
       const newAssistantMsg = {
-        role: 'assistant',
+        role: 'model', // Đổi từ 'assistant' thành 'model' để tương thích với Gemini API
         content: responseData.answer || responseData.message || 'Xin lỗi, tôi không hiểu câu hỏi của bạn.',
         listings: responseData.recommendedListings || [],
         timestamp: new Date().toISOString(),
@@ -125,7 +130,7 @@ export default function FloatingChatbot() {
     } catch (err) {
       console.error('[Chatbot] Send message error:', err);
       const errorMsg = {
-        role: 'assistant',
+        role: 'model', // Đổi từ 'assistant' thành 'model'
         content: `Xin lỗi, đã có lỗi xảy ra: ${err.message}. Vui lòng thử lại sau.`,
         timestamp: new Date().toISOString(),
       };
@@ -150,6 +155,126 @@ export default function FloatingChatbot() {
     setIsOpen(false);
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHẦN 2: TÍCH HỢP 3 API LỊCH SỬ
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // 1. Fetch danh sách sessions
+  const fetchSessions = async () => {
+    if (!token) {
+      alert('Vui lòng đăng nhập để xem lịch sử!');
+      return;
+    }
+    
+    setLoadingSessions(true);
+    try {
+      const res = await fetch(`${API_BASE}/Chatbot/sessions`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      const sessionsList = Array.isArray(data) ? data : (data.sessions || []);
+      setSessions(sessionsList);
+    } catch (err) {
+      console.error('[Chatbot] Fetch sessions error:', err);
+      alert('Không thể tải lịch sử chat. Vui lòng thử lại!');
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  // 2. Load một session cụ thể
+  const loadSession = async (loadSessionId) => {
+    if (!token) return;
+    
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/Chatbot/sessions/${loadSessionId}/messages`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      const messagesList = Array.isArray(data) ? data : (data.messages || []);
+      
+      // Chuyển đổi format messages từ API sang format UI
+      // Lưu ý: Chỉ dùng role 'user' hoặc 'model' (không dùng 'assistant')
+      const formattedMessages = messagesList.map(msg => {
+        const isUserMessage = msg.role === 'user' || msg.role === 'USER' || msg.isUser === true;
+        return {
+          role: isUserMessage ? 'user' : 'model', // Đổi 'assistant' thành 'model'
+          content: msg.content || msg.message || '',
+          listings: msg.recommendedListings || [],
+          timestamp: msg.timestamp || msg.createdAt || new Date().toISOString(),
+        };
+      });
+      
+      setMessages(formattedMessages);
+      setSessionId(loadSessionId);
+      setIsHistoryOpen(false);
+      setIsOpen(true);
+    } catch (err) {
+      console.error('[Chatbot] Load session error:', err);
+      alert('Không thể tải cuộc trò chuyện. Vui lòng thử lại!');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 3. Xóa một session
+  const deleteSession = async (deleteSessionId, e) => {
+    e.stopPropagation(); // Ngăn không cho trigger loadSession
+    
+    if (!token) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa cuộc trò chuyện này?')) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/Chatbot/sessions/${deleteSessionId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      // Nếu session đang mở bị xóa, reset messages
+      if (sessionId === deleteSessionId) {
+        setMessages([]);
+        setSessionId(null);
+      }
+      
+      // Refresh danh sách sessions
+      await fetchSessions();
+    } catch (err) {
+      console.error('[Chatbot] Delete session error:', err);
+      alert('Không thể xóa cuộc trò chuyện. Vui lòng thử lại!');
+    }
+  };
+
+  // Fetch sessions khi mở History
+  useEffect(() => {
+    if (isHistoryOpen) {
+      fetchSessions();
+    }
+  }, [isHistoryOpen]);
+
   return (
     <>
       <style>{`
@@ -159,33 +284,177 @@ export default function FloatingChatbot() {
         }
       `}</style>
 
-      {/* FLOATING BUTTON */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center
-                   shadow-[0_0_20px_rgba(249,115,22,0.5)] hover:shadow-[0_0_30px_rgba(249,115,22,0.7)]
-                   transition-all duration-300 active:scale-95 group hover:bg-orange-700"
-        aria-label="Open AI Chatbot"
-      >
-        {isOpen ? (
-          <span className="material-symbols-outlined text-2xl">close</span>
-        ) : (
-          <span className="material-symbols-outlined text-2xl">smart_toy</span>
-        )}
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          PHẦN 3: CỤM NÚT FLOATING (HISTORY + CHAT)
+          ═══════════════════════════════════════════════════════════════════════════ */}
+      <div className="fixed bottom-6 right-6 z-50 flex gap-4">
+        {/* NÚT LỊCH SỬ (MỚI) */}
+        <button
+          onClick={() => {
+            setIsHistoryOpen(!isHistoryOpen);
+            setIsOpen(false);
+          }}
+          className="w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center
+                     shadow-lg hover:bg-orange-200 hover:shadow-xl
+                     transition-all duration-300 active:scale-95 group border-2 border-orange-200"
+          aria-label="Chat History"
+        >
+          <span className="material-symbols-outlined text-2xl">history</span>
+          
+          {/* Tooltip */}
+          {!isHistoryOpen && (
+            <div className="absolute bottom-full right-0 mb-2 bg-orange-600 text-white text-xs rounded-xl px-3 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
+              Lịch sử chat
+              <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-600" />
+            </div>
+          )}
+        </button>
 
-        {/* Tooltip */}
-        {!isOpen && (
-          <div className="absolute bottom-full right-0 mb-2 bg-orange-600 text-white text-xs rounded-xl px-3 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
-            Trợ lý AI
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-600" />
+        {/* NÚT CHAT (CŨ) */}
+        <button
+          onClick={() => {
+            setIsOpen(!isOpen);
+            setIsHistoryOpen(false);
+            // Khi bấm mở chat mới = reset messages & tạo sessionId mới
+            if (!isOpen) {
+              setMessages([]);
+              if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                setSessionId(crypto.randomUUID());
+              } else {
+                setSessionId(`session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+              }
+            }
+          }}
+          className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center
+                     shadow-[0_0_20px_rgba(249,115,22,0.5)] hover:shadow-[0_0_30px_rgba(249,115,22,0.7)]
+                     transition-all duration-300 active:scale-95 group hover:bg-orange-700"
+          aria-label="Open AI Chatbot"
+        >
+          {isOpen ? (
+            <span className="material-symbols-outlined text-2xl">close</span>
+          ) : (
+            <span className="material-symbols-outlined text-2xl">smart_toy</span>
+          )}
+
+          {/* Tooltip */}
+          {!isOpen && (
+            <div className="absolute bottom-full right-0 mb-2 bg-orange-600 text-white text-xs rounded-xl px-3 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
+              Trợ lý AI
+              <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-600" />
+            </div>
+          )}
+        </button>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          HISTORY MODAL (MỚI)
+          ═══════════════════════════════════════════════════════════════════════════ */}
+      {isHistoryOpen && (
+        <div
+          className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden z-50"
+          style={{ animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+        >
+          {/* HEADER */}
+          <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-5 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined text-xl">history</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Lịch sử trò chuyện</h3>
+                <p className="text-xs text-white/80">{sessions.length} cuộc hội thoại</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsHistoryOpen(false)}
+              className="p-1.5 hover:bg-white/20 rounded-lg transition-all duration-200"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
           </div>
-        )}
-      </button>
 
-      {/* CHAT WINDOW */}
+          {/* BODY - SESSIONS LIST */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+            {loadingSessions ? (
+              <div className="flex justify-center items-center h-full">
+                <span className="material-symbols-outlined animate-spin text-4xl text-orange-500">
+                  progress_activity
+                </span>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="flex justify-center items-center h-full">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+                    <span className="material-symbols-outlined text-4xl text-orange-500">chat_bubble</span>
+                  </div>
+                  <h4 className="font-bold text-lg text-gray-900">Chưa có lịch sử</h4>
+                  <p className="text-sm text-gray-500 max-w-xs">
+                    Các cuộc trò chuyện của bạn sẽ được lưu lại ở đây.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              sessions.map((session) => {
+                const sessionTitle = session.title || session.sessionTitle || 'Cuộc trò chuyện';
+                const createdDate = session.createdAt 
+                  ? new Date(session.createdAt).toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  : '—';
+                const messageCount = session.messageCount || session.messagesCount || 0;
+                const sessionIdValue = session.sessionId || session.id;
+
+                return (
+                  <div
+                    key={sessionIdValue}
+                    onClick={() => loadSession(sessionIdValue)}
+                    className="relative p-4 bg-white border border-gray-100 rounded-xl cursor-pointer hover:border-orange-500 hover:shadow-md transition-all group"
+                  >
+                    {/* Content */}
+                    <div className="pr-10">
+                      <h4 className="font-bold text-sm text-gray-900 truncate mb-1">
+                        {sessionTitle}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="material-symbols-outlined text-[14px]">schedule</span>
+                        <span>{createdDate}</span>
+                      </div>
+                      {messageCount > 0 && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-bold">
+                            <span className="material-symbols-outlined text-[12px]">chat</span>
+                            {messageCount} tin nhắn
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => deleteSession(sessionIdValue, e)}
+                      className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      title="Xóa cuộc trò chuyện"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════════
+          CHAT WINDOW (CŨ - ĐÃ CẬP NHẬT TÔNG CAM)
+          ═══════════════════════════════════════════════════════════════════════════ */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden z-50"
+          className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden z-50"
           style={{ animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
         >
           {/* HEADER */}
@@ -242,7 +511,7 @@ export default function FloatingChatbot() {
                   </div>
 
                   {/* Product recommendations */}
-                  {msg.role === 'assistant' && msg.listings && msg.listings.length > 0 && (
+                  {msg.role !== 'user' && msg.listings && msg.listings.length > 0 && (
                     <div className="mt-3 space-y-2">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide px-2">
                         Gợi ý sản phẩm
@@ -345,7 +614,7 @@ export default function FloatingChatbot() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Nhập câu hỏi của bạn..."
                 disabled={isLoading}
-                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 text-sm transition-all duration-200 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-sm transition-all duration-200 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
