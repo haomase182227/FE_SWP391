@@ -211,10 +211,67 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Placeholder for last column - will be added in next request */}
+          {/* ═══════════════════════════════════════════════════════════════
+              CỘT 4: HỆ SINH THÁI (THE KINETIC ECOSYSTEM)
+              ═══════════════════════════════════════════════════════════════ */}
           <div>
-            {/* TODO: Add company info or legal column */}
+            <h3 className="text-white font-bold text-lg mb-6 uppercase tracking-wider">
+              Hệ sinh thái
+            </h3>
+            <ul className="space-y-4">
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors">
+                    engineering
+                  </span>
+                  Tech Specs Library
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors">
+                    public
+                  </span>
+                  Global Logistics
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors">
+                    smart_toy
+                  </span>
+                  Chương trình kiểm định AI
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors" style={{ fontVariationSettings: '"FILL" 1' }}>
+                    workspace_premium
+                  </span>
+                  Câu lạc bộ Kinetic Elite
+                </a>
+              </li>
+            </ul>
           </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ĐƯỜNG PHÂN CÁCH (DIVIDER)
+            ═══════════════════════════════════════════════════════════════ */}
+        <div className="border-t border-gray-800 mt-16 pt-8">
+          {/* TODO: Add Bottom Bar (Copyright & Legal) in next request */}
         </div>
       </div>
 
