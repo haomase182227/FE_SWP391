@@ -49,15 +49,6 @@ const LNG = 106.80994162985021;
 export default function Support() {
   const [activeTab, setActiveTab] = useState('terms');
   const [openIndex, setOpenIndex] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [sent, setSent] = useState(false);
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    setSent(true);
-    setForm({ name: '', email: '', subject: '', message: '' });
-    setTimeout(() => setSent(false), 4000);
-  }
 
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body pt-20">
@@ -154,149 +145,78 @@ export default function Support() {
 
         {/* ── CONTACT TAB ── */}
         {activeTab === 'contact' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Left: Form */}
-            <div>
-              <h2 className="text-2xl font-headline font-bold tracking-tight mb-2">Gửi tin nhắn</h2>
-              <p className="text-on-surface-variant text-sm mb-8">
-                Đội ngũ hỗ trợ sẽ phản hồi trong vòng <span className="font-semibold text-on-surface">24 giờ</span> làm việc.
-              </p>
-
-              {sent && (
-                <div className="mb-6 p-4 bg-tertiary-container/40 text-on-tertiary-container rounded-xl flex items-center gap-3 text-sm font-bold">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: '"FILL" 1' }}>check_circle</span>
-                  Tin nhắn đã được gửi thành công!
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                      Họ tên
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30"
-                      placeholder="Nguyễn Văn A"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                      Email
-                    </label>
-                    <input
-                      required
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30"
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                    Chủ đề
-                  </label>
-                  <select
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30"
-                  >
-                    <option value="">Chọn chủ đề...</option>
-                    <option>Hỗ trợ giao dịch</option>
-                    <option>Vấn đề tài khoản</option>
-                    <option>Khiếu nại / Tranh chấp</option>
-                    <option>Dịch vụ kiểm định</option>
-                    <option>Khác</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                    Nội dung
-                  </label>
-                  <textarea
-                    required
-                    rows={5}
-                    value={form.message}
-                    onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500/30 resize-none"
-                    placeholder="Mô tả chi tiết vấn đề của bạn..."
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-orange-500 text-white font-headline font-bold uppercase tracking-widest text-xs rounded-lg shadow-lg hover:bg-orange-600 transition-all active:scale-95"
-                >
-                  Gửi tin nhắn
-                </button>
-              </form>
-
-              {/* Contact info */}
-              <div className="mt-8 space-y-3">
-                {[
-                  { icon: 'mail', label: 'support@velocekinetic.vn' },
-                  { icon: 'phone', label: '+84 28 3456 7890' },
-                  { icon: 'schedule', label: 'Thứ 2 – Thứ 6, 8:00 – 18:00 (GMT+7)' },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-3 text-sm text-on-surface-variant">
-                    <span className="material-symbols-outlined text-orange-600 text-base">{item.icon}</span>
-                    {item.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: Map + Address */}
+          <div className="max-w-2xl mx-auto">
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-headline font-bold tracking-tight mb-2">Văn phòng</h2>
-                <p className="text-on-surface-variant text-sm mb-6">
-                  Ghé thăm chúng tôi tại địa chỉ bên dưới hoặc đặt lịch hẹn trước qua email.
+                <h2 className="text-2xl font-headline font-bold tracking-tight mb-2">Thông tin liên hệ</h2>
+                <p className="text-on-surface-variant text-sm mb-8">
+                  Đội ngũ hỗ trợ sẽ phản hồi trong vòng <span className="font-semibold text-on-surface">24 giờ</span> làm việc.
                 </p>
               </div>
 
-              {/* Map */}
-              <div className="rounded-xl overflow-hidden border border-outline-variant/20" style={{ height: '320px' }}>
-                <iframe
-                  title="Veloce Kinetic Office"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=${LAT},${LNG}&z=16&output=embed`}
-                />
+              {/* Contact info */}
+              <div className="bg-white rounded-xl p-6 shadow-md space-y-4">
+                {[
+                  { icon: 'mail', label: 'Email', value: 'support@velocekinetic.vn' },
+                  { icon: 'phone', label: 'Điện thoại', value: '+84 28 3456 7890' },
+                  { icon: 'schedule', label: 'Giờ làm việc', value: 'Thứ 2 – Thứ 6, 8:00 – 18:00 (GMT+7)' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-orange-600 text-xl">{item.icon}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">{item.label}</p>
+                      <p className="text-base font-medium text-on-surface">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Address card */}
-              <div className="bg-surface-container-lowest rounded-xl p-6 flex gap-4 items-start" style={{ boxShadow: '0 4px 20px rgba(78,33,32,0.05)' }}>
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-orange-600 text-base">location_on</span>
+              {/* Map */}
+              <div>
+                <h3 className="text-xl font-headline font-bold tracking-tight mb-4">Văn phòng</h3>
+                <p className="text-on-surface-variant text-sm mb-4">
+                  Ghé thăm chúng tôi tại địa chỉ bên dưới hoặc liên hệ qua email/điện thoại.
+                </p>
+                
+                <div className="rounded-xl overflow-hidden border border-outline-variant/20 mb-4" style={{ height: '320px' }}>
+                  <iframe
+                    title="Veloce Kinetic Office"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps?q=${LAT},${LNG}&z=16&output=embed`}
+                  />
                 </div>
-                <div>
-                  <p className="font-headline font-bold text-sm mb-1">The Kinetic Editorial</p>
-                  <p className="text-xs text-on-surface-variant leading-relaxed">
-                    Khu Công nghệ cao, Quận 9<br />
-                    TP. Hồ Chí Minh, Việt Nam<br />
-                    <span className="font-mono text-[10px] text-orange-600 mt-1 block">
-                      {LAT.toFixed(6)}, {LNG.toFixed(6)}
-                    </span>
-                  </p>
-                  <a
-                    href={`https://www.google.com/maps?q=${LAT},${LNG}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold uppercase tracking-widest text-orange-600 hover:underline"
-                  >
-                    Mở trong Google Maps
-                    <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  </a>
+
+                {/* Address card */}
+                <div className="bg-surface-container-lowest rounded-xl p-6 flex gap-4 items-start shadow-md">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-orange-600 text-base">location_on</span>
+                  </div>
+                  <div>
+                    <p className="font-headline font-bold text-sm mb-1">The Kinetic Editorial</p>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                      Khu Công nghệ cao, Quận 9<br />
+                      TP. Hồ Chí Minh, Việt Nam<br />
+                      <span className="font-mono text-[10px] text-orange-600 mt-1 block">
+                        {LAT.toFixed(6)}, {LNG.toFixed(6)}
+                      </span>
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps?q=${LAT},${LNG}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold uppercase tracking-widest text-orange-600 hover:underline"
+                    >
+                      Mở trong Google Maps
+                      <span className="material-symbols-outlined text-sm">open_in_new</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
