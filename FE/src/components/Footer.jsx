@@ -126,40 +126,40 @@ export default function Footer() {
             </h3>
             <ul className="space-y-4">
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/search?category=road"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Xe đạp đua (Road)
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/search?category=mtb"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Xe đạp địa hình (MTB)
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/search?category=touring"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Xe đạp đường phố (Touring)
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/search?category=parts"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Phụ tùng & Linh kiện
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -173,40 +173,40 @@ export default function Footer() {
             </h3>
             <ul className="space-y-4">
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/support"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Trung tâm trợ giúp
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/support"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Hướng dẫn mua hàng
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/support"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Chính sách đổi trả
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/support"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
                   Tra cứu bảo hành
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -220,48 +220,48 @@ export default function Footer() {
             </h3>
             <ul className="space-y-4">
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/coming-soon"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors">
                     engineering
                   </span>
                   Tech Specs Library
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/coming-soon"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors">
                     public
                   </span>
                   Global Logistics
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/coming-soon"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors">
                     smart_toy
                   </span>
                   Chương trình kiểm định AI
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/coming-soon"
                   className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
                 >
                   <span className="material-symbols-outlined text-[16px] text-gray-600 group-hover:text-orange-500 transition-colors" style={{ fontVariationSettings: '"FILL" 1' }}>
                     workspace_premium
                   </span>
                   Câu lạc bộ Kinetic Elite
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -288,26 +288,26 @@ export default function Footer() {
               <div className="flex items-center gap-1">
                 <span className="hidden md:inline text-gray-700">•</span>
                 <div className="flex items-center gap-4">
-                  <a
-                    href="#"
+                  <Link
+                    to="/coming-soon"
                     className="text-sm text-gray-500 hover:text-orange-500 transition-colors"
                   >
                     Privacy Policy
-                  </a>
+                  </Link>
                   <span className="text-gray-700">•</span>
-                  <a
-                    href="#"
+                  <Link
+                    to="/coming-soon"
                     className="text-sm text-gray-500 hover:text-orange-500 transition-colors"
                   >
                     Terms of Service
-                  </a>
+                  </Link>
                   <span className="text-gray-700">•</span>
-                  <a
-                    href="#"
+                  <Link
+                    to="/coming-soon"
                     className="text-sm text-gray-500 hover:text-orange-500 transition-colors"
                   >
                     Cookie Policy
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
