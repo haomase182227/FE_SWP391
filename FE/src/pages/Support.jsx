@@ -21,7 +21,11 @@ const TERMS = [
     content:
       'Veloce Kinetic cung cấp dịch vụ kiểm định 48 điểm kỹ thuật bởi các kỹ thuật viên được chứng nhận. Chứng nhận kiểm định không đảm bảo tình trạng hoàn hảo nhưng xác nhận xe đáp ứng tiêu chuẩn tối thiểu của nền tảng.',
   },
-
+  {
+    title: '5. Chính sách hoàn tiền',
+    content:
+      'Người mua có quyền yêu cầu hoàn tiền trong vòng 48 giờ sau khi nhận hàng nếu xe không đúng mô tả. Tranh chấp sẽ được đội ngũ hỗ trợ Veloce Kinetic xem xét và giải quyết trong vòng 5 ngày làm việc.',
+  },
   {
     title: '6. Phí dịch vụ',
     content:
