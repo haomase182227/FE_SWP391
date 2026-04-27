@@ -79,7 +79,9 @@ export default function Footer() {
             {/* Social Media Icons */}
             <div className="flex items-center gap-4 pt-2">
               <a
-                href="#"
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-900 hover:bg-orange-500 flex items-center justify-center transition-all duration-300 group"
                 aria-label="Facebook"
               >
@@ -88,7 +90,9 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-900 hover:bg-orange-500 flex items-center justify-center transition-all duration-300 group"
                 aria-label="Instagram"
               >
@@ -97,7 +101,9 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-900 hover:bg-orange-500 flex items-center justify-center transition-all duration-300 group"
                 aria-label="Twitter"
               >
@@ -106,7 +112,9 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-900 hover:bg-orange-500 flex items-center justify-center transition-all duration-300 group"
                 aria-label="YouTube"
               >
