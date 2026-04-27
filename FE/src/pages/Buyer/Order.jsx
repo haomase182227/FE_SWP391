@@ -490,24 +490,27 @@ export default function Order() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Total Orders */}
                 <div className="bg-surface-container-low rounded-lg p-4">
                   <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Total Orders</p>
                   <p className="font-headline text-3xl font-bold text-on-surface mt-2">{stats.totalOrders}</p>
                 </div>
+                
+                {/* Completed */}
                 <div className="bg-surface-container-low rounded-lg p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Pending</p>
-                  <p className="font-headline text-3xl font-bold text-secondary mt-2">{stats.pendingOrders}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Completed</p>
+                  <p className="font-headline text-3xl font-bold text-tertiary mt-2">{stats.receivedOrders}</p>
                 </div>
+                
+                {/* Cancelled */}
                 <div className="bg-surface-container-low rounded-lg p-4">
                   <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Cancelled</p>
                   <p className="font-headline text-3xl font-bold text-error mt-2">{stats.cancelledOrders}</p>
                 </div>
+                
+                {/* Total Value */}
                 <div className="bg-surface-container-low rounded-lg p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Received</p>
-                  <p className="font-headline text-3xl font-bold text-tertiary mt-2">{stats.receivedOrders}</p>
-                </div>
-                <div className="bg-surface-container-low rounded-lg p-4 md:col-span-2">
                   <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Total Value</p>
                   <p className="font-headline text-2xl font-bold text-primary mt-2">
                     {stats.totalValue.toLocaleString('vi-VN')}₫
@@ -520,57 +523,49 @@ export default function Order() {
 
         {!loading && !error && (
           <div className="max-w-screen-2xl mx-auto px-8 py-8">
-            <div className="flex flex-wrap items-center gap-2 mb-8 pb-0 border-b border-outline-variant/20">
+            <div className="flex flex-wrap items-center gap-3 mb-8 pb-0 border-b border-outline-variant/20">
               <button
                 onClick={() => setActiveStatus('all')}
-                className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'all' ? 'text-primary border-b-primary' : 'text-on-surface-variant border-b-transparent'
+                className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                  activeStatus === 'all' ? 'text-primary border-b-primary' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 All Orders
               </button>
               <button
-                onClick={() => setActiveStatus('pending')}
-                className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'pending' ? 'text-secondary border-b-secondary' : 'text-on-surface-variant border-b-transparent'
-                }`}
-              >
-                Pending
-              </button>
-              <button
                 onClick={() => setActiveStatus('completed')}
-                className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'completed' ? 'text-tertiary border-b-tertiary' : 'text-on-surface-variant border-b-transparent'
+                className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                  activeStatus === 'completed' ? 'text-tertiary border-b-tertiary' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 Completed
               </button>
               <button
                 onClick={() => setActiveStatus('cancelled')}
-                className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'cancelled' ? 'text-error border-b-error' : 'text-on-surface-variant border-b-transparent'
+                className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                  activeStatus === 'cancelled' ? 'text-error border-b-error' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
                 Cancelled
               </button>
               <button
                 onClick={() => setActiveStatus('reviews')}
-                className={`ml-auto px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'reviews' ? 'text-purple-600 border-b-purple-600' : 'text-on-surface-variant border-b-transparent'
+                className={`ml-auto px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                  activeStatus === 'reviews' ? 'text-purple-600 border-b-purple-600' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px]">rate_review</span>
                   Reviews
                 </span>
               </button>
               <button
                 onClick={() => setActiveStatus('reports')}
-                className={`px-4 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
-                  activeStatus === 'reports' ? 'text-red-600 border-b-red-600' : 'text-on-surface-variant border-b-transparent'
+                className={`px-5 py-3 font-bold text-sm uppercase tracking-tight transition-all border-b-2 ${
+                  activeStatus === 'reports' ? 'text-red-600 border-b-red-600' : 'text-on-surface-variant border-b-transparent hover:text-on-surface'
                 }`}
               >
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px]">flag</span>
                   Reports
                 </span>
@@ -726,7 +721,7 @@ export default function Order() {
                 {filteredOrders.map((order) => {
                   const orderId = order.orderId ?? order.id;
                   const status = order.status?.toLowerCase() ?? '';
-                  const canTakeAction = status === 'pending' || status === 'paid';
+                  const canTakeAction = status === 'paid';
                   const isCompleted = status === 'completed';
                   
                   // Lấy danh sách items từ order (API mới trả về mảng items)
@@ -746,14 +741,8 @@ export default function Order() {
                         
                         {/* Trạng thái đơn hàng */}
                         <div className="flex items-center gap-2">
-                          {status === 'pending' && (
-                            <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[14px]">schedule</span>
-                              Pending
-                            </span>
-                          )}
                           {status === 'paid' && (
-                            <span className="bg-secondary text-on-secondary text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                            <span className="bg-blue-100 text-blue-700 text-[10px] font-bold uppercase px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-blue-200">
                               <span className="material-symbols-outlined text-[14px]">payments</span>
                               Paid
                             </span>
@@ -813,7 +802,8 @@ export default function Order() {
                                   </p>
                                 </div>
 
-                                {/* NÚT ĐÁNH GIÁ CHO TỪNG ITEM - CHỈ HIỂN THỊ KHI COMPLETED */}
+                                {/* NÚT ĐÁNH GIÁ VÀ TỐ CÁO */}
+                                {/* Hiển thị nút RATE chỉ khi Completed */}
                                 {isCompleted && (
                                   <div className="flex items-center flex-wrap gap-2 mt-3">
                                     {reviewCount === 0 ? (
@@ -873,9 +863,13 @@ export default function Order() {
                                         Rated
                                       </button>
                                     )}
+                                  </div>
+                                )}
 
-                                    {/* NÚT REPORT - CHỈ HIỂN THỊ KHI ĐÃ ĐÁNH GIÁ (reviewCount > 0) */}
-                                    {reviewCount > 0 && (() => {
+                                {/* NÚT REPORT - HIỂN THỊ KHI COMPLETED HOẶC CANCELLED (KHÔNG CẦN ĐÁNH GIÁ) */}
+                                {(status === 'completed' || status === 'cancelled') && (
+                                  <div className="flex items-center flex-wrap gap-2 mt-3">
+                                    {(() => {
                                       const alreadyReported = reportHistory.some(
                                         r => (r.orderId === orderId || r.orderId === String(orderId))
                                       );

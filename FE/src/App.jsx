@@ -4,6 +4,7 @@ import { useAuth } from './pages/Context/AuthContext';
 import TopNavBar from './components/TopNavBar';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
+import FloatingChatbot from './components/FloatingChatbot';
 import Home from './pages/Home';
 import BikeDetail from './pages/BikeDetail';
 import Wishlist from './pages/Buyer/Wishlist';
@@ -105,6 +106,9 @@ function AppContent() {
       </div>
       {!hidePublicChrome && !isChatPage && <Footer />}
       {!hidePublicChrome && !isChatPage && <MobileNav />}
+      
+      {/* Floating Chatbot - Hiển thị trên tất cả các trang công khai */}
+      {!hidePublicChrome && !isChatPage && <FloatingChatbot />}
     </div>
   );
 }
