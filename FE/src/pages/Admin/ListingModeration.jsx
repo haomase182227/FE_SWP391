@@ -7,11 +7,11 @@ const PENDING_PAGE_SIZE = 5;
 const ALL_PAGE_SIZE = 10;
 
 const STATUS_BADGE = {
-  Pending:   'bg-orange-500/10 text-orange-600',
-  Approved:  'bg-tertiary/10 text-tertiary',
-  Rejected:  'bg-error/10 text-error',
-  Sold:      'bg-purple-500/10 text-purple-600',
-  PendingInspection: 'bg-blue-500/10 text-blue-600',
+  Pending:           'bg-amber-400/20 text-amber-700 border border-amber-400/40 shadow-[0_0_8px_rgba(251,191,36,0.25)]',
+  Approved:          'bg-emerald-500/20 text-emerald-700 border border-emerald-400/40 shadow-[0_0_8px_rgba(52,211,153,0.25)]',
+  Rejected:          'bg-red-500/20 text-red-700 border border-red-400/40 shadow-[0_0_8px_rgba(239,68,68,0.25)]',
+  Sold:              'bg-purple-500/20 text-purple-700 border border-purple-400/40 shadow-[0_0_8px_rgba(139,92,246,0.25)]',
+  PendingInspection: 'bg-blue-500/20 text-blue-700 border border-blue-400/40 shadow-[0_0_8px_rgba(59,130,246,0.25)]',
 };
 
 function formatPrice(p) {
@@ -390,14 +390,22 @@ export default function ListingModeration() {
 
         {/* ── BẢNG 1: PENDING ── */}
         <section>
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
-                Chờ duyệt
-              </h2>
-              <p className="text-xs text-on-surface-variant mt-1">
-                {pendingTotal} listing đang chờ xử lý
-              </p>
+          <div className="flex items-end justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 4px 14px rgba(245,158,11,0.45)' }}>
+                <span className="material-symbols-outlined text-white text-xl">pending_actions</span>
+              </div>
+              <div>
+                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
+                  Chờ duyệt
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+                    {pendingTotal} listing đang chờ xử lý
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
 
@@ -405,11 +413,11 @@ export default function ListingModeration() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Listing</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Giá</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Ngày tạo</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Thao tác</th>
+                  <tr className="bg-amber-50/60">
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-amber-700">Listing</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-amber-700">Giá</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-amber-700">Ngày tạo</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-amber-700 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-low">
@@ -484,18 +492,29 @@ export default function ListingModeration() {
 
         {/* ── BẢNG 2: TẤT CẢ LISTING ĐÃ ĐƯỢC ADMIN XỬ LÝ ── */}
         <section>
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
-                TẤT CẢ LISTING ĐÃ ĐƯỢC ADMIN XỬ LÝ 
-              </h2>
-              <p className="text-xs text-on-surface-variant mt-1">{allTotal} listing</p>
+          <div className="flex items-end justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#4e2120,#7c3a39)', boxShadow: '0 4px 14px rgba(78,33,32,0.45)' }}>
+                <span className="material-symbols-outlined text-white text-xl">list_alt</span>
+              </div>
+              <div>
+                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
+                  Tất cả listing đã xử lý
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-0.5">{allTotal} listing</p>
+              </div>
             </div>
             {/* Filter by status */}
-            <div className="flex items-center gap-2">
-              {[['__all__', 'Tất cả'], ['Approved', 'Approved'], ['Rejected', 'Rejected'], ['Sold', 'Sold']].map(([val, label]) => (
+            <div className="flex items-center gap-2 p-1 rounded-2xl" style={{ background: 'rgba(78,33,32,0.06)' }}>
+              {[
+                { val: '__all__', label: 'Tất cả',  icon: 'apps',          active: 'bg-on-surface text-surface',                                                                inactive: 'text-on-surface-variant hover:text-on-surface' },
+                { val: 'Approved', label: 'Approved', icon: 'check_circle', active: 'bg-emerald-600 text-white shadow-[0_4px_12px_rgba(5,150,105,0.5)]',                         inactive: 'text-emerald-700 hover:bg-emerald-50' },
+                { val: 'Rejected', label: 'Rejected', icon: 'cancel',       active: 'bg-red-600 text-white shadow-[0_4px_12px_rgba(220,38,38,0.5)]',                             inactive: 'text-red-700 hover:bg-red-50' },
+                { val: 'Sold',     label: 'Sold',     icon: 'sell',         active: 'bg-purple-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.5)]',                         inactive: 'text-purple-700 hover:bg-purple-50' },
+              ].map(({ val, label, icon, active, inactive }) => (
                 <button key={val} onClick={() => { setFilterStatus(val); setAllPage(1); }}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${filterStatus === val ? 'bg-primary text-on-primary' : 'border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low'}`}>
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-200 ${filterStatus === val ? active : inactive}`}>
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>{icon}</span>
                   {label}
                 </button>
               ))}
@@ -506,12 +525,12 @@ export default function ListingModeration() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Listing</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Giá</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Trạng thái</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Ngày tạo</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Chi tiết / Thao tác</th>
+                  <tr className="bg-primary/8" style={{ background: 'rgba(78,33,32,0.05)' }}>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-primary/70">Listing</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-primary/70">Giá</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-primary/70">Trạng thái</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-primary/70">Ngày tạo</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-primary/70 text-right">Chi tiết / Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-low">
@@ -545,7 +564,10 @@ export default function ListingModeration() {
                         <p className="font-headline text-sm font-bold text-on-surface">{formatPrice(item.price)}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[item.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${STATUS_BADGE[item.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                          <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: '"FILL" 1' }}>
+                            {item.status === 'Approved' ? 'check_circle' : item.status === 'Rejected' ? 'cancel' : item.status === 'Sold' ? 'sell' : item.status === 'PendingInspection' ? 'search' : 'schedule'}
+                          </span>
                           {item.status}
                         </span>
                       </td>
@@ -582,12 +604,17 @@ export default function ListingModeration() {
 
         {/* ── BẢNG 3: BIKE CATEGORIES ── */}
         <section>
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
-                Danh mục xe đạp
-              </h2>
-              <p className="text-xs text-on-surface-variant mt-1">{categories.length} danh mục</p>
+          <div className="flex items-end justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.45)' }}>
+                <span className="material-symbols-outlined text-white text-xl">category</span>
+              </div>
+              <div>
+                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter uppercase">
+                  Danh mục xe đạp
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-0.5">{categories.length} danh mục</p>
+              </div>
             </div>
             <button onClick={() => { setShowCatCreate(true); setCatCreateName(''); setCatCreateDesc(''); setCatCreateError(''); }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity">
@@ -600,11 +627,11 @@ export default function ListingModeration() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">ID</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Tên danh mục</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant">Mô tả</th>
-                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-on-surface-variant text-right">Thao tác</th>
+                  <tr style={{ background: 'rgba(8,145,178,0.06)' }}>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-cyan-700">ID</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-cyan-700">Tên danh mục</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-cyan-700">Mô tả</th>
+                    <th className="px-6 py-4 font-label uppercase text-[10px] tracking-widest text-cyan-700 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-low">

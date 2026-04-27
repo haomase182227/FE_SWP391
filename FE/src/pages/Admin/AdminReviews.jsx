@@ -5,310 +5,318 @@ import AdminSidebar from '../../components/AdminSidebar';
 
 const API_BASE = '/api/v1';
 
+/* ── Rating helpers ─────────────────────────────────────────── */
+const RATING_CFG = {
+  5: { label: 'Xuất sắc',  cls: 'bg-emerald-100 text-emerald-700 border border-emerald-300', bar: 'bg-emerald-500', card: 'border-l-emerald-400', glow: 'rgba(16,185,129,0.12)' },
+  4: { label: 'Tốt',       cls: 'bg-blue-100 text-blue-700 border border-blue-300',          bar: 'bg-blue-500',    card: 'border-l-blue-400',    glow: 'rgba(59,130,246,0.12)' },
+  3: { label: 'Trung bình',cls: 'bg-amber-100 text-amber-700 border border-amber-300',       bar: 'bg-amber-500',   card: 'border-l-amber-400',   glow: 'rgba(245,158,11,0.12)' },
+  2: { label: 'Kém',       cls: 'bg-orange-100 text-orange-700 border border-orange-300',    bar: 'bg-orange-500',  card: 'border-l-orange-400',  glow: 'rgba(249,115,22,0.12)' },
+  1: { label: 'Tệ',        cls: 'bg-red-100 text-red-700 border border-red-300',             bar: 'bg-red-500',     card: 'border-l-red-400',     glow: 'rgba(239,68,68,0.12)'  },
+};
+
+const getRatingCfg = (r) => RATING_CFG[r] ?? RATING_CFG[3];
+
 export default function AdminReviews() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const token = currentUser?.token;
 
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews]     = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError]         = useState('');
   const [stats, setStats] = useState({
-    total: 0,
-    averageRating: 0,
-    fiveStars: 0,
-    fourStars: 0,
-    threeStars: 0,
-    twoStars: 0,
-    oneStar: 0
+    total: 0, averageRating: 0,
+    fiveStars: 0, fourStars: 0, threeStars: 0, twoStars: 0, oneStar: 0,
   });
 
-  // Gọi API lấy danh sách đánh giá
   useEffect(() => {
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-
+    if (!token) { setIsLoading(false); return; }
     const fetchReviews = async () => {
-      setIsLoading(true);
-      setError('');
+      setIsLoading(true); setError('');
       try {
-        const response = await fetch(`${API_BASE}/admin/orders/reviews`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'accept': '*/*'
-          }
+        const res = await fetch(`${API_BASE}/admin/orders/reviews`, {
+          headers: { Authorization: `Bearer ${token}`, accept: '*/*' },
         });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            setReviews([]);
-            return;
-          }
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('[AdminReviews] API Response:', data);
-        
-        // API có thể trả về mảng trực tiếp hoặc object chứa mảng
-        const reviewList = Array.isArray(data) ? data : (data.reviews || []);
-        setReviews(reviewList);
-
-        // Tính toán thống kê
-        if (reviewList.length > 0) {
-          const totalRating = reviewList.reduce((sum, r) => sum + (r.rating || 0), 0);
-          const avgRating = (totalRating / reviewList.length).toFixed(1);
-          
+        if (!res.ok) { if (res.status === 404) { setReviews([]); return; } throw new Error(`HTTP ${res.status}`); }
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.reviews || []);
+        setReviews(list);
+        if (list.length > 0) {
+          const avg = (list.reduce((s, r) => s + (r.rating || 0), 0) / list.length).toFixed(1);
           setStats({
-            total: reviewList.length,
-            averageRating: avgRating,
-            fiveStars: reviewList.filter(r => r.rating === 5).length,
-            fourStars: reviewList.filter(r => r.rating === 4).length,
-            threeStars: reviewList.filter(r => r.rating === 3).length,
-            twoStars: reviewList.filter(r => r.rating === 2).length,
-            oneStar: reviewList.filter(r => r.rating === 1).length
+            total: list.length, averageRating: avg,
+            fiveStars:  list.filter(r => r.rating === 5).length,
+            fourStars:  list.filter(r => r.rating === 4).length,
+            threeStars: list.filter(r => r.rating === 3).length,
+            twoStars:   list.filter(r => r.rating === 2).length,
+            oneStar:    list.filter(r => r.rating === 1).length,
           });
         }
-      } catch (err) {
-        console.error('[AdminReviews] Fetch error:', err);
-        setError(err.message || 'Không thể tải danh sách đánh giá');
-        setReviews([]);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (e) { setError(e.message || 'Không thể tải đánh giá'); setReviews([]); }
+      finally { setIsLoading(false); }
     };
-
     fetchReviews();
   }, [token]);
 
-  // Format ngày tháng
-  const formatDate = (dateString) => {
-    if (!dateString) return '—';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return '—';
-    }
+  const formatDate = (d) => {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    catch { return '—'; }
   };
 
-  if (!token) {
-    return (
-      <main className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-gray-500">Vui lòng đăng nhập để xem đánh giá.</p>
-          <button
-            onClick={() => navigate('/auth')}
-            className="px-6 py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
-          >
-            Đăng nhập
-          </button>
-        </div>
-      </main>
-    );
-  }
+  if (!token) return (
+    <main className="min-h-screen bg-[#fff4f3] flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <p className="text-on-surface-variant">Vui lòng đăng nhập để xem đánh giá.</p>
+        <button onClick={() => navigate('/auth')} className="px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:opacity-90">Đăng nhập</button>
+      </div>
+    </main>
+  );
+
+  /* ── Stat cards config ──────────────────────────────────── */
+  const statCards = [
+    {
+      label: 'Tổng đánh giá',
+      value: stats.total,
+      icon: 'rate_review',
+      gradient: 'linear-gradient(135deg,#4e2120,#9b3a38)',
+      glow: '0 12px 40px rgba(78,33,32,0.35)',
+      accent: '#fecaca', sub2: '#fca5a5',
+      sub: 'All reviews',
+    },
+    {
+      label: 'Điểm trung bình',
+      value: `${stats.averageRating} ⭐`,
+      icon: 'star',
+      gradient: 'linear-gradient(135deg,#b45309,#f59e0b)',
+      glow: '0 12px 40px rgba(245,158,11,0.35)',
+      accent: '#fde68a', sub2: '#fcd34d',
+      sub: 'Average rating',
+    },
+    {
+      label: '5 Sao',
+      value: stats.fiveStars,
+      icon: 'star',
+      gradient: 'linear-gradient(135deg,#065f46,#10b981)',
+      glow: '0 12px 40px rgba(16,185,129,0.35)',
+      accent: '#a7f3d0', sub2: '#6ee7b7',
+      sub: 'Xuất sắc',
+    },
+    {
+      label: '4 Sao',
+      value: stats.fourStars,
+      icon: 'star_half',
+      gradient: 'linear-gradient(135deg,#1e40af,#3b82f6)',
+      glow: '0 12px 40px rgba(59,130,246,0.35)',
+      accent: '#bfdbfe', sub2: '#93c5fd',
+      sub: 'Tốt',
+    },
+    {
+      label: '3 Sao',
+      value: stats.threeStars,
+      icon: 'star_half',
+      gradient: 'linear-gradient(135deg,#92400e,#d97706)',
+      glow: '0 12px 40px rgba(217,119,6,0.35)',
+      accent: '#fde68a', sub2: '#fbbf24',
+      sub: 'Trung bình',
+    },
+    {
+      label: '2 Sao',
+      value: stats.twoStars,
+      icon: 'star_border',
+      gradient: 'linear-gradient(135deg,#7c2d12,#ea580c)',
+      glow: '0 12px 40px rgba(234,88,12,0.35)',
+      accent: '#fed7aa', sub2: '#fdba74',
+      sub: 'Kém',
+    },
+    {
+      label: '1 Sao',
+      value: stats.oneStar,
+      icon: 'star_border',
+      gradient: 'linear-gradient(135deg,#7f1d1d,#dc2626)',
+      glow: '0 12px 40px rgba(220,38,38,0.35)',
+      accent: '#fecaca', sub2: '#fca5a5',
+      sub: 'Tệ',
+    },
+  ];
 
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <div className="bg-[#fff4f3] font-body text-on-surface antialiased min-h-screen">
       <AdminSidebar />
 
-      <main className="flex-1 ml-64 p-8">
-        {/* HEADER */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="material-symbols-outlined text-4xl text-primary">rate_review</span>
-            <div>
-              <h2 className="font-body text-xs uppercase tracking-widest text-zinc-400 font-medium">ADMIN PANEL</h2>
-              <h1 className="font-headline text-4xl font-black italic text-zinc-900">Quản lý Đánh giá</h1>
-            </div>
+      <main className="ml-64 pt-8 px-8 pb-16">
+
+        {/* ── Page header ─────────────────────────────────── */}
+        <div className="mb-10 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg,#4e2120,#9b3a38)', boxShadow: '0 6px 20px rgba(78,33,32,0.4)' }}>
+            <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: '"FILL" 1' }}>rate_review</span>
           </div>
-          <p className="text-sm text-zinc-600 mt-2">
-            Theo dõi và quản lý tất cả đánh giá trên toàn hệ thống
-          </p>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary mb-0.5">Admin Panel</p>
+            <h1 className="font-headline text-3xl font-black tracking-tighter text-on-surface leading-none">Quản lý Đánh giá</h1>
+            <p className="text-sm text-on-surface-variant mt-1">Theo dõi và quản lý tất cả đánh giá trên toàn hệ thống</p>
+          </div>
         </div>
 
-        {/* STATISTICS */}
+        {/* ── Stat cards ──────────────────────────────────── */}
         {!isLoading && !error && reviews.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-            <div className="bg-white rounded-xl p-4 border border-zinc-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">Total</p>
-              <p className="font-headline text-3xl font-bold text-zinc-900 mt-2">{stats.total}</p>
-            </div>
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-orange-600 font-bold">Average</p>
-              <p className="font-headline text-3xl font-bold text-orange-600 mt-2">{stats.averageRating} ⭐</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-zinc-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">5 Stars</p>
-              <p className="font-headline text-3xl font-bold text-yellow-500 mt-2">{stats.fiveStars}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-zinc-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">4 Stars</p>
-              <p className="font-headline text-3xl font-bold text-green-500 mt-2">{stats.fourStars}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-zinc-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">3 Stars</p>
-              <p className="font-headline text-3xl font-bold text-blue-500 mt-2">{stats.threeStars}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-zinc-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">2 Stars</p>
-              <p className="font-headline text-3xl font-bold text-orange-500 mt-2">{stats.twoStars}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-zinc-200/50 shadow-sm">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">1 Star</p>
-              <p className="font-headline text-3xl font-bold text-red-500 mt-2">{stats.oneStar}</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
+            {statCards.map(s => (
+              <div key={s.label} className="relative rounded-2xl overflow-hidden p-5 flex flex-col gap-2 cursor-default hover:-translate-y-1 transition-transform duration-300"
+                style={{ background: s.gradient, boxShadow: s.glow }}>
+                <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
+                  style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full opacity-20 blur-xl pointer-events-none"
+                  style={{ background: `radial-gradient(circle,${s.accent},transparent)` }} />
+                <div className="flex items-center justify-between relative z-10">
+                  <p className="text-[9px] uppercase font-black tracking-[0.2em]" style={{ color: s.accent }}>{s.label}</p>
+                  <span className="material-symbols-outlined text-base text-white/60" style={{ fontVariationSettings: '"FILL" 1' }}>{s.icon}</span>
+                </div>
+                <h3 className="text-2xl font-headline font-black tracking-tighter text-white relative z-10 leading-none">{s.value}</h3>
+                <div className="flex items-center gap-1 relative z-10">
+                  <span className="w-1 h-1 rounded-full" style={{ background: s.sub2 }} />
+                  <span className="text-[9px] font-bold" style={{ color: s.sub2 }}>{s.sub}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* LOADING STATE */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <span className="material-symbols-outlined animate-spin text-5xl text-primary mb-4">progress_activity</span>
-            <p className="text-zinc-600">Đang tải dữ liệu...</p>
+        {/* ── Loading ──────────────────────────────────────── */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+            <p className="text-sm text-on-surface-variant">Đang tải dữ liệu...</p>
           </div>
-        ) : error ? (
-          /* ERROR STATE */
-          <div className="text-center py-20">
-            <div className="flex justify-center mb-4">
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-5xl text-red-600">error</span>
-              </div>
+        )}
+
+        {/* ── Error ────────────────────────────────────────── */}
+        {!isLoading && error && (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-5xl text-red-500">error</span>
             </div>
-            <p className="text-red-600 font-bold text-lg">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 px-6 py-2 bg-primary text-white rounded-lg font-bold hover:opacity-90"
-            >
+            <p className="text-red-600 font-bold">{error}</p>
+            <button onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-primary text-on-primary rounded-xl font-bold hover:opacity-90 transition-opacity">
               Thử lại
             </button>
           </div>
-        ) : reviews.length === 0 ? (
-          /* EMPTY STATE */
-          <div className="text-center py-20">
-            <div className="flex justify-center mb-4">
-              <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-5xl text-zinc-400">rate_review</span>
-              </div>
+        )}
+
+        {/* ── Empty ────────────────────────────────────────── */}
+        {!isLoading && !error && reviews.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="w-20 h-20 rounded-full bg-rose-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-5xl text-rose-300">rate_review</span>
             </div>
-            <p className="text-zinc-600 text-lg font-medium">Chưa có đánh giá nào trên hệ thống.</p>
-            <p className="text-zinc-400 text-sm mt-2">Các đánh giá từ người dùng sẽ xuất hiện ở đây.</p>
+            <p className="text-on-surface-variant font-medium">Chưa có đánh giá nào trên hệ thống.</p>
+            <p className="text-sm text-on-surface-variant/60">Các đánh giá từ người dùng sẽ xuất hiện ở đây.</p>
           </div>
-        ) : (
-          /* REVIEWS LIST */
-          <div className="space-y-4">
+        )}
+
+        {/* ── Reviews list ─────────────────────────────────── */}
+        {!isLoading && !error && reviews.length > 0 && (
+          <div className="space-y-5">
             {reviews.map((review) => {
-              const reviewId = review.reviewItemId || review.id;
+              const id     = review.reviewItemId || review.id;
               const rating = review.rating || 0;
+              const cfg    = getRatingCfg(rating);
 
               return (
-                <div 
-                  key={reviewId} 
-                  className="bg-white border border-zinc-200/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-all"
-                >
-                  <div className="flex gap-6">
-                    {/* NỘI DUNG ĐÁNH GIÁ */}
+                <div key={id}
+                  className={`bg-white rounded-2xl overflow-hidden border-l-4 ${cfg.card} shadow-[0_4px_20px_rgba(78,33,32,0.07)] hover:shadow-[0_8px_32px_rgba(78,33,32,0.12)] hover:-translate-y-0.5 transition-all duration-200`}
+                  style={{ boxShadow: `0 4px 20px ${cfg.glow}, 0 1px 4px rgba(78,33,32,0.06)` }}>
+
+                  <div className="flex gap-6 p-6">
+                    {/* ── Left: content ── */}
                     <div className="flex-1 min-w-0">
-                      {/* HEADER - Tên sản phẩm */}
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-primary text-xl">directions_bike</span>
-                            <h3 className="font-bold text-lg text-zinc-900">
-                              {review.listingTitle || 'Sản phẩm'}
-                            </h3>
-                          </div>
-                          
-                          {/* THÔNG TIN GIAO DỊCH - QUAN TRỌNG */}
-                          <div className="flex flex-wrap items-center gap-3 mt-3">
-                            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
-                              <span className="material-symbols-outlined text-blue-600 text-sm">person</span>
-                              <span className="text-xs font-medium text-blue-700">
-                                Người mua: <span className="font-bold">{review.buyerName || 'N/A'}</span>
-                              </span>
-                            </div>
-                            <span className="material-symbols-outlined text-zinc-300 text-sm">arrow_forward</span>
-                            <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
-                              <span className="material-symbols-outlined text-green-600 text-sm">store</span>
-                              <span className="text-xs font-medium text-green-700">
-                                Người bán: <span className="font-bold">{review.sellerName || 'N/A'}</span>
-                              </span>
-                            </div>
-                          </div>
+
+                      {/* Product title */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: 'linear-gradient(135deg,#4e2120,#9b3a38)' }}>
+                          <span className="material-symbols-outlined text-white text-sm">directions_bike</span>
+                        </div>
+                        <h3 className="font-headline font-black text-base text-on-surface tracking-tight leading-tight">
+                          {review.listingTitle || 'Sản phẩm'}
+                        </h3>
+                      </div>
+
+                      {/* Buyer → Seller */}
+                      <div className="flex flex-wrap items-center gap-2 mb-4">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200">
+                          <span className="material-symbols-outlined text-indigo-500 text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>person</span>
+                          <span className="text-[11px] font-bold text-indigo-700">
+                            Người mua: <span className="font-black">{review.buyerName || 'N/A'}</span>
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-on-surface-variant/30 text-sm">arrow_forward</span>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
+                          <span className="material-symbols-outlined text-emerald-600 text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>storefront</span>
+                          <span className="text-[11px] font-bold text-emerald-700">
+                            Người bán: <span className="font-black">{review.sellerName || 'N/A'}</span>
+                          </span>
                         </div>
                       </div>
 
-                      {/* RATING - Hiển thị sao */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <span 
-                              key={star}
-                              className={`material-symbols-outlined text-2xl ${
-                                star <= rating ? 'text-yellow-500' : 'text-zinc-300'
-                              }`}
-                              style={{ fontVariationSettings: star <= rating ? '"FILL" 1' : '"FILL" 0' }}
-                            >
+                      {/* Stars + rating badge */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <span key={star}
+                              className={`material-symbols-outlined text-xl ${star <= rating ? 'text-amber-400' : 'text-zinc-200'}`}
+                              style={{ fontVariationSettings: star <= rating ? '"FILL" 1' : '"FILL" 0' }}>
                               star
                             </span>
                           ))}
                         </div>
-                        <span className="text-lg font-bold text-zinc-900">{rating}/5</span>
-                        <span className={`ml-2 px-2 py-0.5 rounded text-xs font-bold ${
-                          rating >= 4 ? 'bg-green-100 text-green-700' :
-                          rating >= 3 ? 'bg-blue-100 text-blue-700' :
-                          rating >= 2 ? 'bg-orange-100 text-orange-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
-                          {rating >= 4 ? 'Tích cực' : rating >= 3 ? 'Trung bình' : 'Tiêu cực'}
+                        <span className="font-black text-base text-on-surface">{rating}/5</span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${cfg.cls}`}>
+                          {cfg.label}
                         </span>
                       </div>
 
-                      {/* COMMENT - Nội dung đánh giá */}
-                      <div className="bg-zinc-50 rounded-lg p-4 border-l-4 border-primary mb-4">
-                        <p className="text-sm text-zinc-700 leading-relaxed italic">
+                      {/* Comment */}
+                      <div className="rounded-xl p-4 mb-4 bg-rose-50 border border-rose-100 border-l-4 border-l-primary">
+                        <p className="text-sm text-on-surface leading-relaxed italic">
                           "{review.comment || 'Không có nội dung đánh giá.'}"
                         </p>
                       </div>
 
-                      {/* FOOTER - Thông tin bổ sung */}
-                      <div className="flex items-center gap-4 pt-3 border-t border-zinc-200/50 text-xs text-zinc-500">
-                        <div className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                      {/* Footer */}
+                      <div className="flex items-center gap-4 pt-3 border-t border-rose-100 text-[11px] text-on-surface-variant">
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm text-primary/50">calendar_today</span>
                           <span>{formatDate(review.createdAt)}</span>
                         </div>
                         {review.orderId && (
-                          <div className="flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[14px]">receipt</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-primary/50">receipt</span>
                             <span>Order #{review.orderId}</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* HÌNH ẢNH XE ĐẠP - BÊN PHẢI */}
+                    {/* ── Right: image ── */}
                     <div className="flex-shrink-0">
-                      <div className="w-32 h-32 rounded-lg overflow-hidden bg-zinc-100 border border-zinc-200">
+                      <div className="w-28 h-28 rounded-xl overflow-hidden border-2 border-rose-100 shadow-sm">
                         {review.listingImageUrl ? (
-                          <img 
-                            src={review.listingImageUrl} 
-                            alt={review.listingTitle || 'Bike'} 
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={review.listingImageUrl} alt={review.listingTitle || 'Bike'}
+                            className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="material-symbols-outlined text-4xl text-zinc-300">directions_bike</span>
+                          <div className="w-full h-full bg-rose-50 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-4xl text-rose-200">directions_bike</span>
                           </div>
                         )}
+                      </div>
+                      {/* Rating circle */}
+                      <div className="mt-2 flex items-center justify-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm ${cfg.cls}`}>
+                          {rating}★
+                        </div>
                       </div>
                     </div>
                   </div>
