@@ -116,16 +116,16 @@ const Dashboard = () => {
         </header>
 
         {/* Metrics Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12">
           {/* Total Revenue */}
-          <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-primary hover:-translate-y-1 transition-transform duration-300">
+          <div className="md:col-span-2 bg-gradient-to-br from-primary/10 to-primary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-primary hover:-translate-y-1 transition-transform duration-300">
             <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <span className="material-symbols-outlined text-8xl text-primary">receipt_long</span>
             </div>
             <p className="text-[10px] uppercase font-black text-primary tracking-widest mb-4 h-10 flex items-start">
               Total Revenue
             </p>
-            <h3 className="text-5xl font-headline font-black text-primary mb-3 tracking-tighter">
+            <h3 className="font-headline font-black text-primary mb-3 tracking-tighter flex items-baseline gap-x-0.5" style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
               {stats.totalEscrowVolume === null ? '—' : `${stats.totalEscrowVolume.toLocaleString('vi-VN')}₫`}
             </h3>
             <div className="flex items-center gap-2 text-primary/70 mt-auto">
@@ -166,14 +166,14 @@ const Dashboard = () => {
             </div>
           </div>
           {/* Total Sold Listings */}
-          <div className="bg-gradient-to-br from-tertiary/10 to-tertiary/5 p-8 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-tertiary hover:-translate-y-1 transition-transform duration-300">
-            <div className="absolute bottom-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-8xl text-tertiary">sell</span>
+          <div className="bg-gradient-to-br from-tertiary/10 to-tertiary/5 p-6 rounded-2xl relative overflow-hidden shadow-[0_8px_32px_rgba(78,33,32,0.12)] group flex flex-col border-t-4 border-tertiary hover:-translate-y-1 transition-transform duration-300">
+            <div className="absolute bottom-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+              <span className="material-symbols-outlined text-6xl text-tertiary">sell</span>
             </div>
-            <p className="text-[10px] uppercase font-black text-tertiary tracking-widest mb-4 h-10 flex items-start">
+            <p className="text-[10px] uppercase font-black text-tertiary tracking-widest mb-3 h-10 flex items-start">
               Total Sold Listings
             </p>
-            <h3 className="text-5xl font-headline font-black text-on-surface mb-3 tracking-tighter">
+            <h3 className="text-4xl font-headline font-black text-on-surface mb-3 tracking-tighter">
               {fmt(stats.totalSoldListings)}
             </h3>
             <div className="flex items-center gap-2 text-tertiary/70 mt-auto">
