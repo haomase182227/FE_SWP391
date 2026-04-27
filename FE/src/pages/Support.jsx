@@ -53,7 +53,7 @@ export default function Support() {
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body pt-20">
       {/* Hero */}
-      <section className="bg-surface-container-low py-16 px-6">
+      <section className="bg-orange-50 py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-600 mb-3">Veloce Kinetic</p>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-on-surface mb-4">
@@ -128,13 +128,13 @@ export default function Support() {
             ))}
 
             {/* Privacy note */}
-            <div className="mt-8 p-6 bg-secondary-container/20 rounded-xl border border-secondary/10 flex gap-4 items-start">
-              <span className="material-symbols-outlined text-secondary mt-0.5" style={{ fontVariationSettings: '"FILL" 1' }}>
+            <div className="mt-8 p-6 bg-orange-50 rounded-xl border border-orange-200 flex gap-4 items-start">
+              <span className="material-symbols-outlined text-orange-600 mt-0.5" style={{ fontVariationSettings: '"FILL" 1' }}>
                 verified_user
               </span>
               <div>
-                <p className="font-bold text-sm text-on-secondary-container mb-1">Cam kết bảo mật</p>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
+                <p className="font-bold text-sm text-orange-900 mb-1">Cam kết bảo mật</p>
+                <p className="text-xs text-orange-700 leading-relaxed">
                   Dữ liệu của bạn được mã hóa AES-256 và xử lý qua cổng thanh toán tuân thủ PCI-DSS Level 1.
                   Chúng tôi không lưu trữ thông tin thẻ ngân hàng đầy đủ trên máy chủ của mình.
                 </p>
@@ -194,13 +194,13 @@ export default function Support() {
                 </div>
 
                 {/* Address card */}
-                <div className="bg-surface-container-lowest rounded-xl p-6 flex gap-4 items-start shadow-md">
-                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-orange-600 text-base">location_on</span>
+                <div className="bg-orange-50 rounded-xl p-6 flex gap-4 items-start shadow-md border border-orange-100">
+                  <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-orange-700 text-base">location_on</span>
                   </div>
                   <div>
-                    <p className="font-headline font-bold text-sm mb-1">The Kinetic Editorial</p>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                    <p className="font-headline font-bold text-sm mb-1 text-orange-900">The Kinetic Editorial</p>
+                    <p className="text-xs text-orange-700 leading-relaxed">
                       Khu Công nghệ cao, Quận 9<br />
                       TP. Hồ Chí Minh, Việt Nam<br />
                       <span className="font-mono text-[10px] text-orange-600 mt-1 block">
@@ -211,7 +211,7 @@ export default function Support() {
                       href={`https://www.google.com/maps?q=${LAT},${LNG}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold uppercase tracking-widest text-orange-600 hover:underline"
+                      className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold uppercase tracking-widest text-orange-600 hover:text-orange-700 hover:underline"
                     >
                       Mở trong Google Maps
                       <span className="material-symbols-outlined text-sm">open_in_new</span>
@@ -221,8 +221,8 @@ export default function Support() {
               </div>
 
               {/* FAQ quick links */}
-              <div className="bg-surface-container-low rounded-xl p-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4">Câu hỏi thường gặp</p>
+              <div className="bg-orange-50 rounded-xl p-6 border border-orange-100">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600 mb-4">Câu hỏi thường gặp</p>
                 <div className="space-y-2">
                   {[
                     'Làm thế nào để đăng bán xe?',
@@ -233,7 +233,7 @@ export default function Support() {
                     <button
                       key={q}
                       onClick={() => setActiveTab('terms')}
-                      className="w-full text-left flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-lg hover:bg-orange-50 transition-colors text-xs font-medium text-on-surface group"
+                      className="w-full text-left flex items-center justify-between px-4 py-3 bg-white rounded-lg hover:bg-orange-100 border border-orange-100 hover:border-orange-300 transition-colors text-xs font-medium text-on-surface group"
                     >
                       {q}
                       <span className="material-symbols-outlined text-sm text-on-surface-variant group-hover:text-orange-600 transition-colors">
