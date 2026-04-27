@@ -117,9 +117,103 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Placeholder for other columns - will be added in next request */}
-          <div className="lg:col-span-3">
-            {/* TODO: Add navigation columns */}
+          {/* ═══════════════════════════════════════════════════════════════
+              CỘT 2: SẢN PHẨM (MARKETPLACE)
+              ═══════════════════════════════════════════════════════════════ */}
+          <div>
+            <h3 className="text-white font-bold text-lg mb-6 uppercase tracking-wider">
+              Sản phẩm
+            </h3>
+            <ul className="space-y-4">
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Xe đạp đua (Road)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Xe đạp địa hình (MTB)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Xe đạp đường phố (Touring)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Phụ tùng & Linh kiện
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              CỘT 3: HỖ TRỢ KHÁCH HÀNG (SUPPORT)
+              ═══════════════════════════════════════════════════════════════ */}
+          <div>
+            <h3 className="text-white font-bold text-lg mb-6 uppercase tracking-wider">
+              Hỗ trợ
+            </h3>
+            <ul className="space-y-4">
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Trung tâm trợ giúp
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Hướng dẫn mua hàng
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Chính sách đổi trả
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-orange-500 transition-colors text-sm inline-flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-orange-500 transition-colors"></span>
+                  Tra cứu bảo hành
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Placeholder for last column - will be added in next request */}
+          <div>
+            {/* TODO: Add company info or legal column */}
           </div>
         </div>
       </div>
