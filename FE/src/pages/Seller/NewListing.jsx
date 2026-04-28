@@ -23,6 +23,7 @@ export default function NewListing() {
   // ── Form state ────────────────────────────────────────────────
   const [condition,         setCondition]         = useState('Pristine');
   const [inspectionEnabled, setInspectionEnabled] = useState(true);
+  const [primaryImageFile,  setPrimaryImageFile]  = useState(null);
   const [additionalFiles,   setAdditionalFiles]   = useState([]);
   const [previewImages,     setPreviewImages]      = useState([]);
   const [form, setForm] = useState({
@@ -329,6 +330,7 @@ export default function NewListing() {
                     className="hidden"
                     onChange={handleAdditionalUpload}
                   />
+                  {/* keep an explicit file input for the primary hero so browsers allow selecting one file reliably */}
                 </div>
               </div>
             </div>
