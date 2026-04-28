@@ -182,12 +182,22 @@ export default function ListingModeration() {
     setDetailLoading(true);
     setDetail(null);
     try {
-      const res = await fetch(`${API_BASE}/admin/listings/${listingId}/detail`,
-        { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/admin/listings/${listingId}/detail`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => null);
+        throw new Error(errBody || `HTTP ${res.status}`);
+      }
       const data = await res.json();
-      setDetail(data);
-    } catch { setDetail(null); }
-    finally { setDetailLoading(false); }
+      // ensure we always set an object so modal conditional renders predictably
+      setDetail(data ?? { error: 'Empty response' });
+    } catch (e) {
+      console.error('Failed to load listing detail', e);
+      setDetail({ error: e?.message || 'Không thể tải chi tiết' });
+    } finally {
+      setDetailLoading(false);
+    }
   }
 
   // ── Submit action ────────────────────────────────────────────
@@ -689,80 +699,91 @@ export default function ListingModeration() {
                 <span className="material-symbols-outlined animate-spin text-3xl block mx-auto mb-2">progress_activity</span>Đang tải...
               </div>
             )}
-            {!detailLoading && detail && (() => {
-              const l = detail.listing;
-              const coverImg = l.images?.find(i => i.isCover)?.imageUrl ?? l.images?.[0]?.imageUrl;
-              return (
-                <div>
-                  {coverImg && <img src={coverImg} alt={l.title} className="w-full h-56 object-cover rounded-t-2xl" />}
-                  <div className="p-8 space-y-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter">{l.title}</h3>
-                        <p className="text-sm text-on-surface-variant mt-1">ID #{l.id}</p>
-                      </div>
-                      <p className="font-headline text-xl font-bold text-primary flex-shrink-0">{formatPrice(l.price)}</p>
-                    </div>
-
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[l.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
-                        {typeof l.status === 'number' ? ['Pending','Approved','Rejected','PendingInspection'][l.status] ?? l.status : l.status}
-                      </span>
-                      {detail.hasInspectionRequest && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-blue-500/10 text-blue-600">Có yêu cầu kiểm định</span>
-                      )}
-                      {detail.inspectionPassed && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-tertiary/10 text-tertiary">Đã qua kiểm định</span>
-                      )}
-                    </div>
-
-                    {/* Info grid */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {[
-                        ['Frame Size', l.frameSize],
-                        ['Material', l.material],
-                        ['Gear Count', l.gearCount],
-                        ['Ngày tạo', formatDate(l.createdAt)],
-                      ].map(([k, v]) => (
-                        <div key={k}>
-                          <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
-                          <p className="font-medium text-on-surface">{v || '—'}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Attributes */}
-                    {l.attributes?.length > 0 && (
-                      <div>
-                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3">Thuộc tính</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {l.attributes.map(a => (
-                            <div key={a.id} className="bg-surface-container-low rounded-lg px-3 py-2">
-                              <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{a.key}</p>
-                              <p className="text-sm font-medium text-on-surface">{a.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Description */}
-                    {l.description && (
-                      <div>
-                        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</p>
-                        <p className="text-sm text-on-surface-variant leading-relaxed">{l.description}</p>
-                      </div>
-                    )}
-
+            {!detailLoading && detail && (
+              detail.error
+                ? (
+                  <div className="p-8 text-center">
+                    <p className="text-error text-sm mb-6">Lỗi: {detail.error}</p>
                     <button onClick={() => setDetail(null)}
                       className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
                       Đóng
                     </button>
                   </div>
-                </div>
-              );
-            })()}
+                ) : (() => {
+                  const l = detail.listing;
+                  const coverImg = l?.images?.find(i => i.isCover)?.imageUrl ?? l?.images?.[0]?.imageUrl;
+                  return (
+                    <div>
+                      {coverImg && <img src={coverImg} alt={l.title} className="w-full h-56 object-cover rounded-t-2xl" />}
+                      <div className="p-8 space-y-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter">{l.title}</h3>
+                            <p className="text-sm text-on-surface-variant mt-1">ID #{l.id}</p>
+                          </div>
+                          <p className="font-headline text-xl font-bold text-primary flex-shrink-0">{formatPrice(l.price)}</p>
+                        </div>
+
+                        {/* Badges */}
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[l.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                            {typeof l.status === 'number' ? ['Pending','Approved','Rejected','PendingInspection'][l.status] ?? l.status : l.status}
+                          </span>
+                          {detail.hasInspectionRequest && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-blue-500/10 text-blue-600">Có yêu cầu kiểm định</span>
+                          )}
+                          {detail.inspectionPassed && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-tertiary/10 text-tertiary">Đã qua kiểm định</span>
+                          )}
+                        </div>
+
+                        {/* Info grid */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {[
+                            ['Frame Size', l.frameSize],
+                            ['Material', l.material],
+                            ['Gear Count', l.gearCount],
+                            ['Ngày tạo', formatDate(l.createdAt)],
+                          ].map(([k, v]) => (
+                            <div key={k}>
+                              <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
+                              <p className="font-medium text-on-surface">{v || '—'}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Attributes */}
+                        {l?.attributes?.length > 0 && (
+                          <div>
+                            <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3">Thuộc tính</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {l.attributes.map(a => (
+                                <div key={a.id} className="bg-surface-container-low rounded-lg px-3 py-2">
+                                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{a.key}</p>
+                                  <p className="text-sm font-medium text-on-surface">{a.value}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Description */}
+                        {l.description && (
+                          <div>
+                            <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</p>
+                            <p className="text-sm text-on-surface-variant leading-relaxed">{l.description}</p>
+                          </div>
+                        )}
+
+                        <button onClick={() => setDetail(null)}
+                          className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                          Đóng
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
+            )}
           </div>
         </div>
       )}
