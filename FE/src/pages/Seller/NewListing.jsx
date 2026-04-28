@@ -47,6 +47,23 @@ export default function NewListing() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleCategoryChange = (e) => {
+    const categorySlug = e.target.value;
+    const selectedCategory = categories.find(
+      (c) => c.categorySlug === categorySlug || c.slug === categorySlug
+    );
+
+    setForm((prev) => ({
+      ...prev,
+      categorySlug,
+      categoryId: selectedCategory?.categoryId
+        ? String(selectedCategory.categoryId)
+        : selectedCategory?.id
+          ? String(selectedCategory.id)
+          : '',
+    }));
+  };
+
   // ── Image handlers ────────────────────────────────────────────
   const handlePrimaryUpload = (e) => {
     const file = e.target.files[0];
@@ -91,7 +108,6 @@ export default function NewListing() {
 
       // Integer fields — only append if valid number
       if (form.categoryId && !isNaN(form.categoryId)) fd.append('CategoryId', parseInt(form.categoryId, 10));
-      if (form.categorySlug) fd.append('CategorySlug', form.categorySlug);
 
       // String fields — brand & model as names
       if (form.brandName) fd.append('BrandName', form.brandName);
@@ -106,8 +122,11 @@ export default function NewListing() {
       if (form.description)   fd.append('Description',   form.description);
 
       // Files
-      if (primaryImageFile) fd.append('PrimaryImage', primaryImageFile);
-      additionalFiles.forEach((f) => fd.append('AdditionalImages', f));
+      const allImages = [primaryImageFile, ...additionalFiles].filter(Boolean);
+      if (allImages.length > 0) {
+        fd.append('PrimaryImage', allImages[0]);
+        allImages.slice(1).forEach((f) => fd.append('AdditionalImages', f));
+      }
 
       const res = await fetch(`${API_BASE}/seller/Listings`, {
         method: 'POST',
@@ -115,8 +134,12 @@ export default function NewListing() {
         body: fd,
       });
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.title || `HTTP ${res.status}`);
+        const d = await res.json().catch(async () => ({ raw: await res.text().catch(() => '') }));
+        const validationErrors = d.errors
+          ? Object.entries(d.errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join(' | ')
+          : '';
+        const fallbackMessage = d.detail || d.message || d.title || d.raw || `HTTP ${res.status}`;
+        throw new Error(validationErrors ? `${fallbackMessage} (${validationErrors})` : fallbackMessage);
       }
       navigate('/seller/listings');
     } catch (err) {
@@ -203,7 +226,7 @@ export default function NewListing() {
                   <select
                     name="categorySlug"
                     value={form.categorySlug}
-                    onChange={handleChange}
+                    onChange={handleCategoryChange}
                     className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body rounded"
                   >
                     <option value="">— Select Category —</option>
