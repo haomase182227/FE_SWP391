@@ -83,6 +83,7 @@ export default function ListingModeration() {
   // ── Detail modal ─────────────────────────────────────────────
   const [detail, setDetail]         = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [showRawDetail, setShowRawDetail] = useState(false);
 
   // ── Action modal (approve / reject / approve-with-inspection) ─
   const [actionModal, setActionModal] = useState(null);
@@ -181,17 +182,76 @@ export default function ListingModeration() {
   async function openDetail(listingId) {
     setDetailLoading(true);
     setDetail(null);
+    const url = `${API_BASE}/admin/listings/${listingId}/detail`;
+    if (!token) {
+      console.debug('openDetail aborted: no auth token');
+      setDetail({ error: 'Không có token xác thực. Vui lòng đăng nhập lại.' });
+      setDetailLoading(false);
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE}/admin/listings/${listingId}/detail`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      console.debug('openDetail', { listingId, url, hasToken: Boolean(token) });
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {
-        const errBody = await res.text().catch(() => null);
-        throw new Error(errBody || `HTTP ${res.status}`);
+        // try JSON error first
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const j = await res.json();
+          if (j && (j.message || j.error || j.title)) errMsg = j.message || j.error || j.title;
+        } catch {
+          const txt = await res.text().catch(() => null);
+          if (txt) errMsg = txt;
+        }
+        throw new Error(errMsg);
       }
       const data = await res.json();
-      // ensure we always set an object so modal conditional renders predictably
-      setDetail(data ?? { error: 'Empty response' });
+      // normalize response shape: backend may return { listing: {...} } or the listing object directly
+      let payload = data;
+      if (data && data.listing) {
+        payload = data;
+      } else if (data && (data.id || data.title)) {
+        payload = {
+          listing: data,
+          inspections: data.inspections ?? [],
+          hasInspectionRequest: data.hasInspectionRequest ?? false,
+          inspectionPassed: data.inspectionPassed ?? false,
+        };
+      }
+      // try to resolve category name from cached categories when backend returns null
+      const listing = payload.listing || payload;
+      if (listing && !listing.category && listing.categoryId && categories.length > 0) {
+        const cat = categories.find(c => c.id === listing.categoryId || c.categoryId === listing.categoryId || c.categoryId === Number(listing.categoryId));
+        if (cat) listing.category = { id: cat.id ?? cat.categoryId, name: cat.name ?? cat.categoryName };
+      }
+      // if seller missing but sellerId present, try fetch user detail from Auth endpoint
+      if (listing && !listing.seller && listing.sellerId) {
+        try {
+          // try single-user endpoint first
+          let u = null;
+          try {
+            const r = await fetch(`${API_BASE}/Auth/users/${listing.sellerId}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (r.ok) u = await r.json();
+          } catch (e) {
+            /* ignore */
+          }
+
+          // fallback: fetch a reasonably large page of users and search by id
+          if (!u) {
+            try {
+              const qs = new URLSearchParams({ pageNumber: 1, pageSize: 500 });
+              const r2 = await fetch(`${API_BASE}/Auth/users?${qs}`, { headers: { Authorization: `Bearer ${token}` } });
+              if (r2.ok) {
+                const list = await r2.json();
+                const users = list.users ?? list.items ?? [];
+                u = users.find(x => Number(x.id) === Number(listing.sellerId));
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          if (u) listing.seller = u;
+        } catch (e) { /* ignore seller fetch failures */ }
+      }
+      setDetail(payload ?? { error: 'Empty response' });
     } catch (e) {
       console.error('Failed to load listing detail', e);
       setDetail({ error: e?.message || 'Không thể tải chi tiết' });
@@ -700,89 +760,153 @@ export default function ListingModeration() {
               </div>
             )}
             {!detailLoading && detail && (
-              detail.error
-                ? (
-                  <div className="p-8 text-center">
+              <div className="p-8">
+                <div className="flex justify-end mb-4">
+                  <button onClick={() => setShowRawDetail(s => !s)} className="text-xs px-3 py-1 rounded bg-surface-container-high border border-outline-variant/20">{showRawDetail ? 'Hide JSON' : 'Show JSON'}</button>
+                </div>
+                {detail.error ? (
+                  <div className="text-center">
                     <p className="text-error text-sm mb-6">Lỗi: {detail.error}</p>
                     <button onClick={() => setDetail(null)}
                       className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
                       Đóng
                     </button>
                   </div>
-                ) : (() => {
-                  const l = detail.listing;
-                  const coverImg = l?.images?.find(i => i.isCover)?.imageUrl ?? l?.images?.[0]?.imageUrl;
-                  return (
-                    <div>
-                      {coverImg && <img src={coverImg} alt={l.title} className="w-full h-56 object-cover rounded-t-2xl" />}
-                      <div className="p-8 space-y-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter">{l.title}</h3>
-                            <p className="text-sm text-on-surface-variant mt-1">ID #{l.id}</p>
-                          </div>
-                          <p className="font-headline text-xl font-bold text-primary flex-shrink-0">{formatPrice(l.price)}</p>
-                        </div>
-
-                        {/* Badges */}
-                        <div className="flex flex-wrap gap-2">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[l.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
-                            {typeof l.status === 'number' ? ['Pending','Approved','Rejected','PendingInspection'][l.status] ?? l.status : l.status}
-                          </span>
-                          {detail.hasInspectionRequest && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-blue-500/10 text-blue-600">Có yêu cầu kiểm định</span>
-                          )}
-                          {detail.inspectionPassed && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-tertiary/10 text-tertiary">Đã qua kiểm định</span>
-                          )}
-                        </div>
-
-                        {/* Info grid */}
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          {[
-                            ['Frame Size', l.frameSize],
-                            ['Material', l.material],
-                            ['Gear Count', l.gearCount],
-                            ['Ngày tạo', formatDate(l.createdAt)],
-                          ].map(([k, v]) => (
-                            <div key={k}>
-                              <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
-                              <p className="font-medium text-on-surface">{v || '—'}</p>
+                ) : (
+                  <div>
+                    {showRawDetail && (
+                      <pre className="bg-surface-container-low rounded p-4 mb-4 overflow-auto text-xs text-on-surface-variant" style={{ maxHeight: 240 }}>
+                        {JSON.stringify(detail, null, 2)}
+                      </pre>
+                    )}
+                    {(() => {
+                      const l = detail.listing;
+                      const coverImg = l?.images?.find(i => i.isCover)?.imageUrl ?? l?.images?.[0]?.imageUrl;
+                      return (
+                        <div>
+                          {coverImg && <img src={coverImg} alt={l.title} className="w-full h-56 object-cover rounded-t-2xl" />}
+                          <div className="p-8 space-y-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <h3 className="font-headline text-2xl font-black text-on-surface tracking-tighter">{l.title}</h3>
+                                <p className="text-sm text-on-surface-variant mt-1">ID #{l.id}</p>
+                              </div>
+                              <p className="font-headline text-xl font-bold text-primary flex-shrink-0">{formatPrice(l.price)}</p>
                             </div>
-                          ))}
-                        </div>
 
-                        {/* Attributes */}
-                        {l?.attributes?.length > 0 && (
-                          <div>
-                            <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3">Thuộc tính</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              {l.attributes.map(a => (
-                                <div key={a.id} className="bg-surface-container-low rounded-lg px-3 py-2">
-                                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{a.key}</p>
-                                  <p className="text-sm font-medium text-on-surface">{a.value}</p>
+                            {/* Badges */}
+                            <div className="flex flex-wrap gap-2">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${STATUS_BADGE[l.status] ?? 'bg-surface-container-high text-on-surface-variant'}`}>
+                                {typeof l.status === 'number' ? ['Pending','Approved','Rejected','PendingInspection'][l.status] ?? l.status : l.status}
+                              </span>
+                              {detail.hasInspectionRequest && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-blue-500/10 text-blue-600">Có yêu cầu kiểm định</span>
+                              )}
+                              {detail.inspectionPassed && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-tertiary/10 text-tertiary">Đã qua kiểm định</span>
+                              )}
+                            </div>
+
+                            {/* Info grid (aligned with API fields) */}
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              {[
+                                ['Thương hiệu', l.brandName],
+                                ['Model', l.modelName],
+                                ['Danh mục', l.category?.name ?? detail.listing?.categoryName ?? '—'],
+                                ['Kích thước khung', l.frameSize],
+                              ].map(([k, v]) => (
+                                <div key={k}>
+                                  <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">{k}</p>
+                                  <p className="font-medium text-on-surface">{v || '—'}</p>
                                 </div>
                               ))}
                             </div>
-                          </div>
-                        )}
 
-                        {/* Description */}
-                        {l.description && (
-                          <div>
-                            <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</p>
-                            <p className="text-sm text-on-surface-variant leading-relaxed">{l.description}</p>
-                          </div>
-                        )}
+                            {/* Meta grid: seller, verified, timestamps, inspections */}
+                            <div className="grid grid-cols-2 gap-4 text-sm mt-2">
+                              <div>
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">Người bán</p>
+                                <p className="font-medium text-on-surface">{l.seller?.userName ?? l.sellerName ?? '—'}</p>
+                              </div>
+                              <div>
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">Đã xác thực xe</p>
+                                <p className="font-medium text-on-surface">{l.isVerifiedBicycle ? 'Có' : 'Không'}</p>
+                              </div>
+                              <div>
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">Ngày tạo</p>
+                                <p className="font-medium text-on-surface">{formatDate(l.createdAt)}</p>
+                              </div>
+                              <div>
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-0.5">Cập nhật</p>
+                                <p className="font-medium text-on-surface">{formatDate(l.updatedAt)}</p>
+                              </div>
+                            </div>
 
-                        <button onClick={() => setDetail(null)}
-                          className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
-                          Đóng
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()
+                            {/* Inspection info */}
+                            <div className="mt-4">
+                              <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Kiểm định</p>
+                              <div className="text-sm text-on-surface-variant">
+                                <p>Số yêu cầu kiểm định: <span className="font-medium text-on-surface">{(l.inspectionRequests?.length ?? 0)}</span></p>
+                                <p>Số bản ghi kiểm định: <span className="font-medium text-on-surface">{(detail.inspections?.length ?? 0)}</span></p>
+                                {l.inspectionRequests?.length > 0 && (
+                                  <div className="mt-2 space-y-2">
+                                    {l.inspectionRequests.map(req => (
+                                      <div key={req.id} className="bg-surface-container-low rounded-lg p-3">
+                                        <p className="text-sm font-medium">Yêu cầu #{req.id} · {req.status}</p>
+                                        <p className="text-xs text-on-surface-variant">{req.note || '—'}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Images gallery */}
+                            {l.images?.length > 0 && (
+                              <div className="mt-4">
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Hình ảnh</p>
+                                <div className="flex gap-2">
+                                  {l.images.map(img => (
+                                    <img key={img.id} src={img.imageUrl} alt={`img-${img.id}`} className="w-20 h-20 object-cover rounded-lg border" />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Attributes */}
+                            {l?.attributes?.length > 0 && (
+                              <div>
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3">Thuộc tính</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {l.attributes.map(a => (
+                                    <div key={a.id} className="bg-surface-container-low rounded-lg px-3 py-2">
+                                      <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{a.key}</p>
+                                      <p className="text-sm font-medium text-on-surface">{a.value}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Description */}
+                            {l.description && (
+                              <div>
+                                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Mô tả</p>
+                                <p className="text-sm text-on-surface-variant leading-relaxed">{l.description}</p>
+                              </div>
+                            )}
+
+                            <button onClick={() => setDetail(null)}
+                              className="w-full py-3 rounded-xl border border-outline-variant/30 text-on-surface font-bold text-sm hover:bg-surface-container-low transition-colors">
+                              Đóng
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
