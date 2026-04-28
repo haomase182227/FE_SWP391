@@ -4,8 +4,6 @@ import SellerSidebar from '../../components/SellerSidebar';
 import { useAuth } from '../Context/AuthContext';
 
 const API_BASE = '/api/v1';
-const CONDITIONS = ['Pristine', 'Excellent', 'Good', 'Fair'];
-
 export default function NewListing() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -25,7 +23,6 @@ export default function NewListing() {
   // ── Form state ────────────────────────────────────────────────
   const [condition,         setCondition]         = useState('Pristine');
   const [inspectionEnabled, setInspectionEnabled] = useState(true);
-  const [primaryImageFile,  setPrimaryImageFile]  = useState(null);
   const [additionalFiles,   setAdditionalFiles]   = useState([]);
   const [previewImages,     setPreviewImages]      = useState([]);
   const [form, setForm] = useState({
@@ -38,8 +35,6 @@ export default function NewListing() {
     price:         '',
     frameSize:     '',
     description:   '',
-    usageHistory:  '',
-    lastService:   '',
   });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError,   setSubmitError]   = useState('');
@@ -91,7 +86,6 @@ export default function NewListing() {
 
       // Required
       fd.append('Title', form.title);
-      fd.append('Condition', condition);
       fd.append('RequestInspection', String(inspectionEnabled));
 
       // Integer fields — only append if valid number
@@ -109,13 +103,6 @@ export default function NewListing() {
       // String fields
       if (form.frameSize)     fd.append('FrameSize',     form.frameSize);
       if (form.description)   fd.append('Description',   form.description);
-      if (form.usageHistory)  fd.append('UsageHistory',  form.usageHistory);
-
-      // DateTime — must be ISO 8601
-      if (form.lastService) {
-        const dt = new Date(form.lastService);
-        if (!isNaN(dt.getTime())) fd.append('LastServiceDate', dt.toISOString());
-      }
 
       // Files
       if (primaryImageFile) fd.append('PrimaryImage', primaryImageFile);
@@ -356,27 +343,6 @@ export default function NewListing() {
               </div>
               <div className="md:w-3/4 space-y-8">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 font-body">
-                    Current Condition
-                  </label>
-                  <div className="flex gap-4 flex-wrap">
-                    {CONDITIONS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setCondition(c)}
-                        className={`px-6 py-3 font-headline font-bold text-xs uppercase rounded-full transition-colors ${
-                          condition === c
-                            ? 'bg-surface-container-highest border border-primary text-primary'
-                            : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">
                     Detailed Description
                   </label>
@@ -388,33 +354,6 @@ export default function NewListing() {
                     placeholder="Describe the ride characteristics, history of maintenance, and any upgrades..."
                     rows={6}
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">
-                      Usage History
-                    </label>
-                    <input
-                      name="usageHistory"
-                      value={form.usageHistory}
-                      onChange={handleChange}
-                      className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body rounded"
-                      placeholder="~1,500 km"
-                      type="text"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 font-body">
-                      Last Service Date
-                    </label>
-                    <input
-                      name="lastService"
-                      value={form.lastService}
-                      onChange={handleChange}
-                      className="w-full bg-surface-container-high border-none px-4 py-4 focus:ring-2 focus:ring-primary-container font-body rounded"
-                      type="date"
-                    />
-                  </div>
                 </div>
               </div>
             </div>

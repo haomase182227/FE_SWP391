@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SellerSidebar from '../../components/SellerSidebar';
 import { useAuth } from '../Context/AuthContext';
@@ -60,9 +60,16 @@ export default function ListingManagement() {
 
   // ── Edit modal ────────────────────────────────────────────────
   const [editTarget,  setEditTarget]  = useState(null);
-  const [editForm,    setEditForm]    = useState({ title: '', description: '', price: '', frameSize: '', requestReInspection: false });
+  const [editForm,    setEditForm]    = useState({ title: '', description: '', price: '', frameSize: '', brandName: '', modelName: '', requestReInspection: false });
   const [editLoading, setEditLoading] = useState(false);
   const [editError,   setEditError]   = useState('');
+  // Edit image state
+  const [editPrimaryFile,      setEditPrimaryFile]      = useState(null);
+  const [editAdditionalFiles,  setEditAdditionalFiles]  = useState([]);
+  const [editPrimaryPreview,   setEditPrimaryPreview]   = useState(null);   // string URL
+  const [editAdditionalPreviews, setEditAdditionalPreviews] = useState([]); // string[]
+  const editPrimaryRef    = useRef(null);
+  const editAdditionalRef = useRef(null);
 
   // ── Delete confirm ────────────────────────────────────────────
   const [deleteTarget,  setDeleteTarget]  = useState(null); // listing object
@@ -102,8 +109,16 @@ export default function ListingManagement() {
       description:         listing.description ?? '',
       price:               listing.price ?? '',
       frameSize:           listing.frameSize ?? '',
+      brandName:           listing.brandName ?? listing.brand ?? '',
+      modelName:           listing.modelName ?? listing.model ?? '',
       requestReInspection: false,
     });
+    // Reset image state; show existing primary image as preview
+    setEditPrimaryFile(null);
+    setEditAdditionalFiles([]);
+    const existingImg = listing.primaryImage ?? listing.primaryImageUrl ?? listing.imageUrl ?? listing.image ?? null;
+    setEditPrimaryPreview(existingImg);
+    setEditAdditionalPreviews([]);
     setEditError('');
   }
 
@@ -113,16 +128,22 @@ export default function ListingManagement() {
     setEditLoading(true);
     setEditError('');
     try {
+      const fd = new FormData();
+      if (editForm.title)       fd.append('Title',       editForm.title);
+      if (editForm.description) fd.append('Description', editForm.description);
+      if (editForm.price !== '' && !isNaN(editForm.price)) fd.append('Price', parseFloat(editForm.price));
+      if (editForm.frameSize)   fd.append('FrameSize',   editForm.frameSize);
+      if (editForm.brandName)   fd.append('BrandName',   editForm.brandName);
+      if (editForm.modelName)   fd.append('ModelName',   editForm.modelName);
+      fd.append('RequestReInspection', String(editForm.requestReInspection));
+      // Images — only append if user selected new files
+      if (editPrimaryFile)                fd.append('PrimaryImage', editPrimaryFile);
+      editAdditionalFiles.forEach(f => fd.append('AdditionalImages', f));
+
       const res = await fetch(`${API_BASE}/seller/listings/${editTarget.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          title:               editForm.title,
-          description:         editForm.description,
-          price:               Number(editForm.price),
-          frameSize:           editForm.frameSize,
-          requestReInspection: editForm.requestReInspection,
-        }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -625,6 +646,30 @@ export default function ListingManagement() {
                   />
                 </div>
 
+                {/* Brand + Model */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Brand Name</label>
+                    <input
+                      disabled={editTarget.status === 'PendingInspection'}
+                      value={editForm.brandName}
+                      onChange={e => setEditForm(f => ({ ...f, brandName: e.target.value }))}
+                      placeholder="e.g. Specialized"
+                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Model Name</label>
+                    <input
+                      disabled={editTarget.status === 'PendingInspection'}
+                      value={editForm.modelName}
+                      onChange={e => setEditForm(f => ({ ...f, modelName: e.target.value }))}
+                      placeholder="e.g. Tarmac SL7"
+                      className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
                 {/* Description */}
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Description</label>
@@ -663,6 +708,101 @@ export default function ListingManagement() {
                       placeholder="e.g. S, M, L, XL"
                       className="w-full px-4 py-3 rounded-xl bg-surface-container-low border-2 border-transparent focus:border-primary/30 text-sm text-on-surface outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                  </div>
+                </div>
+
+                {/* Images */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Images</label>
+                  <div className="space-y-3">
+                    {/* Primary image */}
+                    <div>
+                      <p className="text-[10px] text-on-surface-variant mb-1.5 font-medium">Cover Image {!editPrimaryFile && editPrimaryPreview && <span className="text-tertiary">(keeping existing)</span>}</p>
+                      <div className="flex items-center gap-3">
+                        {editPrimaryPreview ? (
+                          <div className="relative w-20 h-14 rounded-lg overflow-hidden flex-shrink-0 group">
+                            <img src={editPrimaryPreview} alt="primary" className="w-full h-full object-cover" />
+                            {!editTarget || editTarget.status !== 'PendingInspection' ? (
+                              <button
+                                type="button"
+                                onClick={() => { setEditPrimaryFile(null); setEditPrimaryPreview(null); }}
+                                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity"
+                              >
+                                <span className="material-symbols-outlined text-white text-sm">delete</span>
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="w-20 h-14 rounded-lg bg-surface-container-high flex items-center justify-center border-2 border-dashed border-outline-variant/40 flex-shrink-0">
+                            <span className="material-symbols-outlined text-on-surface-variant/40 text-xl">image</span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          disabled={editTarget.status === 'PendingInspection'}
+                          onClick={() => editPrimaryRef.current?.click()}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant/30 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <span className="material-symbols-outlined text-sm">upload</span>
+                          {editPrimaryPreview ? 'Replace' : 'Upload'}
+                        </button>
+                        <input
+                          ref={editPrimaryRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            setEditPrimaryFile(file);
+                            setEditPrimaryPreview(URL.createObjectURL(file));
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Additional images */}
+                    <div>
+                      <p className="text-[10px] text-on-surface-variant mb-1.5 font-medium">Additional Images</p>
+                      <div className="flex flex-wrap gap-2">
+                        {editAdditionalPreviews.map((src, i) => (
+                          <div key={i} className="relative w-16 h-12 rounded-lg overflow-hidden group">
+                            <img src={src} alt={`extra ${i}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditAdditionalFiles(prev => prev.filter((_, idx) => idx !== i));
+                                setEditAdditionalPreviews(prev => prev.filter((_, idx) => idx !== i));
+                              }}
+                              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity"
+                            >
+                              <span className="material-symbols-outlined text-white text-sm">close</span>
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          disabled={editTarget.status === 'PendingInspection'}
+                          onClick={() => editAdditionalRef.current?.click()}
+                          className="w-16 h-12 rounded-lg border-2 border-dashed border-outline-variant/40 flex items-center justify-center hover:bg-surface-container transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <span className="material-symbols-outlined text-on-surface-variant/50 text-lg">add</span>
+                        </button>
+                        <input
+                          ref={editAdditionalRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={e => {
+                            const files = Array.from(e.target.files);
+                            if (!files.length) return;
+                            setEditAdditionalFiles(prev => [...prev, ...files]);
+                            setEditAdditionalPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
