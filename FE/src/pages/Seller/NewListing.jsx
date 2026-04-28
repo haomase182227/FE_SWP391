@@ -145,8 +145,6 @@ export default function NewListing() {
         avatarSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuBqbF9iNTv0bf12Xf_6OXCV8ABGhUJ13qL3Skz87MXP9Z_Gg_67pryu_bzTsFeYh5zumD-CWuZuYJCr7cz4m6fab0MRt3mUYxHZgs3-frNGSKKv-ymzNlmNDz_rmK5q--8c7V7z3q_7Y6197v12Q39EdH8tpFH93Bvt6JtO2mDROzGAW3sQwYdQz-Rj6q9piqEIUN9j9WSrQxVkg2a2UQYDzK2Zq4QVowKJQCOjP-Rj3FhqIeOuAG4bVxx6CLCH_8rFQAucJZXGuQvG"
         merchantName="Verified Merchant"
         merchantSub="Seller Dashboard"
-        bottomButton="List New Bike"
-        onBottomButtonClick={() => navigate('/seller/new-listing')}
       />
 
       {/* Main Content */}
